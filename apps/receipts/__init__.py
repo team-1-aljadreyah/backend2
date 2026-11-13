@@ -1,0 +1,1 @@
+"""Receipts (goods receiving) app."""

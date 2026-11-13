@@ -1,0 +1,1 @@
+"""Warehouses domain app."""

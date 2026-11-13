@@ -1,0 +1,4865 @@
+{
+  "generated_at_policy": "deterministic_seed",
+  "total_assets": 243,
+  "assets": [
+    {
+      "asset_id": "asset-company-logo",
+      "entity_type": "company",
+      "seed_key": "company:logo",
+      "file_path": "company/al_nahrain_logo.webp",
+      "thumb_path": "company/thumbs/al_nahrain_logo_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "brand/logo.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "شعار شركة النهرين للمواد الغذائية بالجملة",
+      "alt_en": "Al-Nahrain Wholesale Foods Logo",
+      "source": "ai_generated",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "497d1a5cec535f32f2594d2aae63b6f6254f638ad25aa60608980f7671d44824"
+    },
+    {
+      "asset_id": "asset-product-1",
+      "entity_type": "product",
+      "entity_id": 1,
+      "seed_key": "item:1",
+      "file_path": "products/item_1.webp",
+      "thumb_path": "products/thumbs/item_1_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/1/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Sunflower Oil 1L",
+      "alt_en": "Al-Nahrain Sunflower Oil 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cdf7543734f61be97fac066031857ec01ebdb0026e7eea127c71a28cebfd4e42"
+    },
+    {
+      "asset_id": "asset-product-2",
+      "entity_type": "product",
+      "entity_id": 2,
+      "seed_key": "item:2",
+      "file_path": "products/item_2.webp",
+      "thumb_path": "products/thumbs/item_2_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/2/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Sunflower Oil 5L",
+      "alt_en": "Al-Nahrain Sunflower Oil 5L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b8240b611b8943f8c4e492a264d44ae3ab630e4919cf42be000bf1bee3158c42"
+    },
+    {
+      "asset_id": "asset-product-3",
+      "entity_type": "product",
+      "entity_id": 3,
+      "seed_key": "item:3",
+      "file_path": "products/item_3.webp",
+      "thumb_path": "products/thumbs/item_3_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/3/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Pure Corn Oil 1.8L",
+      "alt_en": "Babil Pure Corn Oil 1.8L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "dbd4d91b775716bf5bb34417e25b7c3a038aaea53bf73b32e82d5c7981aaf379"
+    },
+    {
+      "asset_id": "asset-product-4",
+      "entity_type": "product",
+      "entity_id": 4,
+      "seed_key": "item:4",
+      "file_path": "products/item_4.webp",
+      "thumb_path": "products/thumbs/item_4_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/4/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Vegetable Ghee 2KG",
+      "alt_en": "Al-Furat Vegetable Ghee 2KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3901a05e88755d323aefab34821f706b635f9c5549a6ece37506e10db1a0a1d6"
+    },
+    {
+      "asset_id": "asset-product-5",
+      "entity_type": "product",
+      "entity_id": 5,
+      "seed_key": "item:5",
+      "file_path": "products/item_5.webp",
+      "thumb_path": "products/thumbs/item_5_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/5/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Virgin Olive Oil 500ml",
+      "alt_en": "Dijlah Virgin Olive Oil 500ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9852d50edeca8ed6418963f77dbb996d1d82aed2d6a717384dbd0470b17165ee"
+    },
+    {
+      "asset_id": "asset-product-6",
+      "entity_type": "product",
+      "entity_id": 6,
+      "seed_key": "item:6",
+      "file_path": "products/item_6.webp",
+      "thumb_path": "products/thumbs/item_6_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/6/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Sunbula Commercial Frying Oil 18L",
+      "alt_en": "Al-Sunbula Commercial Frying Oil 18L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "67215969a2393e480ab65a21e8caf8ac1b060d4331dc855fedb038c4232ea59f"
+    },
+    {
+      "asset_id": "asset-product-7",
+      "entity_type": "product",
+      "entity_id": 7,
+      "seed_key": "item:7",
+      "file_path": "products/item_7.webp",
+      "thumb_path": "products/thumbs/item_7_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/7/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Canola Oil 900ml",
+      "alt_en": "Al-Ghadeer Canola Oil 900ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0d3f2ec572da38ce62f9048ca41bd086c93af78b0d492393165b93f7f2020de0"
+    },
+    {
+      "asset_id": "asset-product-8",
+      "entity_type": "product",
+      "entity_id": 8,
+      "seed_key": "item:8",
+      "file_path": "products/item_8.webp",
+      "thumb_path": "products/thumbs/item_8_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/8/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Karbala Pure Ghee 900g",
+      "alt_en": "Rawabi Karbala Pure Ghee 900g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "71ebbdd387603737e817903ab72e41b02d74c489357a6bc88140d78151202935"
+    },
+    {
+      "asset_id": "asset-product-9",
+      "entity_type": "product",
+      "entity_id": 9,
+      "seed_key": "item:9",
+      "file_path": "products/item_9.webp",
+      "thumb_path": "products/thumbs/item_9_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/9/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Aseel Sesame Oil 250ml",
+      "alt_en": "Al-Aseel Sesame Oil 250ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "98d86c6196a86529362eba088741a9b919be1cb3971db40ee661a479819522fa"
+    },
+    {
+      "asset_id": "asset-product-10",
+      "entity_type": "product",
+      "entity_id": 10,
+      "seed_key": "item:10",
+      "file_path": "products/item_10.webp",
+      "thumb_path": "products/thumbs/item_10_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/10/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Table Butter 200g",
+      "alt_en": "Al-Nakheel Table Butter 200g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "31d272c6549847ac9b0739cc0494ce07418d3c854738c6b781e22773a0294388"
+    },
+    {
+      "asset_id": "asset-product-11",
+      "entity_type": "product",
+      "entity_id": 11,
+      "seed_key": "item:11",
+      "file_path": "products/item_11.webp",
+      "thumb_path": "products/thumbs/item_11_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/11/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Basmati Rice 5KG",
+      "alt_en": "Al-Nahrain Basmati Rice 5KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ee615e116b0946a1a4da28ece002614ab44b851832da701eb4d87fab733fda80"
+    },
+    {
+      "asset_id": "asset-product-12",
+      "entity_type": "product",
+      "entity_id": 12,
+      "seed_key": "item:12",
+      "file_path": "products/item_12.webp",
+      "thumb_path": "products/thumbs/item_12_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/12/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Basmati Rice 10KG",
+      "alt_en": "Al-Nahrain Basmati Rice 10KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d0c8cb36d0ddda13a108f3fb27c5028d3092d71b95f7afaab5e2d64c61437126"
+    },
+    {
+      "asset_id": "asset-product-13",
+      "entity_type": "product",
+      "entity_id": 13,
+      "seed_key": "item:13",
+      "file_path": "products/item_13.webp",
+      "thumb_path": "products/thumbs/item_13_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/13/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Anbar Rice 5KG",
+      "alt_en": "Al-Furat Anbar Rice 5KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1d61d0e1d66a18181cc3aa7b9f2615fafa38732a6baad8c2c91a3e0b4fd85d83"
+    },
+    {
+      "asset_id": "asset-product-14",
+      "entity_type": "product",
+      "entity_id": 14,
+      "seed_key": "item:14",
+      "file_path": "products/item_14.webp",
+      "thumb_path": "products/thumbs/item_14_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/14/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Red Lentils 1KG",
+      "alt_en": "Al-Ghadeer Red Lentils 1KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e5866f0c7869532ed527eabe31aca7274d9ada26c00c5ccb5bdf02787e05a7c5"
+    },
+    {
+      "asset_id": "asset-product-15",
+      "entity_type": "product",
+      "entity_id": 15,
+      "seed_key": "item:15",
+      "file_path": "products/item_15.webp",
+      "thumb_path": "products/thumbs/item_15_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/15/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Whole Chickpeas 1KG",
+      "alt_en": "Babil Whole Chickpeas 1KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "a242fee4766131c38b8d146b8d87622464b4fcd4d7d99832103748f265427ea6"
+    },
+    {
+      "asset_id": "asset-product-16",
+      "entity_type": "product",
+      "entity_id": 16,
+      "seed_key": "item:16",
+      "file_path": "products/item_16.webp",
+      "thumb_path": "products/thumbs/item_16_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/16/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah White Beans 1KG",
+      "alt_en": "Dijlah White Beans 1KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "471ac529e7f6f2a49d01832e6abb7fdc66b816e222b1cd637f908e7aa83ba743"
+    },
+    {
+      "asset_id": "asset-product-17",
+      "entity_type": "product",
+      "entity_id": 17,
+      "seed_key": "item:17",
+      "file_path": "products/item_17.webp",
+      "thumb_path": "products/thumbs/item_17_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/17/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Baker Flour 25KG",
+      "alt_en": "Al-Nahrain Baker Flour 25KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6f57e2fc6f14eee27e3c34537c4843939bc8ec5f309879ebe27eaa7a76b3bcca"
+    },
+    {
+      "asset_id": "asset-product-18",
+      "entity_type": "product",
+      "entity_id": 18,
+      "seed_key": "item:18",
+      "file_path": "products/item_18.webp",
+      "thumb_path": "products/thumbs/item_18_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/18/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Coarse Bulgur 900g",
+      "alt_en": "Karbala Coarse Bulgur 900g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "42fe1760c84b09af47c5eaf21761df9972b3bd429e6aada170b63d9ed2605a6b"
+    },
+    {
+      "asset_id": "asset-product-19",
+      "entity_type": "product",
+      "entity_id": 19,
+      "seed_key": "item:19",
+      "file_path": "products/item_19.webp",
+      "thumb_path": "products/thumbs/item_19_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/19/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Spaghetti Pasta 400g",
+      "alt_en": "Babil Spaghetti Pasta 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d80cab39f7042418e8138948e7597cdb4e34b5a8fca66814c14a9ec5db098e0c"
+    },
+    {
+      "asset_id": "asset-product-20",
+      "entity_type": "product",
+      "entity_id": 20,
+      "seed_key": "item:20",
+      "file_path": "products/item_20.webp",
+      "thumb_path": "products/thumbs/item_20_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/20/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Whole Oats 500g",
+      "alt_en": "Al-Ghadeer Whole Oats 500g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "45385dc0d9f3abe3810a45f0d073361fde115a5124269121617fb0e34031dfbd"
+    },
+    {
+      "asset_id": "asset-product-21",
+      "entity_type": "product",
+      "entity_id": 21,
+      "seed_key": "item:21",
+      "file_path": "products/item_21.webp",
+      "thumb_path": "products/thumbs/item_21_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/21/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain UHT Milk 1L",
+      "alt_en": "Al-Nahrain UHT Milk 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7ff12d0e1484505a34ad0039e43bade19927fd44d4949eba062398641764ab44"
+    },
+    {
+      "asset_id": "asset-product-22",
+      "entity_type": "product",
+      "entity_id": 22,
+      "seed_key": "item:22",
+      "file_path": "products/item_22.webp",
+      "thumb_path": "products/thumbs/item_22_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/22/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Milk Powder 900g",
+      "alt_en": "Rawabi Milk Powder 900g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6bca28a27ec6a2dba2a7b4bfb05e2a85162665eccf3648abea1e2106db1ed5b5"
+    },
+    {
+      "asset_id": "asset-product-23",
+      "entity_type": "product",
+      "entity_id": 23,
+      "seed_key": "item:23",
+      "file_path": "products/item_23.webp",
+      "thumb_path": "products/thumbs/item_23_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/23/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Cheese Triangles 120g",
+      "alt_en": "Al-Furat Cheese Triangles 120g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f91910d8d1dd3368def216d11da8b5fc91ca16dfd6711d7d4136683b55faecbb"
+    },
+    {
+      "asset_id": "asset-product-24",
+      "entity_type": "product",
+      "entity_id": 24,
+      "seed_key": "item:24",
+      "file_path": "products/item_24.webp",
+      "thumb_path": "products/thumbs/item_24_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/24/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Cheddar Block 400g",
+      "alt_en": "Babil Cheddar Block 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1814d98f8c9061f87747f049d622e75ee5aee14f554f9eb4640c308c51763c19"
+    },
+    {
+      "asset_id": "asset-product-25",
+      "entity_type": "product",
+      "entity_id": 25,
+      "seed_key": "item:25",
+      "file_path": "products/item_25.webp",
+      "thumb_path": "products/thumbs/item_25_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/25/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Ayran Drink 250ml",
+      "alt_en": "Dijlah Ayran Drink 250ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b7825c45fd0b9c0d31b3bbdbf2cccdd19e81d827a0027d65cc92bb150d647c46"
+    },
+    {
+      "asset_id": "asset-product-26",
+      "entity_type": "product",
+      "entity_id": 26,
+      "seed_key": "item:26",
+      "file_path": "products/item_26.webp",
+      "thumb_path": "products/thumbs/item_26_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/26/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Table Cream 170g",
+      "alt_en": "Al-Ghadeer Table Cream 170g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c4e9d1a0be5e7b0a27ef8ee8ee01faba0196d5cc19c5417a9cde757d5fe09aeb"
+    },
+    {
+      "asset_id": "asset-product-27",
+      "entity_type": "product",
+      "entity_id": 27,
+      "seed_key": "item:27",
+      "file_path": "products/item_27.webp",
+      "thumb_path": "products/thumbs/item_27_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/27/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Sunbula Shredded Mozzarella 1KG",
+      "alt_en": "Al-Sunbula Shredded Mozzarella 1KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fe86f340a374f4a025a9a8e532108f26d4b71304aee714928d7e6eec9c5eeb71"
+    },
+    {
+      "asset_id": "asset-product-28",
+      "entity_type": "product",
+      "entity_id": 28,
+      "seed_key": "item:28",
+      "file_path": "products/item_28.webp",
+      "thumb_path": "products/thumbs/item_28_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/28/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Turkish Labneh 500g",
+      "alt_en": "Karbala Turkish Labneh 500g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ea66a541794bb9efcb5df72b3d1ae3e1c1af91a9756b55b4e3f46713d60afb6c"
+    },
+    {
+      "asset_id": "asset-product-29",
+      "entity_type": "product",
+      "entity_id": 29,
+      "seed_key": "item:29",
+      "file_path": "products/item_29.webp",
+      "thumb_path": "products/thumbs/item_29_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/29/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Condensed Milk 397g",
+      "alt_en": "Al-Nakheel Condensed Milk 397g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "903ae453112dad0b0ef640bde2942afca6f90ae694855f4c80d28fb8fbf01208"
+    },
+    {
+      "asset_id": "asset-product-30",
+      "entity_type": "product",
+      "entity_id": 30,
+      "seed_key": "item:30",
+      "file_path": "products/item_30.webp",
+      "thumb_path": "products/thumbs/item_30_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/30/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Cream Cheese Jar 240g",
+      "alt_en": "Dijlah Cream Cheese Jar 240g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9e84b196cfe115d8e3ad320b73de3453a39090afdf4e267ba3f548d52e4a7bc1"
+    },
+    {
+      "asset_id": "asset-product-31",
+      "entity_type": "product",
+      "entity_id": 31,
+      "seed_key": "item:31",
+      "file_path": "products/item_31.webp",
+      "thumb_path": "products/thumbs/item_31_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/31/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Tomato Paste 800g",
+      "alt_en": "Al-Nahrain Tomato Paste 800g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "5c44cf97bb7b16b6d1e46bae8f233687af618cbf068fb19035f43077c570ff1a"
+    },
+    {
+      "asset_id": "asset-product-32",
+      "entity_type": "product",
+      "entity_id": 32,
+      "seed_key": "item:32",
+      "file_path": "products/item_32.webp",
+      "thumb_path": "products/thumbs/item_32_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/32/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Tomato Paste 400g",
+      "alt_en": "Al-Nahrain Tomato Paste 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ca8cbbe504f56efe29137eb8d092cb7c42396b3fb5b771a4e5de8c58e3af4e84"
+    },
+    {
+      "asset_id": "asset-product-33",
+      "entity_type": "product",
+      "entity_id": 33,
+      "seed_key": "item:33",
+      "file_path": "products/item_33.webp",
+      "thumb_path": "products/thumbs/item_33_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/33/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Chunk White Tuna 185g",
+      "alt_en": "Dijlah Chunk White Tuna 185g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "93b6941a995508c7ab369a0b41a79f8ac326fdee499042ce3e12b7354cfe4d21"
+    },
+    {
+      "asset_id": "asset-product-34",
+      "entity_type": "product",
+      "entity_id": 34,
+      "seed_key": "item:34",
+      "file_path": "products/item_34.webp",
+      "thumb_path": "products/thumbs/item_34_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/34/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Foul Medames 400g",
+      "alt_en": "Al-Ghadeer Foul Medames 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "87c91a22a3849152fb2dd0080c3935cc30d7e006ea78adc2cb89e3345d49054e"
+    },
+    {
+      "asset_id": "asset-product-35",
+      "entity_type": "product",
+      "entity_id": 35,
+      "seed_key": "item:35",
+      "file_path": "products/item_35.webp",
+      "thumb_path": "products/thumbs/item_35_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/35/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Sweet Corn Can 340g",
+      "alt_en": "Babil Sweet Corn Can 340g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3d75bef92132f1e6b9ed7e61639bb07c244a6b7c0d35aa59be97deab50e172fb"
+    },
+    {
+      "asset_id": "asset-product-36",
+      "entity_type": "product",
+      "entity_id": 36,
+      "seed_key": "item:36",
+      "file_path": "products/item_36.webp",
+      "thumb_path": "products/thumbs/item_36_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/36/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Sliced Mushrooms 400g",
+      "alt_en": "Al-Furat Sliced Mushrooms 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1a74791bf1c5d321daaa0e4d4f8af1569e6236a1a6ba394d16f0499c4d2b24b2"
+    },
+    {
+      "asset_id": "asset-product-37",
+      "entity_type": "product",
+      "entity_id": 37,
+      "seed_key": "item:37",
+      "file_path": "products/item_37.webp",
+      "thumb_path": "products/thumbs/item_37_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/37/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Aseel Hummus Tahini 380g",
+      "alt_en": "Al-Aseel Hummus Tahini 380g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "4cbc2e6a0153f27824bb5ef0de1b9901d1bce32ad97877eae69efddeef51deae"
+    },
+    {
+      "asset_id": "asset-product-38",
+      "entity_type": "product",
+      "entity_id": 38,
+      "seed_key": "item:38",
+      "file_path": "products/item_38.webp",
+      "thumb_path": "products/thumbs/item_38_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/38/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Apricot Jam 450g",
+      "alt_en": "Rawabi Apricot Jam 450g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0074d64e90638d2ced3acaca5cf33ab2196c35fa09dd861bf75bbf13cc5bbf1c"
+    },
+    {
+      "asset_id": "asset-product-39",
+      "entity_type": "product",
+      "entity_id": 39,
+      "seed_key": "item:39",
+      "file_path": "products/item_39.webp",
+      "thumb_path": "products/thumbs/item_39_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/39/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Premium Date Syrup 850g",
+      "alt_en": "Karbala Premium Date Syrup 850g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3228f917ced3640a17b1f981d63aabcd1ab036dc795a7814b61eaa9a13869d0a"
+    },
+    {
+      "asset_id": "asset-product-40",
+      "entity_type": "product",
+      "entity_id": 40,
+      "seed_key": "item:40",
+      "file_path": "products/item_40.webp",
+      "thumb_path": "products/thumbs/item_40_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/40/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Pitted Black Olives 350g",
+      "alt_en": "Al-Nakheel Pitted Black Olives 350g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0b8b9a35c798c3d099779cb330a5eb197a1a689d6295734d1ef00a5e28463f3a"
+    },
+    {
+      "asset_id": "asset-product-41",
+      "entity_type": "product",
+      "entity_id": 41,
+      "seed_key": "item:41",
+      "file_path": "products/item_41.webp",
+      "thumb_path": "products/thumbs/item_41_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/41/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Bottled Water 500ml",
+      "alt_en": "Al-Nahrain Bottled Water 500ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "bcd6f6a882f8db2b033eaf28384002a1f705b4bde82d97d3300ca56070655aaa"
+    },
+    {
+      "asset_id": "asset-product-42",
+      "entity_type": "product",
+      "entity_id": 42,
+      "seed_key": "item:42",
+      "file_path": "products/item_42.webp",
+      "thumb_path": "products/thumbs/item_42_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/42/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Bottled Water 1.5L",
+      "alt_en": "Al-Nahrain Bottled Water 1.5L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3d14b802b3e5702e66a6f0d185df2cfc1c8b549ea2803f79752b7f0497bb972c"
+    },
+    {
+      "asset_id": "asset-product-43",
+      "entity_type": "product",
+      "entity_id": 43,
+      "seed_key": "item:43",
+      "file_path": "products/item_43.webp",
+      "thumb_path": "products/thumbs/item_43_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/43/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Mango Nectar 1L",
+      "alt_en": "Al-Furat Mango Nectar 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3b645eb4e75d18f9d011cf47c997cca6f84ffa4d74ddd20b82f79ae550b91ba0"
+    },
+    {
+      "asset_id": "asset-product-44",
+      "entity_type": "product",
+      "entity_id": 44,
+      "seed_key": "item:44",
+      "file_path": "products/item_44.webp",
+      "thumb_path": "products/thumbs/item_44_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/44/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Orange Juice 250ml",
+      "alt_en": "Babil Orange Juice 250ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "19bd4ad993a4a1205d98b7bdb3285ce36937f80347dcdde6db2712852e9cfc0c"
+    },
+    {
+      "asset_id": "asset-product-45",
+      "entity_type": "product",
+      "entity_id": 45,
+      "seed_key": "item:45",
+      "file_path": "products/item_45.webp",
+      "thumb_path": "products/thumbs/item_45_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/45/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Apple Juice 1L",
+      "alt_en": "Al-Ghadeer Apple Juice 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3e8692d0fa235776d54d14a6c09af88263429ad5be1589b31efd2dcf61297152"
+    },
+    {
+      "asset_id": "asset-product-46",
+      "entity_type": "product",
+      "entity_id": 46,
+      "seed_key": "item:46",
+      "file_path": "products/item_46.webp",
+      "thumb_path": "products/thumbs/item_46_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/46/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Lemon Malt Drink 330ml",
+      "alt_en": "Dijlah Lemon Malt Drink 330ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6b23bf12d9f2d40f408ebcbaaa247012eb0185cad1833950c1acf2f7c5da1a03"
+    },
+    {
+      "asset_id": "asset-product-47",
+      "entity_type": "product",
+      "entity_id": 47,
+      "seed_key": "item:47",
+      "file_path": "products/item_47.webp",
+      "thumb_path": "products/thumbs/item_47_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/47/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Cola Can 330ml",
+      "alt_en": "Babil Cola Can 330ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "bd26cbaaed2804e6a6d20b156a55a6283da88876daf5402c92e1efd6c399e9e4"
+    },
+    {
+      "asset_id": "asset-product-48",
+      "entity_type": "product",
+      "entity_id": 48,
+      "seed_key": "item:48",
+      "file_path": "products/item_48.webp",
+      "thumb_path": "products/thumbs/item_48_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/48/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Pomegranate Concentrate 700ml",
+      "alt_en": "Karbala Pomegranate Concentrate 700ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "172b9cfdae51ae2f7466122b6bd484e7c737c3c993c8f4fcb762f490d9abb733"
+    },
+    {
+      "asset_id": "asset-product-49",
+      "entity_type": "product",
+      "entity_id": 49,
+      "seed_key": "item:49",
+      "file_path": "products/item_49.webp",
+      "thumb_path": "products/thumbs/item_49_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/49/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Guava Tetra 200ml",
+      "alt_en": "Rawabi Guava Tetra 200ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2f76000f290b12fb15640f0c8e6032a59da0673b28bcbbedd13ff22b52410f92"
+    },
+    {
+      "asset_id": "asset-product-50",
+      "entity_type": "product",
+      "entity_id": 50,
+      "seed_key": "item:50",
+      "file_path": "products/item_50.webp",
+      "thumb_path": "products/thumbs/item_50_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/50/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Sparkling Water 300ml",
+      "alt_en": "Al-Nakheel Sparkling Water 300ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "144dc2289705a4b634f2c3d7bbc60f1dd9b9f382ef113573ac66e0ab02512709"
+    },
+    {
+      "asset_id": "asset-product-51",
+      "entity_type": "product",
+      "entity_id": 51,
+      "seed_key": "item:51",
+      "file_path": "products/item_51.webp",
+      "thumb_path": "products/thumbs/item_51_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/51/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Ceylon Tea 500g",
+      "alt_en": "Al-Nahrain Ceylon Tea 500g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "88e1a3c6ec73657037e098dfd6379366949d6768306a3daf450158d9ae3d4842"
+    },
+    {
+      "asset_id": "asset-product-52",
+      "entity_type": "product",
+      "entity_id": 52,
+      "seed_key": "item:52",
+      "file_path": "products/item_52.webp",
+      "thumb_path": "products/thumbs/item_52_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/52/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Ceylon Tea 1KG",
+      "alt_en": "Al-Nahrain Ceylon Tea 1KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b3393352b4261a3e95addd512e7bc8b425b0cb76821b779221c063290ebe779f"
+    },
+    {
+      "asset_id": "asset-product-53",
+      "entity_type": "product",
+      "entity_id": 53,
+      "seed_key": "item:53",
+      "file_path": "products/item_53.webp",
+      "thumb_path": "products/thumbs/item_53_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/53/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Tea Bags 100ct",
+      "alt_en": "Al-Furat Tea Bags 100ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c776f779220486f1f015d956703474c118f97675c78faec22f9926bc3fddacd1"
+    },
+    {
+      "asset_id": "asset-product-54",
+      "entity_type": "product",
+      "entity_id": 54,
+      "seed_key": "item:54",
+      "file_path": "products/item_54.webp",
+      "thumb_path": "products/thumbs/item_54_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/54/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Instant Coffee 200g",
+      "alt_en": "Dijlah Instant Coffee 200g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fc82718e02d737ee247150afe8c466bf72a2524830c3da010c0c4ff43f9633b3"
+    },
+    {
+      "asset_id": "asset-product-55",
+      "entity_type": "product",
+      "entity_id": 55,
+      "seed_key": "item:55",
+      "file_path": "products/item_55.webp",
+      "thumb_path": "products/thumbs/item_55_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/55/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Cardamom Coffee 250g",
+      "alt_en": "Al-Ghadeer Cardamom Coffee 250g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6e4b9c0a2b82ac776f15f14cfd2266863e83f829702ac249e5e047dfa04fe956"
+    },
+    {
+      "asset_id": "asset-product-56",
+      "entity_type": "product",
+      "entity_id": 56,
+      "seed_key": "item:56",
+      "file_path": "products/item_56.webp",
+      "thumb_path": "products/thumbs/item_56_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/56/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Aseel Turkish Coffee 250g",
+      "alt_en": "Al-Aseel Turkish Coffee 250g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "65830dd9d47a12815a709676762659a9f99d8ac901b00daa852d73973a076eb7"
+    },
+    {
+      "asset_id": "asset-product-57",
+      "entity_type": "product",
+      "entity_id": 57,
+      "seed_key": "item:57",
+      "file_path": "products/item_57.webp",
+      "thumb_path": "products/thumbs/item_57_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/57/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil 3in1 Coffee Sachets 20pk",
+      "alt_en": "Babil 3in1 Coffee Sachets 20pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6d1dc28ed6a6cac19b7e492d8e9a8dd1aa7f790eff43f713268065e0cefc7516"
+    },
+    {
+      "asset_id": "asset-product-58",
+      "entity_type": "product",
+      "entity_id": 58,
+      "seed_key": "item:58",
+      "file_path": "products/item_58.webp",
+      "thumb_path": "products/thumbs/item_58_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/58/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Mint Green Tea 25ct",
+      "alt_en": "Rawabi Mint Green Tea 25ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0e5eb83e81c755fe72ed17668f87fac07f7e640bd9beac939b098d2a231aeb55"
+    },
+    {
+      "asset_id": "asset-product-59",
+      "entity_type": "product",
+      "entity_id": 59,
+      "seed_key": "item:59",
+      "file_path": "products/item_59.webp",
+      "thumb_path": "products/thumbs/item_59_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/59/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Coffee Creamer 400g",
+      "alt_en": "Al-Nakheel Coffee Creamer 400g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "acf48051dc81d844f608d92c1dcfa02abeed80d37e2bddcd5150186ecc8d80d2"
+    },
+    {
+      "asset_id": "asset-product-60",
+      "entity_type": "product",
+      "entity_id": 60,
+      "seed_key": "item:60",
+      "file_path": "products/item_60.webp",
+      "thumb_path": "products/thumbs/item_60_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/60/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Automatic Detergent 3KG",
+      "alt_en": "Al-Nahrain Automatic Detergent 3KG",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ae4e387223ec87fbfac410e38fa18a9fb2ad29b84139d5b53f8556be558e1e34"
+    },
+    {
+      "asset_id": "asset-product-61",
+      "entity_type": "product",
+      "entity_id": 61,
+      "seed_key": "item:61",
+      "file_path": "products/item_61.webp",
+      "thumb_path": "products/thumbs/item_61_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/61/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Lemon Dish Liquid 1L",
+      "alt_en": "Al-Furat Lemon Dish Liquid 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0b8bce8dd2eaae8eb5f7d325124b6e33b4c2a7bd90cf6fe29c1b7f5c6aea54bc"
+    },
+    {
+      "asset_id": "asset-product-62",
+      "entity_type": "product",
+      "entity_id": 62,
+      "seed_key": "item:62",
+      "file_path": "products/item_62.webp",
+      "thumb_path": "products/thumbs/item_62_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/62/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Bleach Disinfectant 3.7L",
+      "alt_en": "Dijlah Bleach Disinfectant 3.7L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "308c288fbaf695e8b1a20511259dc3ba4a501fbabc3d524e2d4e8a5b1b0e9ea4"
+    },
+    {
+      "asset_id": "asset-product-63",
+      "entity_type": "product",
+      "entity_id": 63,
+      "seed_key": "item:63",
+      "file_path": "products/item_63.webp",
+      "thumb_path": "products/thumbs/item_63_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/63/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Fabric Softener 2L",
+      "alt_en": "Al-Ghadeer Fabric Softener 2L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "37365cc52b01e78d9bad9904277c1836967031aeb1cc8cfab767866aaa50a811"
+    },
+    {
+      "asset_id": "asset-product-64",
+      "entity_type": "product",
+      "entity_id": 64,
+      "seed_key": "item:64",
+      "file_path": "products/item_64.webp",
+      "thumb_path": "products/thumbs/item_64_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/64/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Pine Floor Cleaner 1.5L",
+      "alt_en": "Babil Pine Floor Cleaner 1.5L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cb62cdd89328e9d186a20639b18fd107c5f62745f1f67667ec7b6f3d5e716dd1"
+    },
+    {
+      "asset_id": "asset-product-65",
+      "entity_type": "product",
+      "entity_id": 65,
+      "seed_key": "item:65",
+      "file_path": "products/item_65.webp",
+      "thumb_path": "products/thumbs/item_65_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/65/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Facial Tissues 5pk",
+      "alt_en": "Al-Nahrain Facial Tissues 5pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0f7cc7b3094ade848ad14a8c0bdb86975b39a91e57eed1ebbd0b02a8e354f126"
+    },
+    {
+      "asset_id": "asset-product-66",
+      "entity_type": "product",
+      "entity_id": 66,
+      "seed_key": "item:66",
+      "file_path": "products/item_66.webp",
+      "thumb_path": "products/thumbs/item_66_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/66/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Kitchen Towels 4pk",
+      "alt_en": "Rawabi Kitchen Towels 4pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "a5acc782b21972dbf3a3af91be441ff296d254c356912c2699703d58845cc8bc"
+    },
+    {
+      "asset_id": "asset-product-67",
+      "entity_type": "product",
+      "entity_id": 67,
+      "seed_key": "item:67",
+      "file_path": "products/item_67.webp",
+      "thumb_path": "products/thumbs/item_67_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/67/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Sunbula Heavy Trash Bags 30ct",
+      "alt_en": "Al-Sunbula Heavy Trash Bags 30ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1d5b3921f2d7ee1348c2283f359773717ca8e3259c22980a8214ecdbe73d46fb"
+    },
+    {
+      "asset_id": "asset-product-68",
+      "entity_type": "product",
+      "entity_id": 68,
+      "seed_key": "item:68",
+      "file_path": "products/item_68.webp",
+      "thumb_path": "products/thumbs/item_68_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/68/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Glass Cleaner 750ml",
+      "alt_en": "Al-Nakheel Glass Cleaner 750ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b333c8927004f0c924f18cab409d41fbc7caac47fe7bc4114b8a026955168c7c"
+    },
+    {
+      "asset_id": "asset-product-69",
+      "entity_type": "product",
+      "entity_id": 69,
+      "seed_key": "item:69",
+      "file_path": "products/item_69.webp",
+      "thumb_path": "products/thumbs/item_69_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/69/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Dishwasher Tabs 30ct",
+      "alt_en": "Dijlah Dishwasher Tabs 30ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "62553f6d5dc2a7ebc5f922e19031c68f2b3a0c3568b6f507b9e065da04dd7428"
+    },
+    {
+      "asset_id": "asset-product-70",
+      "entity_type": "product",
+      "entity_id": 70,
+      "seed_key": "item:70",
+      "file_path": "products/item_70.webp",
+      "thumb_path": "products/thumbs/item_70_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/70/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Daily Shampoo 400ml",
+      "alt_en": "Al-Ghadeer Daily Shampoo 400ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e22ed3d1d17a970fed21443108b19797380d75bd970947f67abec11dacad8987"
+    },
+    {
+      "asset_id": "asset-product-71",
+      "entity_type": "product",
+      "entity_id": 71,
+      "seed_key": "item:71",
+      "file_path": "products/item_71.webp",
+      "thumb_path": "products/thumbs/item_71_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/71/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Oud Hand Wash 500ml",
+      "alt_en": "Dijlah Oud Hand Wash 500ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9bd42d6df84cdd96a11f7c9ed2aee88ab6322f88734bb1ad417bffec5fa7408a"
+    },
+    {
+      "asset_id": "asset-product-72",
+      "entity_type": "product",
+      "entity_id": 72,
+      "seed_key": "item:72",
+      "file_path": "products/item_72.webp",
+      "thumb_path": "products/thumbs/item_72_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/72/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Total Toothpaste 100ml",
+      "alt_en": "Babil Total Toothpaste 100ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "08a7e718587b0cd349fe1def15b4db853c2a6457e5c6e2439ff63ec7fc424736"
+    },
+    {
+      "asset_id": "asset-product-73",
+      "entity_type": "product",
+      "entity_id": 73,
+      "seed_key": "item:73",
+      "file_path": "products/item_73.webp",
+      "thumb_path": "products/thumbs/item_73_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/73/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Baby Diapers Sz4 44ct",
+      "alt_en": "Al-Nahrain Baby Diapers Sz4 44ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "becfa70414f6dd688b23e1131176ec988913f7d04f3c95d51d4edb88b3ab5a69"
+    },
+    {
+      "asset_id": "asset-product-74",
+      "entity_type": "product",
+      "entity_id": 74,
+      "seed_key": "item:74",
+      "file_path": "products/item_74.webp",
+      "thumb_path": "products/thumbs/item_74_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/74/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Baby Wipes 72ct",
+      "alt_en": "Rawabi Baby Wipes 72ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cc2ec7ca913fc041c891570916510ae6472ae17c851757b0ed3ab0cbb4ccebf2"
+    },
+    {
+      "asset_id": "asset-product-75",
+      "entity_type": "product",
+      "entity_id": 75,
+      "seed_key": "item:75",
+      "file_path": "products/item_75.webp",
+      "thumb_path": "products/thumbs/item_75_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/75/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Aseel Bath Soap Bar 4pk",
+      "alt_en": "Al-Aseel Bath Soap Bar 4pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "02449b428f7fba242f7d6e4204937d2626c4f6c0a45d487d951b8254923dd686"
+    },
+    {
+      "asset_id": "asset-product-76",
+      "entity_type": "product",
+      "entity_id": 76,
+      "seed_key": "item:76",
+      "file_path": "products/item_76.webp",
+      "thumb_path": "products/thumbs/item_76_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/76/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Roll-on Deodorant 50ml",
+      "alt_en": "Al-Furat Roll-on Deodorant 50ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7731d389003bbf4d2a14eebccace4b3ad2716fab582141c3648133d134cd784a"
+    },
+    {
+      "asset_id": "asset-product-77",
+      "entity_type": "product",
+      "entity_id": 77,
+      "seed_key": "item:77",
+      "file_path": "products/item_77.webp",
+      "thumb_path": "products/thumbs/item_77_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/77/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Fresh Shower Gel 500ml",
+      "alt_en": "Al-Nakheel Fresh Shower Gel 500ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "08aa37c7b048cd8a72e138a3ea41adbbcce9995535a698efc583528b5fbc3df4"
+    },
+    {
+      "asset_id": "asset-product-78",
+      "entity_type": "product",
+      "entity_id": 78,
+      "seed_key": "item:78",
+      "file_path": "products/item_78.webp",
+      "thumb_path": "products/thumbs/item_78_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/78/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Skin Moisturizer 150ml",
+      "alt_en": "Dijlah Skin Moisturizer 150ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "777d8c9c408516e3fd2b7a4715e6201e4f7025e4b4c4d7052484f9b60b63fa6f"
+    },
+    {
+      "asset_id": "asset-product-79",
+      "entity_type": "product",
+      "entity_id": 79,
+      "seed_key": "item:79",
+      "file_path": "products/item_79.webp",
+      "thumb_path": "products/thumbs/item_79_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/79/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Tea Biscuit Box 24pk",
+      "alt_en": "Al-Nahrain Tea Biscuit Box 24pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1b201e9ac47f26e4cd34d77b999dcfaea1f187c28c866065b0cc78b9b16003f5"
+    },
+    {
+      "asset_id": "asset-product-80",
+      "entity_type": "product",
+      "entity_id": 80,
+      "seed_key": "item:80",
+      "file_path": "products/item_80.webp",
+      "thumb_path": "products/thumbs/item_80_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/80/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Chocolate Wafer 12pk",
+      "alt_en": "Al-Furat Chocolate Wafer 12pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fec3077130881ab141cc784688ea1222d03d66a689a9c8b1dd9b1b073e9e006e"
+    },
+    {
+      "asset_id": "asset-product-81",
+      "entity_type": "product",
+      "entity_id": 81,
+      "seed_key": "item:81",
+      "file_path": "products/item_81.webp",
+      "thumb_path": "products/thumbs/item_81_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/81/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Salted Chips Carton 20pk",
+      "alt_en": "Babil Salted Chips Carton 20pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "48d60a15c4887b3c90df129891b9efc6cb6076527b88f5e641e71628a9b04bb8"
+    },
+    {
+      "asset_id": "asset-product-82",
+      "entity_type": "product",
+      "entity_id": 82,
+      "seed_key": "item:82",
+      "file_path": "products/item_82.webp",
+      "thumb_path": "products/thumbs/item_82_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/82/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Milk Chocolate 100g",
+      "alt_en": "Al-Ghadeer Milk Chocolate 100g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "25d02308ced28e10ecc49a29ea1861c3bb2da3df710e2d75635390e363999b83"
+    },
+    {
+      "asset_id": "asset-product-83",
+      "entity_type": "product",
+      "entity_id": 83,
+      "seed_key": "item:83",
+      "file_path": "products/item_83.webp",
+      "thumb_path": "products/thumbs/item_83_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/83/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Date Maamoul 16pk",
+      "alt_en": "Rawabi Date Maamoul 16pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1d7f3d6401aa98dde713a8f8f69b74eaa61e9b1bfb5b2b842c9d4c8a4d20d25b"
+    },
+    {
+      "asset_id": "asset-product-84",
+      "entity_type": "product",
+      "entity_id": 84,
+      "seed_key": "item:84",
+      "file_path": "products/item_84.webp",
+      "thumb_path": "products/thumbs/item_84_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/84/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Cocoa Filled Cake 24pk",
+      "alt_en": "Dijlah Cocoa Filled Cake 24pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b4d969da898ffc542370a673e081780f856cdbecd6a7d4b0514cb413477eecf6"
+    },
+    {
+      "asset_id": "asset-product-85",
+      "entity_type": "product",
+      "entity_id": 85,
+      "seed_key": "item:85",
+      "file_path": "products/item_85.webp",
+      "thumb_path": "products/thumbs/item_85_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/85/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Mint Gum 20pk",
+      "alt_en": "Al-Nakheel Mint Gum 20pk",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "342096cb349a9367253ba986846e8329109feaca4778549d8d08eba018cbef20"
+    },
+    {
+      "asset_id": "asset-product-86",
+      "entity_type": "product",
+      "entity_id": 86,
+      "seed_key": "item:86",
+      "file_path": "products/item_86.webp",
+      "thumb_path": "products/thumbs/item_86_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/86/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Sunbula Roasted Pistachios 250g",
+      "alt_en": "Al-Sunbula Roasted Pistachios 250g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "15d29cc02e3559c6312edc3201c2907b53eff95294194ebaf184c8236885b194"
+    },
+    {
+      "asset_id": "asset-product-87",
+      "entity_type": "product",
+      "entity_id": 87,
+      "seed_key": "item:87",
+      "file_path": "products/item_87.webp",
+      "thumb_path": "products/thumbs/item_87_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/87/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Sesame Halawa 500g",
+      "alt_en": "Karbala Sesame Halawa 500g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "78b5a8daaaf3e8fddde9bde26cef5e59848532855d834b7047ec7658bf0562ce"
+    },
+    {
+      "asset_id": "asset-product-88",
+      "entity_type": "product",
+      "entity_id": 88,
+      "seed_key": "item:88",
+      "file_path": "products/item_88.webp",
+      "thumb_path": "products/thumbs/item_88_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/88/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nahrain Ground Black Pepper 200g",
+      "alt_en": "Al-Nahrain Ground Black Pepper 200g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1d02221060faea18e17341e1ef41ea48bfcae6e54a33a5342469a84dde21a14d"
+    },
+    {
+      "asset_id": "asset-product-89",
+      "entity_type": "product",
+      "entity_id": 89,
+      "seed_key": "item:89",
+      "file_path": "products/item_89.webp",
+      "thumb_path": "products/thumbs/item_89_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/89/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Rawabi Iraqi Biryani Spice 200g",
+      "alt_en": "Rawabi Iraqi Biryani Spice 200g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2e68ae1a3b711816ced5e538f23480e398c9b283e7884e8c52504cb2317e4eee"
+    },
+    {
+      "asset_id": "asset-product-90",
+      "entity_type": "product",
+      "entity_id": 90,
+      "seed_key": "item:90",
+      "file_path": "products/item_90.webp",
+      "thumb_path": "products/thumbs/item_90_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/90/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Furat Ground Cumin 250g",
+      "alt_en": "Al-Furat Ground Cumin 250g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "488222765c6ee9bf27c27ac186fa227dc16f6b724e62cfc3d80ccd359a0fcc19"
+    },
+    {
+      "asset_id": "asset-product-91",
+      "entity_type": "product",
+      "entity_id": 91,
+      "seed_key": "item:91",
+      "file_path": "products/item_91.webp",
+      "thumb_path": "products/thumbs/item_91_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/91/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Babil Pure Turmeric 250g",
+      "alt_en": "Babil Pure Turmeric 250g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "45f205ccc1035b00d35fbe0f5833e578f6caeb4ba56003111c9a0678101ba745"
+    },
+    {
+      "asset_id": "asset-product-92",
+      "entity_type": "product",
+      "entity_id": 92,
+      "seed_key": "item:92",
+      "file_path": "products/item_92.webp",
+      "thumb_path": "products/thumbs/item_92_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/92/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Dijlah Iodized Table Salt 750g",
+      "alt_en": "Dijlah Iodized Table Salt 750g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2a823f2cfabf56bec693fb8f4dfda72ab07e7e9885fbb35f2e1e7af87ae34164"
+    },
+    {
+      "asset_id": "asset-product-93",
+      "entity_type": "product",
+      "entity_id": 93,
+      "seed_key": "item:93",
+      "file_path": "products/item_93.webp",
+      "thumb_path": "products/thumbs/item_93_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/93/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Ghadeer Chicken Bouillon 24ct",
+      "alt_en": "Al-Ghadeer Chicken Bouillon 24ct",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e46aa39ab5f5ed833b49d2ad60ecf7406354f5f49c3a9a3550c99ab435d5d3ea"
+    },
+    {
+      "asset_id": "asset-product-94",
+      "entity_type": "product",
+      "entity_id": 94,
+      "seed_key": "item:94",
+      "file_path": "products/item_94.webp",
+      "thumb_path": "products/thumbs/item_94_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/94/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Karbala Red Sumac 200g",
+      "alt_en": "Karbala Red Sumac 200g",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1611e43d5a8817a6bf2b2451950ab5d319f73acfe570df0abe10c1e029950806"
+    },
+    {
+      "asset_id": "asset-product-95",
+      "entity_type": "product",
+      "entity_id": 95,
+      "seed_key": "item:95",
+      "file_path": "products/item_95.webp",
+      "thumb_path": "products/thumbs/item_95_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/95/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Aseel Grape Vinegar 1L",
+      "alt_en": "Al-Aseel Grape Vinegar 1L",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6fce5b537b0d223b31a21ac70c37c5c36b3fde08f559e76a8ed4600b8f0642a2"
+    },
+    {
+      "asset_id": "asset-product-96",
+      "entity_type": "product",
+      "entity_id": 96,
+      "seed_key": "item:96",
+      "file_path": "products/item_96.webp",
+      "thumb_path": "products/thumbs/item_96_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "items/96/catalog.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 640
+      },
+      "alt_ar": "صورة منتج Al-Nakheel Pomegranate Molasses 500ml",
+      "alt_en": "Al-Nakheel Pomegranate Molasses 500ml",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "8e69c9d3ebb6fe55a7b7768d6a1897ecfe515bd574c36038de1700504afd918a"
+    },
+    {
+      "asset_id": "asset-user-1",
+      "entity_type": "user",
+      "entity_id": 1,
+      "seed_key": "user:1",
+      "file_path": "users/user_1.webp",
+      "thumb_path": "users/thumbs/user_1_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/1.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب طارق عبد الجبار المنصوري",
+      "alt_en": "Portrait for طارق عبد الجبار المنصوري (manager)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9f6cf9849268d2f0d857b8129ec45b5da906605f128d130aa28eebf3d7140f97"
+    },
+    {
+      "asset_id": "asset-user-2",
+      "entity_type": "user",
+      "entity_id": 2,
+      "seed_key": "user:2",
+      "file_path": "users/user_2.webp",
+      "thumb_path": "users/thumbs/user_2_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/2.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب زينب عبد الكريم المياحي",
+      "alt_en": "Portrait for زينب عبد الكريم المياحي (accountant)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "4471e1a5b82eb1611af23d9058e84365aa317f62be3e58b453666fb02fee32b8"
+    },
+    {
+      "asset_id": "asset-user-3",
+      "entity_type": "user",
+      "entity_id": 3,
+      "seed_key": "user:3",
+      "file_path": "users/user_3.webp",
+      "thumb_path": "users/thumbs/user_3_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/3.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حسين علي جواد الصافي",
+      "alt_en": "Portrait for حسين علي جواد الصافي (accountant)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "50cb22363c2992c489fa4c8a003ff77650cfbb3d1a959500125296229582302f"
+    },
+    {
+      "asset_id": "asset-user-4",
+      "entity_type": "user",
+      "entity_id": 4,
+      "seed_key": "user:4",
+      "file_path": "users/user_4.webp",
+      "thumb_path": "users/thumbs/user_4_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/4.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مرتضى قاسم كاظم الفتلاوي",
+      "alt_en": "Portrait for مرتضى قاسم كاظم الفتلاوي (warehouse)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "a5e64dcc2adf26541c18b23ea876d18b60ea4f90448647789c28f18113e5b44c"
+    },
+    {
+      "asset_id": "asset-user-5",
+      "entity_type": "user",
+      "entity_id": 5,
+      "seed_key": "user:5",
+      "file_path": "users/user_5.webp",
+      "thumb_path": "users/thumbs/user_5_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/5.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب علي فاضل هادي الكربلائي",
+      "alt_en": "Portrait for علي فاضل هادي الكربلائي (warehouse)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "48e87f28350fec613c2d0a8b4cc69112599774778bcc386455999ef745cd1703"
+    },
+    {
+      "asset_id": "asset-user-6",
+      "entity_type": "user",
+      "entity_id": 6,
+      "seed_key": "user:6",
+      "file_path": "users/user_6.webp",
+      "thumb_path": "users/thumbs/user_6_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/6.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مصطفى رحيم نوري الياسري",
+      "alt_en": "Portrait for مصطفى رحيم نوري الياسري (warehouse)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7576e50bd5e0ac97337fcc4219bc946350a2a15d96a52ad82bf5b15648c55f26"
+    },
+    {
+      "asset_id": "asset-user-7",
+      "entity_type": "user",
+      "entity_id": 7,
+      "seed_key": "user:7",
+      "file_path": "users/user_7.webp",
+      "thumb_path": "users/thumbs/user_7_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/7.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب أحمد جبار عبد الأمير العاني",
+      "alt_en": "Portrait for أحمد جبار عبد الأمير العاني (warehouse)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "a9378a1158d2cc442ef4efd5f459e180e4c97e6ace538bc2deb35abaddea4225"
+    },
+    {
+      "asset_id": "asset-user-8",
+      "entity_type": "user",
+      "entity_id": 8,
+      "seed_key": "user:8",
+      "file_path": "users/user_8.webp",
+      "thumb_path": "users/thumbs/user_8_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/8.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حيدر صباح مهدي الحلي",
+      "alt_en": "Portrait for حيدر صباح مهدي الحلي (warehouse)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "755bbe413cca263963666083316b6f363eab6667c1695681064d8b0cae518046"
+    },
+    {
+      "asset_id": "asset-user-9",
+      "entity_type": "user",
+      "entity_id": 9,
+      "seed_key": "user:9",
+      "file_path": "users/user_9.webp",
+      "thumb_path": "users/thumbs/user_9_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/9.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب سجاد كريم حسن المسعودي",
+      "alt_en": "Portrait for سجاد كريم حسن المسعودي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "bd285f8f4b209dddef0a2a406e96f72ba47f3b89fba2675f2962bcc2309c6afb"
+    },
+    {
+      "asset_id": "asset-user-10",
+      "entity_type": "user",
+      "entity_id": 10,
+      "seed_key": "user:10",
+      "file_path": "users/user_10.webp",
+      "thumb_path": "users/thumbs/user_10_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/10.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب منتظر حميد جاسم الطائي",
+      "alt_en": "Portrait for منتظر حميد جاسم الطائي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d01e41b2cc224eff22fffcc97d655527fcbe3b324a2255e3b9888c271e2c9764"
+    },
+    {
+      "asset_id": "asset-user-11",
+      "entity_type": "user",
+      "entity_id": 11,
+      "seed_key": "user:11",
+      "file_path": "users/user_11.webp",
+      "thumb_path": "users/thumbs/user_11_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/11.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ياسر ماجد سلمان الجبوري",
+      "alt_en": "Portrait for ياسر ماجد سلمان الجبوري (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "18258772812ec519097514d284e902838089fdbddc7c6f4f66b79c931fcd4035"
+    },
+    {
+      "asset_id": "asset-user-12",
+      "entity_type": "user",
+      "entity_id": 12,
+      "seed_key": "user:12",
+      "file_path": "users/user_12.webp",
+      "thumb_path": "users/thumbs/user_12_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/12.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ضياء ستار خضير الدليمي",
+      "alt_en": "Portrait for ضياء ستار خضير الدليمي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "5eeeaca1df4018f380b403a1ce119ff1e2ac9d0d2c14838aeac02a0b5bd47fb8"
+    },
+    {
+      "asset_id": "asset-user-13",
+      "entity_type": "user",
+      "entity_id": 13,
+      "seed_key": "user:13",
+      "file_path": "users/user_13.webp",
+      "thumb_path": "users/thumbs/user_13_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/13.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عمران طالب محمد الحسناوي",
+      "alt_en": "Portrait for عمران طالب محمد الحسناوي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "5ff97e14780d729f99df6262e51c14c3941b9f07a0deaa9eadffe60353379bb8"
+    },
+    {
+      "asset_id": "asset-user-14",
+      "entity_type": "user",
+      "entity_id": 14,
+      "seed_key": "user:14",
+      "file_path": "users/user_14.webp",
+      "thumb_path": "users/thumbs/user_14_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/14.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب باسم نجم عبد الله السعدون",
+      "alt_en": "Portrait for باسم نجم عبد الله السعدون (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f298527e67a2bd259f8e7c4d98a968d17ea4ba97a1974bde3c3784ad53d093c7"
+    },
+    {
+      "asset_id": "asset-user-15",
+      "entity_type": "user",
+      "entity_id": 15,
+      "seed_key": "user:15",
+      "file_path": "users/user_15.webp",
+      "thumb_path": "users/thumbs/user_15_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/15.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب رافد عادل محسن الخفاجي",
+      "alt_en": "Portrait for رافد عادل محسن الخفاجي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "455d30d54c43d02aebcf2ab5d10420b8d746154bdd5049183775f8cd4ab42926"
+    },
+    {
+      "asset_id": "asset-user-16",
+      "entity_type": "user",
+      "entity_id": 16,
+      "seed_key": "user:16",
+      "file_path": "users/user_16.webp",
+      "thumb_path": "users/thumbs/user_16_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/16.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب غيث طه رزاق العبودي",
+      "alt_en": "Portrait for غيث طه رزاق العبودي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "455d30d54c43d02aebcf2ab5d10420b8d746154bdd5049183775f8cd4ab42926"
+    },
+    {
+      "asset_id": "asset-user-17",
+      "entity_type": "user",
+      "entity_id": 17,
+      "seed_key": "user:17",
+      "file_path": "users/user_17.webp",
+      "thumb_path": "users/thumbs/user_17_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/17.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب وليد شاكر محمود البياتي",
+      "alt_en": "Portrait for وليد شاكر محمود البياتي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fc4b74ab5389cf113a52a77c318fb91918e1a7913b3594972cfe472d387b0336"
+    },
+    {
+      "asset_id": "asset-user-18",
+      "entity_type": "user",
+      "entity_id": 18,
+      "seed_key": "user:18",
+      "file_path": "users/user_18.webp",
+      "thumb_path": "users/thumbs/user_18_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/18.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ليث سمير كاظم الموسوي",
+      "alt_en": "Portrait for ليث سمير كاظم الموسوي (staff)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d39ed08eed5e78ec7576b6d6bfa968c8c8e45d47913c0083b9252db1ba7fa675"
+    },
+    {
+      "asset_id": "asset-user-19",
+      "entity_type": "user",
+      "entity_id": 19,
+      "seed_key": "user:19",
+      "file_path": "users/user_19.webp",
+      "thumb_path": "users/thumbs/user_19_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/19.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عمار هاشم رشيد الشمري",
+      "alt_en": "Portrait for عمار هاشم رشيد الشمري (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c9433fc1cc58b65785551f18addbe2865fe163c45d79dcdfac7a30a6ade6611e"
+    },
+    {
+      "asset_id": "asset-user-20",
+      "entity_type": "user",
+      "entity_id": 20,
+      "seed_key": "user:20",
+      "file_path": "users/user_20.webp",
+      "thumb_path": "users/thumbs/user_20_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/20.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب رعد فالح عبود الخالدي",
+      "alt_en": "Portrait for رعد فالح عبود الخالدي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "26ca77ea5d90f428e11009bb9f06be47408dcdef479579e2747b22adf733a11d"
+    },
+    {
+      "asset_id": "asset-user-21",
+      "entity_type": "user",
+      "entity_id": 21,
+      "seed_key": "user:21",
+      "file_path": "users/user_21.webp",
+      "thumb_path": "users/thumbs/user_21_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/21.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حسام نزار مجيد الزبيدي",
+      "alt_en": "Portrait for حسام نزار مجيد الزبيدي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d5ac822338083491e0b496c99b65f3471b6a7b36d8c8d35c18fbbfc6c33860a3"
+    },
+    {
+      "asset_id": "asset-user-22",
+      "entity_type": "user",
+      "entity_id": 22,
+      "seed_key": "user:22",
+      "file_path": "users/user_22.webp",
+      "thumb_path": "users/thumbs/user_22_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/22.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مهند صباح نعمة العامري",
+      "alt_en": "Portrait for مهند صباح نعمة العامري (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "50aac8117a031cc943f4ab930e73357d8759256fcf55e3b46e735d58cb0e4790"
+    },
+    {
+      "asset_id": "asset-user-23",
+      "entity_type": "user",
+      "entity_id": 23,
+      "seed_key": "user:23",
+      "file_path": "users/user_23.webp",
+      "thumb_path": "users/thumbs/user_23_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/23.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب قحطان خالد جليل التميمي",
+      "alt_en": "Portrait for قحطان خالد جليل التميمي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "21e50908bd10447a13044dcae6180a0283d82e495478970f4366c4396021e4af"
+    },
+    {
+      "asset_id": "asset-user-24",
+      "entity_type": "user",
+      "entity_id": 24,
+      "seed_key": "user:24",
+      "file_path": "users/user_24.webp",
+      "thumb_path": "users/thumbs/user_24_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/24.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب سلام مهدي شهاب الركابي",
+      "alt_en": "Portrait for سلام مهدي شهاب الركابي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "38976cd9b31895d320a608fb788c34d69fa9960b2d599be8f0d60249ae10dc84"
+    },
+    {
+      "asset_id": "asset-user-25",
+      "entity_type": "user",
+      "entity_id": 25,
+      "seed_key": "user:25",
+      "file_path": "users/user_25.webp",
+      "thumb_path": "users/thumbs/user_25_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/25.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب فراس طارق عبد الغني البهادلي",
+      "alt_en": "Portrait for فراس طارق عبد الغني البهادلي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "eaccfb0131cc539711ff99f27cc2ee5d91e500c304593abe59f585bfc0ff2d5a"
+    },
+    {
+      "asset_id": "asset-user-26",
+      "entity_type": "user",
+      "entity_id": 26,
+      "seed_key": "user:26",
+      "file_path": "users/user_26.webp",
+      "thumb_path": "users/thumbs/user_26_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/26.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عصام جواد كاظم الكعبي",
+      "alt_en": "Portrait for عصام جواد كاظم الكعبي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b6a5ffb7a8b9a8ca88c8914b2742c8254565f514594d91a9256843592a0c016c"
+    },
+    {
+      "asset_id": "asset-user-27",
+      "entity_type": "user",
+      "entity_id": 27,
+      "seed_key": "user:27",
+      "file_path": "users/user_27.webp",
+      "thumb_path": "users/thumbs/user_27_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/27.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب أنس عبد الرزاق ياسين المفرجي",
+      "alt_en": "Portrait for أنس عبد الرزاق ياسين المفرجي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e496ee2a8bd7bdc676cddc39338d49c94d7fd2601720b4f44210c541c1fe583b"
+    },
+    {
+      "asset_id": "asset-user-28",
+      "entity_type": "user",
+      "entity_id": 28,
+      "seed_key": "user:28",
+      "file_path": "users/user_28.webp",
+      "thumb_path": "users/thumbs/user_28_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/28.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ناظم صادق إبراهيم الدراجي",
+      "alt_en": "Portrait for ناظم صادق إبراهيم الدراجي (rep)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "037ad42428579b2c2e018d648c0643081daf9a8b82ff6d0b13a7351d0ab09a75"
+    },
+    {
+      "asset_id": "asset-user-29",
+      "entity_type": "user",
+      "entity_id": 29,
+      "seed_key": "user:29",
+      "file_path": "users/user_29.webp",
+      "thumb_path": "users/thumbs/user_29_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/29.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حسين فاضل المعموري",
+      "alt_en": "Portrait for حسين فاضل المعموري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ab5fd2368c38f62628c2a8e52311b871f64a158edc1e2ae6a4c52be7f81b1b32"
+    },
+    {
+      "asset_id": "asset-user-30",
+      "entity_type": "user",
+      "entity_id": 30,
+      "seed_key": "user:30",
+      "file_path": "users/user_30.webp",
+      "thumb_path": "users/thumbs/user_30_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/30.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عباس كريم الزيادي",
+      "alt_en": "Portrait for عباس كريم الزيادي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "34af6a83c2f06a7770e7c51b21f750d3196c9a5edcdd8e85b395e6590b2d88b9"
+    },
+    {
+      "asset_id": "asset-user-31",
+      "entity_type": "user",
+      "entity_id": 31,
+      "seed_key": "user:31",
+      "file_path": "users/user_31.webp",
+      "thumb_path": "users/thumbs/user_31_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/31.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب محمود عبد الله الجبوري",
+      "alt_en": "Portrait for محمود عبد الله الجبوري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d1718b8c10a16902c0ed3d5a688ded6c4f547fd690be99d0869cb536f671465a"
+    },
+    {
+      "asset_id": "asset-user-32",
+      "entity_type": "user",
+      "entity_id": 32,
+      "seed_key": "user:32",
+      "file_path": "users/user_32.webp",
+      "thumb_path": "users/thumbs/user_32_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/32.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب علي حسين الصالحي",
+      "alt_en": "Portrait for علي حسين الصالحي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "401619667d3b86151425e1ad7d8f9e8c6139118fd15d763a054f91644c834c65"
+    },
+    {
+      "asset_id": "asset-user-33",
+      "entity_type": "user",
+      "entity_id": 33,
+      "seed_key": "user:33",
+      "file_path": "users/user_33.webp",
+      "thumb_path": "users/thumbs/user_33_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/33.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب سعدون طارق العامري",
+      "alt_en": "Portrait for سعدون طارق العامري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "940b8b14430eadd195675a6633eaa258931de1304843fbf1fd794726b710a4ac"
+    },
+    {
+      "asset_id": "asset-user-34",
+      "entity_type": "user",
+      "entity_id": 34,
+      "seed_key": "user:34",
+      "file_path": "users/user_34.webp",
+      "thumb_path": "users/thumbs/user_34_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/34.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب صادق مهدي الخفاجي",
+      "alt_en": "Portrait for صادق مهدي الخفاجي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9fcf8b5182e815e8accb9b5f8c531df96e58f4bddbd696e6049b6bf31868b148"
+    },
+    {
+      "asset_id": "asset-user-35",
+      "entity_type": "user",
+      "entity_id": 35,
+      "seed_key": "user:35",
+      "file_path": "users/user_35.webp",
+      "thumb_path": "users/thumbs/user_35_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/35.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مازن قاسم العكيلي",
+      "alt_en": "Portrait for مازن قاسم العكيلي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "940b8b14430eadd195675a6633eaa258931de1304843fbf1fd794726b710a4ac"
+    },
+    {
+      "asset_id": "asset-user-36",
+      "entity_type": "user",
+      "entity_id": 36,
+      "seed_key": "user:36",
+      "file_path": "users/user_36.webp",
+      "thumb_path": "users/thumbs/user_36_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/36.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب أركان حيدر الساعدي",
+      "alt_en": "Portrait for أركان حيدر الساعدي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "66671693d8ab026514b97c07e94a8ef4273346844b0e73225b8bfa3d768c3ca1"
+    },
+    {
+      "asset_id": "asset-user-37",
+      "entity_type": "user",
+      "entity_id": 37,
+      "seed_key": "user:37",
+      "file_path": "users/user_37.webp",
+      "thumb_path": "users/thumbs/user_37_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/37.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب كرار نوري الغراوي",
+      "alt_en": "Portrait for كرار نوري الغراوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "09d1dd67fe02c0ef4d425c8d2c656e7f1f78009bcda48ce7821d90a7b6bdb524"
+    },
+    {
+      "asset_id": "asset-user-38",
+      "entity_type": "user",
+      "entity_id": 38,
+      "seed_key": "user:38",
+      "file_path": "users/user_38.webp",
+      "thumb_path": "users/thumbs/user_38_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/38.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب نزار سلمان البديري",
+      "alt_en": "Portrait for نزار سلمان البديري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "389c3a29b7c56d9fe3aa46f7bdb266747fff1fb481c288bf16684a743c0bbf7b"
+    },
+    {
+      "asset_id": "asset-user-39",
+      "entity_type": "user",
+      "entity_id": 39,
+      "seed_key": "user:39",
+      "file_path": "users/user_39.webp",
+      "thumb_path": "users/thumbs/user_39_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/39.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب هيثم جواد الشويلي",
+      "alt_en": "Portrait for هيثم جواد الشويلي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "509daf8b97a6e06135fc26eb1e1b93cea53656e9afd8d22ae94eb933e7ce8f86"
+    },
+    {
+      "asset_id": "asset-user-40",
+      "entity_type": "user",
+      "entity_id": 40,
+      "seed_key": "user:40",
+      "file_path": "users/user_40.webp",
+      "thumb_path": "users/thumbs/user_40_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/40.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب يوسف راضي الفرطوسي",
+      "alt_en": "Portrait for يوسف راضي الفرطوسي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "66671693d8ab026514b97c07e94a8ef4273346844b0e73225b8bfa3d768c3ca1"
+    },
+    {
+      "asset_id": "asset-user-41",
+      "entity_type": "user",
+      "entity_id": 41,
+      "seed_key": "user:41",
+      "file_path": "users/user_41.webp",
+      "thumb_path": "users/thumbs/user_41_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/41.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب بهاء الدين حسن الوائلي",
+      "alt_en": "Portrait for بهاء الدين حسن الوائلي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e4309022275e09b92f21ea7e2b5cc89c9e1d7a361aefdc502f66245e7fe99563"
+    },
+    {
+      "asset_id": "asset-user-42",
+      "entity_type": "user",
+      "entity_id": 42,
+      "seed_key": "user:42",
+      "file_path": "users/user_42.webp",
+      "thumb_path": "users/thumbs/user_42_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/42.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب صفاء لطيف الباوي",
+      "alt_en": "Portrait for صفاء لطيف الباوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f25662cde8afeac9aed0efe76027ba682384e9d0f1447a59512e364a2e9cc1f4"
+    },
+    {
+      "asset_id": "asset-user-43",
+      "entity_type": "user",
+      "entity_id": 43,
+      "seed_key": "user:43",
+      "file_path": "users/user_43.webp",
+      "thumb_path": "users/thumbs/user_43_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/43.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حارث عماد المحمداوي",
+      "alt_en": "Portrait for حارث عماد المحمداوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f689ab174681c92fb42587681265055a479c89a3418530032f82eb574f1e69b2"
+    },
+    {
+      "asset_id": "asset-user-44",
+      "entity_type": "user",
+      "entity_id": 44,
+      "seed_key": "user:44",
+      "file_path": "users/user_44.webp",
+      "thumb_path": "users/thumbs/user_44_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/44.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب قتيبة جمال العزاوي",
+      "alt_en": "Portrait for قتيبة جمال العزاوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d201cdebaa29507d5f54fd73c26770f41ffb76e9fc408409df391541f919da4b"
+    },
+    {
+      "asset_id": "asset-user-45",
+      "entity_type": "user",
+      "entity_id": 45,
+      "seed_key": "user:45",
+      "file_path": "users/user_45.webp",
+      "thumb_path": "users/thumbs/user_45_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/45.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مؤمل رحيم الكعبي",
+      "alt_en": "Portrait for مؤمل رحيم الكعبي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "570906fe8de6ca8305a8a4251b5ae3de976d063922105e345c4dbbed4d335e33"
+    },
+    {
+      "asset_id": "asset-user-46",
+      "entity_type": "user",
+      "entity_id": 46,
+      "seed_key": "user:46",
+      "file_path": "users/user_46.webp",
+      "thumb_path": "users/thumbs/user_46_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/46.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ستار جبار الشبلي",
+      "alt_en": "Portrait for ستار جبار الشبلي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "db5d69924e2b6f29953a6f0785b46b89a6bf49b299b70713cdd1dc7b2ad6178b"
+    },
+    {
+      "asset_id": "asset-user-47",
+      "entity_type": "user",
+      "entity_id": 47,
+      "seed_key": "user:47",
+      "file_path": "users/user_47.webp",
+      "thumb_path": "users/thumbs/user_47_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/47.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب إحسان محسن الحلفي",
+      "alt_en": "Portrait for إحسان محسن الحلفي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "4bd7be01044d04dccd8aa500c008abc496e1cf881c17ce23e5dc1ab492016be1"
+    },
+    {
+      "asset_id": "asset-user-48",
+      "entity_type": "user",
+      "entity_id": 48,
+      "seed_key": "user:48",
+      "file_path": "users/user_48.webp",
+      "thumb_path": "users/thumbs/user_48_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/48.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب فلاح حسن الربيعي",
+      "alt_en": "Portrait for فلاح حسن الربيعي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "db5d69924e2b6f29953a6f0785b46b89a6bf49b299b70713cdd1dc7b2ad6178b"
+    },
+    {
+      "asset_id": "asset-user-49",
+      "entity_type": "user",
+      "entity_id": 49,
+      "seed_key": "user:49",
+      "file_path": "users/user_49.webp",
+      "thumb_path": "users/thumbs/user_49_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/49.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عادل صباح الدليمي",
+      "alt_en": "Portrait for عادل صباح الدليمي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "caaee19527bf7cc7e8a0969a8dfaa1db2dfdc9ae70fe96e0c60fdf0da8f04764"
+    },
+    {
+      "asset_id": "asset-user-50",
+      "entity_type": "user",
+      "entity_id": 50,
+      "seed_key": "user:50",
+      "file_path": "users/user_50.webp",
+      "thumb_path": "users/thumbs/user_50_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/50.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب رائد نعيم التميمي",
+      "alt_en": "Portrait for رائد نعيم التميمي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "37c0eb92fd5e97e331b12afe3ac58a376f3ffa74ca5b5e0f817caf19ca14eb60"
+    },
+    {
+      "asset_id": "asset-user-51",
+      "entity_type": "user",
+      "entity_id": 51,
+      "seed_key": "user:51",
+      "file_path": "users/user_51.webp",
+      "thumb_path": "users/thumbs/user_51_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/51.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حامد مجيد العبيدي",
+      "alt_en": "Portrait for حامد مجيد العبيدي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fcee211e9a305f8b0047bb1f22a3fd3478f22f6a0be846d825657ed9589e8b86"
+    },
+    {
+      "asset_id": "asset-user-52",
+      "entity_type": "user",
+      "entity_id": 52,
+      "seed_key": "user:52",
+      "file_path": "users/user_52.webp",
+      "thumb_path": "users/thumbs/user_52_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/52.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب وسام خليل العيساوي",
+      "alt_en": "Portrait for وسام خليل العيساوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "12cf5ad72da6eee765779d0505fb56426775aa22d6f285ef4b8b56b91e30aa80"
+    },
+    {
+      "asset_id": "asset-user-53",
+      "entity_type": "user",
+      "entity_id": 53,
+      "seed_key": "user:53",
+      "file_path": "users/user_53.webp",
+      "thumb_path": "users/thumbs/user_53_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/53.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب زيدون طه الحسني",
+      "alt_en": "Portrait for زيدون طه الحسني (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "509daf8b97a6e06135fc26eb1e1b93cea53656e9afd8d22ae94eb933e7ce8f86"
+    },
+    {
+      "asset_id": "asset-user-54",
+      "entity_type": "user",
+      "entity_id": 54,
+      "seed_key": "user:54",
+      "file_path": "users/user_54.webp",
+      "thumb_path": "users/thumbs/user_54_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/54.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب علاء ناصر الياسري",
+      "alt_en": "Portrait for علاء ناصر الياسري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "8f077babbf2e92a17d39c9cc2a0ccc5dd9298f439af91c0a50de188387dd63ed"
+    },
+    {
+      "asset_id": "asset-user-55",
+      "entity_type": "user",
+      "entity_id": 55,
+      "seed_key": "user:55",
+      "file_path": "users/user_55.webp",
+      "thumb_path": "users/thumbs/user_55_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/55.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب جلال محمد الشريفي",
+      "alt_en": "Portrait for جلال محمد الشريفي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7c0c26b29cc0ecc0fd0aa42396d055d296f7ddaa2f18ef06b2189ae42950275a"
+    },
+    {
+      "asset_id": "asset-user-56",
+      "entity_type": "user",
+      "entity_id": 56,
+      "seed_key": "user:56",
+      "file_path": "users/user_56.webp",
+      "thumb_path": "users/thumbs/user_56_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/56.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مثنى كامل الأوسي",
+      "alt_en": "Portrait for مثنى كامل الأوسي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d201cdebaa29507d5f54fd73c26770f41ffb76e9fc408409df391541f919da4b"
+    },
+    {
+      "asset_id": "asset-user-57",
+      "entity_type": "user",
+      "entity_id": 57,
+      "seed_key": "user:57",
+      "file_path": "users/user_57.webp",
+      "thumb_path": "users/thumbs/user_57_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/57.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب سنان عبد الرزاق القيسي",
+      "alt_en": "Portrait for سنان عبد الرزاق القيسي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f689ab174681c92fb42587681265055a479c89a3418530032f82eb574f1e69b2"
+    },
+    {
+      "asset_id": "asset-user-58",
+      "entity_type": "user",
+      "entity_id": 58,
+      "seed_key": "user:58",
+      "file_path": "users/user_58.webp",
+      "thumb_path": "users/thumbs/user_58_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/58.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب أمجد عدنان السعدي",
+      "alt_en": "Portrait for أمجد عدنان السعدي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "19ee15a1826c58e1be60170240f759c2f06117dc2c91d56f40f42135230196d1"
+    },
+    {
+      "asset_id": "asset-user-59",
+      "entity_type": "user",
+      "entity_id": 59,
+      "seed_key": "user:59",
+      "file_path": "users/user_59.webp",
+      "thumb_path": "users/thumbs/user_59_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/59.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب ثامر هادي المشهداني",
+      "alt_en": "Portrait for ثامر هادي المشهداني (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "90053bd99703716bc307c29711cce044fc63f3584a399dc5b8bd14424e9298ad"
+    },
+    {
+      "asset_id": "asset-user-60",
+      "entity_type": "user",
+      "entity_id": 60,
+      "seed_key": "user:60",
+      "file_path": "users/user_60.webp",
+      "thumb_path": "users/thumbs/user_60_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/60.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب منير عبد الكريم الصدر",
+      "alt_en": "Portrait for منير عبد الكريم الصدر (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "015119cec56d5db128584fb17d51bfbd048a61ba803e89ff34010dcff88aefc8"
+    },
+    {
+      "asset_id": "asset-user-61",
+      "entity_type": "user",
+      "entity_id": 61,
+      "seed_key": "user:61",
+      "file_path": "users/user_61.webp",
+      "thumb_path": "users/thumbs/user_61_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/61.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب فائز فخري الجنابي",
+      "alt_en": "Portrait for فائز فخري الجنابي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1a16b634d30958a16e39d88ab0fd89d0d17a7d6aa7da54c71b702ec6b5b68989"
+    },
+    {
+      "asset_id": "asset-user-62",
+      "entity_type": "user",
+      "entity_id": 62,
+      "seed_key": "user:62",
+      "file_path": "users/user_62.webp",
+      "thumb_path": "users/thumbs/user_62_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/62.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب نبيل شاكر الطائي",
+      "alt_en": "Portrait for نبيل شاكر الطائي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "401619667d3b86151425e1ad7d8f9e8c6139118fd15d763a054f91644c834c65"
+    },
+    {
+      "asset_id": "asset-user-63",
+      "entity_type": "user",
+      "entity_id": 63,
+      "seed_key": "user:63",
+      "file_path": "users/user_63.webp",
+      "thumb_path": "users/thumbs/user_63_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/63.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب أثير داود السامرائي",
+      "alt_en": "Portrait for أثير داود السامرائي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "940b8b14430eadd195675a6633eaa258931de1304843fbf1fd794726b710a4ac"
+    },
+    {
+      "asset_id": "asset-user-64",
+      "entity_type": "user",
+      "entity_id": 64,
+      "seed_key": "user:64",
+      "file_path": "users/user_64.webp",
+      "thumb_path": "users/thumbs/user_64_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/64.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب حسنين علي الكرعاوي",
+      "alt_en": "Portrait for حسنين علي الكرعاوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d201cdebaa29507d5f54fd73c26770f41ffb76e9fc408409df391541f919da4b"
+    },
+    {
+      "asset_id": "asset-user-65",
+      "entity_type": "user",
+      "entity_id": 65,
+      "seed_key": "user:65",
+      "file_path": "users/user_65.webp",
+      "thumb_path": "users/thumbs/user_65_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/65.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب عماد طارق العتبي",
+      "alt_en": "Portrait for عماد طارق العتبي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2ec2132bfedde592415be376c513c89462660fbc4fcc9806c40f0b9ac9cf9c6b"
+    },
+    {
+      "asset_id": "asset-user-66",
+      "entity_type": "user",
+      "entity_id": 66,
+      "seed_key": "user:66",
+      "file_path": "users/user_66.webp",
+      "thumb_path": "users/thumbs/user_66_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/66.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب وليد خالد المندلاوي",
+      "alt_en": "Portrait for وليد خالد المندلاوي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e37db5fbc6cbf3d73140ba807f4b708b50ceeda9c70f06b6b40abb1bd333fd2b"
+    },
+    {
+      "asset_id": "asset-user-67",
+      "entity_type": "user",
+      "entity_id": 67,
+      "seed_key": "user:67",
+      "file_path": "users/user_67.webp",
+      "thumb_path": "users/thumbs/user_67_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/67.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب غسان حاتم الدراجي",
+      "alt_en": "Portrait for غسان حاتم الدراجي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cc5e469ba85ddfd823a0a44c781a2d78e0a804562b2a1d24cc4745c46d89534e"
+    },
+    {
+      "asset_id": "asset-user-68",
+      "entity_type": "user",
+      "entity_id": 68,
+      "seed_key": "user:68",
+      "file_path": "users/user_68.webp",
+      "thumb_path": "users/thumbs/user_68_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/68.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب خالدون جاسم العقابي",
+      "alt_en": "Portrait for خالدون جاسم العقابي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cc5e469ba85ddfd823a0a44c781a2d78e0a804562b2a1d24cc4745c46d89534e"
+    },
+    {
+      "asset_id": "asset-user-69",
+      "entity_type": "user",
+      "entity_id": 69,
+      "seed_key": "user:69",
+      "file_path": "users/user_69.webp",
+      "thumb_path": "users/thumbs/user_69_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/69.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب رغيد فؤاد البصري",
+      "alt_en": "Portrait for رغيد فؤاد البصري (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "42df979b988c5141d0047ec1b98bbe531ff14c2a11fa165319d0e2da85e6e707"
+    },
+    {
+      "asset_id": "asset-user-70",
+      "entity_type": "user",
+      "entity_id": 70,
+      "seed_key": "user:70",
+      "file_path": "users/user_70.webp",
+      "thumb_path": "users/thumbs/user_70_thumb.webp",
+      "storage_bucket": "product-images",
+      "storage_key": "user-photos/70.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 512,
+        "height": 512
+      },
+      "alt_ar": "صورة حساب مهيمن جليل المرسومي",
+      "alt_en": "Portrait for مهيمن جليل المرسومي (shop)",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "caaee19527bf7cc7e8a0969a8dfaa1db2dfdc9ae70fe96e0c60fdf0da8f04764"
+    },
+    {
+      "asset_id": "asset-delivery-1",
+      "entity_type": "delivery",
+      "entity_id": 1,
+      "seed_key": "dlv:1",
+      "file_path": "deliveries/dlv_1.webp",
+      "thumb_path": "deliveries/thumbs/dlv_1_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-1-7c6b18ba5e5f.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0001",
+      "alt_en": "Delivery proof for order ORD-0001",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "dc53735b01c00281507b0eed41a2afdd82aff892cd008d1929290fad3751fca0"
+    },
+    {
+      "asset_id": "asset-delivery-2",
+      "entity_type": "delivery",
+      "entity_id": 2,
+      "seed_key": "dlv:2",
+      "file_path": "deliveries/dlv_2.webp",
+      "thumb_path": "deliveries/thumbs/dlv_2_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-2-7bf3c874bc16.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0002",
+      "alt_en": "Delivery proof for order ORD-0002",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "a0971ab251cb9035cc3158a0bba4957e810cf8c1a7073c83e54a9d4d7e004f2b"
+    },
+    {
+      "asset_id": "asset-delivery-3",
+      "entity_type": "delivery",
+      "entity_id": 3,
+      "seed_key": "dlv:3",
+      "file_path": "deliveries/dlv_3.webp",
+      "thumb_path": "deliveries/thumbs/dlv_3_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-3-73e17c923453.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0003",
+      "alt_en": "Delivery proof for order ORD-0003",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "06b89c69a66623dd2140a6405121c2c9f67161466f6f96336bd5c97622c09f47"
+    },
+    {
+      "asset_id": "asset-delivery-4",
+      "entity_type": "delivery",
+      "entity_id": 4,
+      "seed_key": "dlv:4",
+      "file_path": "deliveries/dlv_4.webp",
+      "thumb_path": "deliveries/thumbs/dlv_4_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-4-a617eb401f48.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0004",
+      "alt_en": "Delivery proof for order ORD-0004",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "55dd7b07db433d0c4011881ceca47accac28a04aea407552c80d02e971019ecf"
+    },
+    {
+      "asset_id": "asset-delivery-5",
+      "entity_type": "delivery",
+      "entity_id": 5,
+      "seed_key": "dlv:5",
+      "file_path": "deliveries/dlv_5.webp",
+      "thumb_path": "deliveries/thumbs/dlv_5_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-5-92b77167daea.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0005",
+      "alt_en": "Delivery proof for order ORD-0005",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "120ec461e1af6679340205d50a420dbbd26caa71a64638502890415c6d175968"
+    },
+    {
+      "asset_id": "asset-delivery-6",
+      "entity_type": "delivery",
+      "entity_id": 6,
+      "seed_key": "dlv:6",
+      "file_path": "deliveries/dlv_6.webp",
+      "thumb_path": "deliveries/thumbs/dlv_6_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-6-716cb90e9a58.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0006",
+      "alt_en": "Delivery proof for order ORD-0006",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "8d4853130b7c2a3a32542745ea277e084080617d84679902e2aaec1f7617cb7d"
+    },
+    {
+      "asset_id": "asset-delivery-7",
+      "entity_type": "delivery",
+      "entity_id": 7,
+      "seed_key": "dlv:7",
+      "file_path": "deliveries/dlv_7.webp",
+      "thumb_path": "deliveries/thumbs/dlv_7_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-7-21cea2f44675.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0007",
+      "alt_en": "Delivery proof for order ORD-0007",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "57ae114293e745ecfd11783b154d7aadf31202e191e67674d4a7b923cd261141"
+    },
+    {
+      "asset_id": "asset-delivery-8",
+      "entity_type": "delivery",
+      "entity_id": 8,
+      "seed_key": "dlv:8",
+      "file_path": "deliveries/dlv_8.webp",
+      "thumb_path": "deliveries/thumbs/dlv_8_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-8-fefbbed2b1e0.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0008",
+      "alt_en": "Delivery proof for order ORD-0008",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2f76346e41628bed3b2e7eb4134bd228ce88c7cf6163fe0819992e5c4d7a30e2"
+    },
+    {
+      "asset_id": "asset-delivery-9",
+      "entity_type": "delivery",
+      "entity_id": 9,
+      "seed_key": "dlv:9",
+      "file_path": "deliveries/dlv_9.webp",
+      "thumb_path": "deliveries/thumbs/dlv_9_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-9-499a16e1477c.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0009",
+      "alt_en": "Delivery proof for order ORD-0009",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "81f32469275b5a31f25deb250577b8e6113e4da265d54707ff836594a3b29d25"
+    },
+    {
+      "asset_id": "asset-delivery-10",
+      "entity_type": "delivery",
+      "entity_id": 10,
+      "seed_key": "dlv:10",
+      "file_path": "deliveries/dlv_10.webp",
+      "thumb_path": "deliveries/thumbs/dlv_10_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-10-d57b8a868719.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0010",
+      "alt_en": "Delivery proof for order ORD-0010",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "ed935c618c7628f0897b5bf890f88e54f10e2720e7f68592d30af14b2a014778"
+    },
+    {
+      "asset_id": "asset-delivery-11",
+      "entity_type": "delivery",
+      "entity_id": 11,
+      "seed_key": "dlv:11",
+      "file_path": "deliveries/dlv_11.webp",
+      "thumb_path": "deliveries/thumbs/dlv_11_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-11-48c2f2325d64.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0011",
+      "alt_en": "Delivery proof for order ORD-0011",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "90cb07f952744fd8152e899e7efcd0525b07abc6f38e83cb918e09fe66d3a48f"
+    },
+    {
+      "asset_id": "asset-delivery-12",
+      "entity_type": "delivery",
+      "entity_id": 12,
+      "seed_key": "dlv:12",
+      "file_path": "deliveries/dlv_12.webp",
+      "thumb_path": "deliveries/thumbs/dlv_12_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-12-0d6dfeae51ed.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0012",
+      "alt_en": "Delivery proof for order ORD-0012",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1673311e3a7f768eac3dc11bff04a40b7c834a66ecac9af5ae59dc3fbf2a5958"
+    },
+    {
+      "asset_id": "asset-delivery-13",
+      "entity_type": "delivery",
+      "entity_id": 13,
+      "seed_key": "dlv:13",
+      "file_path": "deliveries/dlv_13.webp",
+      "thumb_path": "deliveries/thumbs/dlv_13_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-13-2eba7119dfea.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0013",
+      "alt_en": "Delivery proof for order ORD-0013",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c06ce81ce009a139b63fbb526388e787ef2bf6c2279da54990ed579a870125ee"
+    },
+    {
+      "asset_id": "asset-delivery-14",
+      "entity_type": "delivery",
+      "entity_id": 14,
+      "seed_key": "dlv:14",
+      "file_path": "deliveries/dlv_14.webp",
+      "thumb_path": "deliveries/thumbs/dlv_14_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-14-e783b70a5056.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0014",
+      "alt_en": "Delivery proof for order ORD-0014",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "dbf3d6c919f8285b1bb4547aa2796d31ab19fcca31f5fad60e7d6f93705f7349"
+    },
+    {
+      "asset_id": "asset-delivery-15",
+      "entity_type": "delivery",
+      "entity_id": 15,
+      "seed_key": "dlv:15",
+      "file_path": "deliveries/dlv_15.webp",
+      "thumb_path": "deliveries/thumbs/dlv_15_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-15-ca4f6d9594dd.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0015",
+      "alt_en": "Delivery proof for order ORD-0015",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "830c4545e9c89b618f3d116f06c75fa53cec4d7d0175dd33ee1fb43a189bd0c8"
+    },
+    {
+      "asset_id": "asset-delivery-16",
+      "entity_type": "delivery",
+      "entity_id": 16,
+      "seed_key": "dlv:16",
+      "file_path": "deliveries/dlv_16.webp",
+      "thumb_path": "deliveries/thumbs/dlv_16_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-16-93a3255cad3b.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0016",
+      "alt_en": "Delivery proof for order ORD-0016",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1ba95e79443c61905e0600dece81ac63ac0630f9de77080405c5803c041de4e6"
+    },
+    {
+      "asset_id": "asset-delivery-17",
+      "entity_type": "delivery",
+      "entity_id": 17,
+      "seed_key": "dlv:17",
+      "file_path": "deliveries/dlv_17.webp",
+      "thumb_path": "deliveries/thumbs/dlv_17_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-17-3cc6eaa9d1c8.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0017",
+      "alt_en": "Delivery proof for order ORD-0017",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7f4e757f7d7058a5eb171e810e7682a136f31983012cf7478ee998078d9c7e67"
+    },
+    {
+      "asset_id": "asset-delivery-18",
+      "entity_type": "delivery",
+      "entity_id": 18,
+      "seed_key": "dlv:18",
+      "file_path": "deliveries/dlv_18.webp",
+      "thumb_path": "deliveries/thumbs/dlv_18_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-18-afe1a4d227b4.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0018",
+      "alt_en": "Delivery proof for order ORD-0018",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "577ba55a0ca6c242f68ce3bba4349d293853b02fc5a5b1c4bd9c2daa1b696f8e"
+    },
+    {
+      "asset_id": "asset-delivery-19",
+      "entity_type": "delivery",
+      "entity_id": 19,
+      "seed_key": "dlv:19",
+      "file_path": "deliveries/dlv_19.webp",
+      "thumb_path": "deliveries/thumbs/dlv_19_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-19-c3265dea8384.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0019",
+      "alt_en": "Delivery proof for order ORD-0019",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "48f699fd180190fc4558b8486e69a399ec667056620214169f56d0c83681863f"
+    },
+    {
+      "asset_id": "asset-delivery-20",
+      "entity_type": "delivery",
+      "entity_id": 20,
+      "seed_key": "dlv:20",
+      "file_path": "deliveries/dlv_20.webp",
+      "thumb_path": "deliveries/thumbs/dlv_20_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-20-064342bead24.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0020",
+      "alt_en": "Delivery proof for order ORD-0020",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c888bb59de3adf53198430c9070d4e28af341f6e71318f2d57c128bbe2c8b9ed"
+    },
+    {
+      "asset_id": "asset-delivery-21",
+      "entity_type": "delivery",
+      "entity_id": 21,
+      "seed_key": "dlv:21",
+      "file_path": "deliveries/dlv_21.webp",
+      "thumb_path": "deliveries/thumbs/dlv_21_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-21-f155f92f116b.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0021",
+      "alt_en": "Delivery proof for order ORD-0021",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "49ae96f2ab22d4d18137bd4607630e0b49c7fa33bdfc00869bf82d1063ea1fc1"
+    },
+    {
+      "asset_id": "asset-delivery-22",
+      "entity_type": "delivery",
+      "entity_id": 22,
+      "seed_key": "dlv:22",
+      "file_path": "deliveries/dlv_22.webp",
+      "thumb_path": "deliveries/thumbs/dlv_22_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-22-1d54bd202676.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0022",
+      "alt_en": "Delivery proof for order ORD-0022",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "eda14fcea6058ca383edc0f5d757e87973af6901cb12c2b8db3ea61655fa859c"
+    },
+    {
+      "asset_id": "asset-delivery-23",
+      "entity_type": "delivery",
+      "entity_id": 23,
+      "seed_key": "dlv:23",
+      "file_path": "deliveries/dlv_23.webp",
+      "thumb_path": "deliveries/thumbs/dlv_23_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-23-a3f7e6f5a7e9.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0023",
+      "alt_en": "Delivery proof for order ORD-0023",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "872c714d5c8a928b8ed6a14141f1b7c8cd21395d66dd8fc4a3b03992300611ce"
+    },
+    {
+      "asset_id": "asset-delivery-24",
+      "entity_type": "delivery",
+      "entity_id": 24,
+      "seed_key": "dlv:24",
+      "file_path": "deliveries/dlv_24.webp",
+      "thumb_path": "deliveries/thumbs/dlv_24_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-24-6a968f659dd9.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0024",
+      "alt_en": "Delivery proof for order ORD-0024",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "c8e518b84cf29cdc2ba82e05b555fb89294012853120030db4342a934bd41552"
+    },
+    {
+      "asset_id": "asset-delivery-27",
+      "entity_type": "delivery",
+      "entity_id": 27,
+      "seed_key": "dlv:27",
+      "file_path": "deliveries/dlv_27.webp",
+      "thumb_path": "deliveries/thumbs/dlv_27_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-27-70d6d29214ad.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0027",
+      "alt_en": "Delivery proof for order ORD-0027",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "8951a8627b0d0773d2563becbc25feb9556d52345751880595d41cd6215c09d3"
+    },
+    {
+      "asset_id": "asset-delivery-30",
+      "entity_type": "delivery",
+      "entity_id": 30,
+      "seed_key": "dlv:30",
+      "file_path": "deliveries/dlv_30.webp",
+      "thumb_path": "deliveries/thumbs/dlv_30_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-30-3822cfb03363.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0030",
+      "alt_en": "Delivery proof for order ORD-0030",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "fbdabaa093a1dd0597add229382bf0fee9e0ddf61f3b5f8dfc15dba376ff4fc7"
+    },
+    {
+      "asset_id": "asset-delivery-33",
+      "entity_type": "delivery",
+      "entity_id": 33,
+      "seed_key": "dlv:33",
+      "file_path": "deliveries/dlv_33.webp",
+      "thumb_path": "deliveries/thumbs/dlv_33_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-33-e7c7e0d9661c.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0033",
+      "alt_en": "Delivery proof for order ORD-0033",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "398d8c1eba1c22a73828b5171aaf8541d343d61f5cd42cfc21f1fd36749260ad"
+    },
+    {
+      "asset_id": "asset-delivery-36",
+      "entity_type": "delivery",
+      "entity_id": 36,
+      "seed_key": "dlv:36",
+      "file_path": "deliveries/dlv_36.webp",
+      "thumb_path": "deliveries/thumbs/dlv_36_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-36-dcd80ddaef3a.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0036",
+      "alt_en": "Delivery proof for order ORD-0036",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "dc171989a996880e6701226985bddc829d18693e2d1ebaf420e06ecb16eec6a1"
+    },
+    {
+      "asset_id": "asset-delivery-39",
+      "entity_type": "delivery",
+      "entity_id": 39,
+      "seed_key": "dlv:39",
+      "file_path": "deliveries/dlv_39.webp",
+      "thumb_path": "deliveries/thumbs/dlv_39_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-39-107f663ca506.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0039",
+      "alt_en": "Delivery proof for order ORD-0039",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "072b6c8dbbd492c479690189d5fa33669260af8318cc74866afdb550411af350"
+    },
+    {
+      "asset_id": "asset-delivery-42",
+      "entity_type": "delivery",
+      "entity_id": 42,
+      "seed_key": "dlv:42",
+      "file_path": "deliveries/dlv_42.webp",
+      "thumb_path": "deliveries/thumbs/dlv_42_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-42-f7a96424eb1b.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0042",
+      "alt_en": "Delivery proof for order ORD-0042",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cfaca983ba578e368b00ab17e3b19a53dd92674eb40ccc694ff525dc9f29830d"
+    },
+    {
+      "asset_id": "asset-delivery-45",
+      "entity_type": "delivery",
+      "entity_id": 45,
+      "seed_key": "dlv:45",
+      "file_path": "deliveries/dlv_45.webp",
+      "thumb_path": "deliveries/thumbs/dlv_45_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-45-840178de4558.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0045",
+      "alt_en": "Delivery proof for order ORD-0045",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "47570b96ca53a0899885cfe90a0d5cd1331deee6eaca7ca00ea02e02aa124af8"
+    },
+    {
+      "asset_id": "asset-delivery-48",
+      "entity_type": "delivery",
+      "entity_id": 48,
+      "seed_key": "dlv:48",
+      "file_path": "deliveries/dlv_48.webp",
+      "thumb_path": "deliveries/thumbs/dlv_48_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-48-24fd99d7ac99.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0048",
+      "alt_en": "Delivery proof for order ORD-0048",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b94079e56dea81b9de8996f55e3fb3c333e3920e460268dc61e08beeaf0e9d28"
+    },
+    {
+      "asset_id": "asset-delivery-51",
+      "entity_type": "delivery",
+      "entity_id": 51,
+      "seed_key": "dlv:51",
+      "file_path": "deliveries/dlv_51.webp",
+      "thumb_path": "deliveries/thumbs/dlv_51_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-51-fc1e160c0373.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0051",
+      "alt_en": "Delivery proof for order ORD-0051",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "3e373871bcfa95d1d260dd1d9fbd22f661d4707db651c89a3901669447bdc157"
+    },
+    {
+      "asset_id": "asset-delivery-54",
+      "entity_type": "delivery",
+      "entity_id": 54,
+      "seed_key": "dlv:54",
+      "file_path": "deliveries/dlv_54.webp",
+      "thumb_path": "deliveries/thumbs/dlv_54_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-54-9df6036ed016.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0054",
+      "alt_en": "Delivery proof for order ORD-0054",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "30add41cdf56af7dcc295717d672a334af51549543e44f8fe8a9a13e1e2129de"
+    },
+    {
+      "asset_id": "asset-delivery-57",
+      "entity_type": "delivery",
+      "entity_id": 57,
+      "seed_key": "dlv:57",
+      "file_path": "deliveries/dlv_57.webp",
+      "thumb_path": "deliveries/thumbs/dlv_57_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-57-99302975f3aa.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0057",
+      "alt_en": "Delivery proof for order ORD-0057",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f8701ba6c38920e7e8752c143591248d7f9788d706788f5f42c55abffe3b99b2"
+    },
+    {
+      "asset_id": "asset-delivery-60",
+      "entity_type": "delivery",
+      "entity_id": 60,
+      "seed_key": "dlv:60",
+      "file_path": "deliveries/dlv_60.webp",
+      "thumb_path": "deliveries/thumbs/dlv_60_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-60-6c80b27ab68d.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0060",
+      "alt_en": "Delivery proof for order ORD-0060",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6153f6bafc74602d043cc5d802c4327a04269993ab1012e5a2541f9b5a3048d2"
+    },
+    {
+      "asset_id": "asset-delivery-63",
+      "entity_type": "delivery",
+      "entity_id": 63,
+      "seed_key": "dlv:63",
+      "file_path": "deliveries/dlv_63.webp",
+      "thumb_path": "deliveries/thumbs/dlv_63_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-63-b5521dd2093e.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0063",
+      "alt_en": "Delivery proof for order ORD-0063",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "86cf86e1bfca831baaceb228a8effc9e2a338ff39ee5f6c4d2fb42cb8e726d99"
+    },
+    {
+      "asset_id": "asset-delivery-66",
+      "entity_type": "delivery",
+      "entity_id": 66,
+      "seed_key": "dlv:66",
+      "file_path": "deliveries/dlv_66.webp",
+      "thumb_path": "deliveries/thumbs/dlv_66_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-66-eaebd383bd38.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0066",
+      "alt_en": "Delivery proof for order ORD-0066",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6501b37cbaedb563d78910f3ca26f1452aeceda6c339532c80cfee0d99c21442"
+    },
+    {
+      "asset_id": "asset-delivery-69",
+      "entity_type": "delivery",
+      "entity_id": 69,
+      "seed_key": "dlv:69",
+      "file_path": "deliveries/dlv_69.webp",
+      "thumb_path": "deliveries/thumbs/dlv_69_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-69-c0687a058787.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0069",
+      "alt_en": "Delivery proof for order ORD-0069",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "27adf47a67d5a249ce668f184189a2e76484151675471737362b88790ba68ae2"
+    },
+    {
+      "asset_id": "asset-delivery-72",
+      "entity_type": "delivery",
+      "entity_id": 72,
+      "seed_key": "dlv:72",
+      "file_path": "deliveries/dlv_72.webp",
+      "thumb_path": "deliveries/thumbs/dlv_72_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-72-27caf385c834.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0072",
+      "alt_en": "Delivery proof for order ORD-0072",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b9ff0e55369a1c54e694b624b567d885cd489b40eecd04e3bc31f48e0a9fe970"
+    },
+    {
+      "asset_id": "asset-delivery-75",
+      "entity_type": "delivery",
+      "entity_id": 75,
+      "seed_key": "dlv:75",
+      "file_path": "deliveries/dlv_75.webp",
+      "thumb_path": "deliveries/thumbs/dlv_75_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-75-9c2eeaf1c6da.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0075",
+      "alt_en": "Delivery proof for order ORD-0075",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "55f321a6fdf49208b3bd1d13c0751111727735c68d14c690991760aa655bff34"
+    },
+    {
+      "asset_id": "asset-delivery-78",
+      "entity_type": "delivery",
+      "entity_id": 78,
+      "seed_key": "dlv:78",
+      "file_path": "deliveries/dlv_78.webp",
+      "thumb_path": "deliveries/thumbs/dlv_78_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-78-7cdcdf05ae7b.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0078",
+      "alt_en": "Delivery proof for order ORD-0078",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "667b7a9741874860b014043b63910039d3172018d8e9d39198833a18ac9961f3"
+    },
+    {
+      "asset_id": "asset-delivery-81",
+      "entity_type": "delivery",
+      "entity_id": 81,
+      "seed_key": "dlv:81",
+      "file_path": "deliveries/dlv_81.webp",
+      "thumb_path": "deliveries/thumbs/dlv_81_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-81-551aefa34092.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0081",
+      "alt_en": "Delivery proof for order ORD-0081",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "269764fae910846763c31829751c77b4b9dcf6cf10f97375cbf6a95b4cfe1ad7"
+    },
+    {
+      "asset_id": "asset-delivery-84",
+      "entity_type": "delivery",
+      "entity_id": 84,
+      "seed_key": "dlv:84",
+      "file_path": "deliveries/dlv_84.webp",
+      "thumb_path": "deliveries/thumbs/dlv_84_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "order-84-1bd13205b1da.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 800,
+        "height": 600
+      },
+      "alt_ar": "إثبات تسليم الطلب ORD-0084",
+      "alt_en": "Delivery proof for order ORD-0084",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1f0c42d50576e1aabdf24e3df78c87666a0fc12724a75cd42853b9f7c7a2d63a"
+    },
+    {
+      "asset_id": "asset-expense-1",
+      "entity_type": "expense",
+      "entity_id": 1,
+      "seed_key": "exp:01",
+      "file_path": "expenses/exp_01.webp",
+      "thumb_path": "expenses/thumbs/exp_01_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/1.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-001",
+      "alt_en": "Expense receipt EXP-SEED-001",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "114f0c00362b6e12069f186591eac23a3f67779a61734440238fdb956b6123ce"
+    },
+    {
+      "asset_id": "asset-expense-2",
+      "entity_type": "expense",
+      "entity_id": 2,
+      "seed_key": "exp:02",
+      "file_path": "expenses/exp_02.webp",
+      "thumb_path": "expenses/thumbs/exp_02_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/2.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-002",
+      "alt_en": "Expense receipt EXP-SEED-002",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "5be43e12fa929b355744b7921a93e26860f1c6c837a6707b1449e7e618ab1a13"
+    },
+    {
+      "asset_id": "asset-expense-3",
+      "entity_type": "expense",
+      "entity_id": 3,
+      "seed_key": "exp:03",
+      "file_path": "expenses/exp_03.webp",
+      "thumb_path": "expenses/thumbs/exp_03_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/3.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-003",
+      "alt_en": "Expense receipt EXP-SEED-003",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "dee002ed4c27fe121fafe840aff2ccbe1a40f238bf7adb262c92688e67c1dcb4"
+    },
+    {
+      "asset_id": "asset-expense-4",
+      "entity_type": "expense",
+      "entity_id": 4,
+      "seed_key": "exp:04",
+      "file_path": "expenses/exp_04.webp",
+      "thumb_path": "expenses/thumbs/exp_04_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/4.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-004",
+      "alt_en": "Expense receipt EXP-SEED-004",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "11abf99a404f6445cf66f10cb0e6e3066bfff0cad505e37cb835945ef6b515ba"
+    },
+    {
+      "asset_id": "asset-expense-5",
+      "entity_type": "expense",
+      "entity_id": 5,
+      "seed_key": "exp:05",
+      "file_path": "expenses/exp_05.webp",
+      "thumb_path": "expenses/thumbs/exp_05_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/5.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-005",
+      "alt_en": "Expense receipt EXP-SEED-005",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "d8baf473740c46d813a89665422f45fe5aea7ed6a02e2e85762f311ddd0e022e"
+    },
+    {
+      "asset_id": "asset-expense-6",
+      "entity_type": "expense",
+      "entity_id": 6,
+      "seed_key": "exp:06",
+      "file_path": "expenses/exp_06.webp",
+      "thumb_path": "expenses/thumbs/exp_06_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/6.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-006",
+      "alt_en": "Expense receipt EXP-SEED-006",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "62af0f21ac168f4dc56982f5121734a71ab0ccad310df12480c5464f1024e489"
+    },
+    {
+      "asset_id": "asset-expense-7",
+      "entity_type": "expense",
+      "entity_id": 7,
+      "seed_key": "exp:07",
+      "file_path": "expenses/exp_07.webp",
+      "thumb_path": "expenses/thumbs/exp_07_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/7.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-007",
+      "alt_en": "Expense receipt EXP-SEED-007",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "45d988fda21d342124959db69b9228d36ae7a23c614269dc6dc22d45b52895f0"
+    },
+    {
+      "asset_id": "asset-expense-8",
+      "entity_type": "expense",
+      "entity_id": 8,
+      "seed_key": "exp:08",
+      "file_path": "expenses/exp_08.webp",
+      "thumb_path": "expenses/thumbs/exp_08_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/8.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-008",
+      "alt_en": "Expense receipt EXP-SEED-008",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "51c3cf5d29dd6caa4595c62747896792ad007cbec8c1463b80a6a160027f2e64"
+    },
+    {
+      "asset_id": "asset-expense-9",
+      "entity_type": "expense",
+      "entity_id": 9,
+      "seed_key": "exp:09",
+      "file_path": "expenses/exp_09.webp",
+      "thumb_path": "expenses/thumbs/exp_09_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/9.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-009",
+      "alt_en": "Expense receipt EXP-SEED-009",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "aae07c225447af951efee285da37491d5c3ae1fdaddbdc15b0bc82bf767de26b"
+    },
+    {
+      "asset_id": "asset-expense-10",
+      "entity_type": "expense",
+      "entity_id": 10,
+      "seed_key": "exp:10",
+      "file_path": "expenses/exp_10.webp",
+      "thumb_path": "expenses/thumbs/exp_10_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/10.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-010",
+      "alt_en": "Expense receipt EXP-SEED-010",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "bc5182afd379276a02c1b35c08602c010bb1ca5c8f8727aa6b3a99d29ab82061"
+    },
+    {
+      "asset_id": "asset-expense-11",
+      "entity_type": "expense",
+      "entity_id": 11,
+      "seed_key": "exp:11",
+      "file_path": "expenses/exp_11.webp",
+      "thumb_path": "expenses/thumbs/exp_11_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/11.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-011",
+      "alt_en": "Expense receipt EXP-SEED-011",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cf20b9e5a7bf91107f9e12a836856f0367c6dfa9f9a51d4bedda73008ae78f0c"
+    },
+    {
+      "asset_id": "asset-expense-12",
+      "entity_type": "expense",
+      "entity_id": 12,
+      "seed_key": "exp:12",
+      "file_path": "expenses/exp_12.webp",
+      "thumb_path": "expenses/thumbs/exp_12_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/12.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-012",
+      "alt_en": "Expense receipt EXP-SEED-012",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "7b2880bb1425a88cf6baf66b3c184a73f7703ed942dacec7db29fbfea7f33d93"
+    },
+    {
+      "asset_id": "asset-expense-13",
+      "entity_type": "expense",
+      "entity_id": 13,
+      "seed_key": "exp:13",
+      "file_path": "expenses/exp_13.webp",
+      "thumb_path": "expenses/thumbs/exp_13_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/13.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-013",
+      "alt_en": "Expense receipt EXP-SEED-013",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "cc7979632e6fdead7a55ef10b5308cedbbdde64073c821f87705bef0fb925076"
+    },
+    {
+      "asset_id": "asset-expense-14",
+      "entity_type": "expense",
+      "entity_id": 14,
+      "seed_key": "exp:14",
+      "file_path": "expenses/exp_14.webp",
+      "thumb_path": "expenses/thumbs/exp_14_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/14.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-014",
+      "alt_en": "Expense receipt EXP-SEED-014",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "1a74ac02d10edb937c16ae3ca89a2822b63b0fb74eec1ebbc1161446e1387fa6"
+    },
+    {
+      "asset_id": "asset-expense-15",
+      "entity_type": "expense",
+      "entity_id": 15,
+      "seed_key": "exp:15",
+      "file_path": "expenses/exp_15.webp",
+      "thumb_path": "expenses/thumbs/exp_15_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/15.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-015",
+      "alt_en": "Expense receipt EXP-SEED-015",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2a70b9b01ec2e5173e4dd32d03817a66228105aa1fab5a0dea6775d4cf901af2"
+    },
+    {
+      "asset_id": "asset-expense-16",
+      "entity_type": "expense",
+      "entity_id": 16,
+      "seed_key": "exp:16",
+      "file_path": "expenses/exp_16.webp",
+      "thumb_path": "expenses/thumbs/exp_16_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/16.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-016",
+      "alt_en": "Expense receipt EXP-SEED-016",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "68c1f6fa3a52e8f65f644289cfb933c56d1f3de1eaacc7251199e3c16622c07a"
+    },
+    {
+      "asset_id": "asset-expense-17",
+      "entity_type": "expense",
+      "entity_id": 17,
+      "seed_key": "exp:17",
+      "file_path": "expenses/exp_17.webp",
+      "thumb_path": "expenses/thumbs/exp_17_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/17.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-017",
+      "alt_en": "Expense receipt EXP-SEED-017",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "913a3a95d9adbb5e4c1450ef46fe3e5edc12fde16bb12e1a5d1f9a936c0e10bf"
+    },
+    {
+      "asset_id": "asset-expense-18",
+      "entity_type": "expense",
+      "entity_id": 18,
+      "seed_key": "exp:18",
+      "file_path": "expenses/exp_18.webp",
+      "thumb_path": "expenses/thumbs/exp_18_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/18.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-018",
+      "alt_en": "Expense receipt EXP-SEED-018",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "e6d32977f80692a6c54045b16db3793cc766d92733a2eb83114c4a2694572e28"
+    },
+    {
+      "asset_id": "asset-expense-19",
+      "entity_type": "expense",
+      "entity_id": 19,
+      "seed_key": "exp:19",
+      "file_path": "expenses/exp_19.webp",
+      "thumb_path": "expenses/thumbs/exp_19_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/19.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-019",
+      "alt_en": "Expense receipt EXP-SEED-019",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "068c589612c32ca387b4b18a71fa0caa30754352c9cf8e0374d783281ff12884"
+    },
+    {
+      "asset_id": "asset-expense-20",
+      "entity_type": "expense",
+      "entity_id": 20,
+      "seed_key": "exp:20",
+      "file_path": "expenses/exp_20.webp",
+      "thumb_path": "expenses/thumbs/exp_20_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/20.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-020",
+      "alt_en": "Expense receipt EXP-SEED-020",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "f50cfe75e0c76df0c87970d3fc11874834f9e34bd8034a1ed95e40ecc1ff52a7"
+    },
+    {
+      "asset_id": "asset-expense-21",
+      "entity_type": "expense",
+      "entity_id": 21,
+      "seed_key": "exp:21",
+      "file_path": "expenses/exp_21.webp",
+      "thumb_path": "expenses/thumbs/exp_21_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/21.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-021",
+      "alt_en": "Expense receipt EXP-SEED-021",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b0b993d15837e72a00311ef0c96a8bb9d1f8815c407c2b6b0bdf46ef092c1d11"
+    },
+    {
+      "asset_id": "asset-expense-22",
+      "entity_type": "expense",
+      "entity_id": 22,
+      "seed_key": "exp:22",
+      "file_path": "expenses/exp_22.webp",
+      "thumb_path": "expenses/thumbs/exp_22_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/22.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-022",
+      "alt_en": "Expense receipt EXP-SEED-022",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "64b34f09ed096a860aecd75dcbc924f4332894f12ba43d9d10e92314685c7e10"
+    },
+    {
+      "asset_id": "asset-expense-23",
+      "entity_type": "expense",
+      "entity_id": 23,
+      "seed_key": "exp:23",
+      "file_path": "expenses/exp_23.webp",
+      "thumb_path": "expenses/thumbs/exp_23_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/23.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-023",
+      "alt_en": "Expense receipt EXP-SEED-023",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0cf3c341dffdee8f8df972898f71aea21458a4a0e3daa8593e3de5ab06cfac2b"
+    },
+    {
+      "asset_id": "asset-expense-24",
+      "entity_type": "expense",
+      "entity_id": 24,
+      "seed_key": "exp:24",
+      "file_path": "expenses/exp_24.webp",
+      "thumb_path": "expenses/thumbs/exp_24_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/24.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-024",
+      "alt_en": "Expense receipt EXP-SEED-024",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "46e29f5853a0ee77defcd6a1cc43aa3cf650b2c51d542374779f556a6d329ae0"
+    },
+    {
+      "asset_id": "asset-expense-25",
+      "entity_type": "expense",
+      "entity_id": 25,
+      "seed_key": "exp:25",
+      "file_path": "expenses/exp_25.webp",
+      "thumb_path": "expenses/thumbs/exp_25_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/25.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-025",
+      "alt_en": "Expense receipt EXP-SEED-025",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "62bd49dc5a4160ed30ff47d5c61b2c13876fa9f41352f68b32731712f4fa4aa7"
+    },
+    {
+      "asset_id": "asset-expense-26",
+      "entity_type": "expense",
+      "entity_id": 26,
+      "seed_key": "exp:26",
+      "file_path": "expenses/exp_26.webp",
+      "thumb_path": "expenses/thumbs/exp_26_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/26.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-026",
+      "alt_en": "Expense receipt EXP-SEED-026",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "759ff77c37ac5496c983b5d4548eac9983be099ac1c341c2cbb1c1f55cbb4719"
+    },
+    {
+      "asset_id": "asset-expense-27",
+      "entity_type": "expense",
+      "entity_id": 27,
+      "seed_key": "exp:27",
+      "file_path": "expenses/exp_27.webp",
+      "thumb_path": "expenses/thumbs/exp_27_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/27.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-027",
+      "alt_en": "Expense receipt EXP-SEED-027",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "0a09da31fe17513d28506eaa2f4d9c905e9a853badad831f42af786ea473d9b1"
+    },
+    {
+      "asset_id": "asset-expense-28",
+      "entity_type": "expense",
+      "entity_id": 28,
+      "seed_key": "exp:28",
+      "file_path": "expenses/exp_28.webp",
+      "thumb_path": "expenses/thumbs/exp_28_thumb.webp",
+      "storage_bucket": "delivery-proofs",
+      "storage_key": "expenses/28.webp",
+      "format": "WEBP",
+      "dimensions": {
+        "width": 640,
+        "height": 800
+      },
+      "alt_ar": "سند صرف EXP-SEED-028",
+      "alt_en": "Expense receipt EXP-SEED-028",
+      "source": "synthetic_pillow_studio",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "2808267d3fb95960e6c9a5410ff513d3053625ff08b4efe8114b4a5901c2def2"
+    },
+    {
+      "asset_id": "asset-showcase-wh_hero",
+      "entity_type": "warehouse",
+      "entity_id": null,
+      "seed_key": "showcase:wh_hero",
+      "file_path": "warehouses/wh_hero.webp",
+      "thumb_path": "warehouses/thumbs/wh_hero_thumb.webp",
+      "storage_bucket": null,
+      "storage_key": null,
+      "format": "WEBP",
+      "dimensions": {
+        "width": 1024,
+        "height": 572
+      },
+      "alt_ar": "المستودع المركزي - كربلاء",
+      "alt_en": "Karbala Central Warehouse Interior",
+      "source": "ai_generated",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "9375806932d5d1451122f2a3480cdb925d4c25f9375601be8a34e488078da874"
+    },
+    {
+      "asset_id": "asset-showcase-fleet_van",
+      "entity_type": "vehicle",
+      "entity_id": null,
+      "seed_key": "showcase:fleet_van",
+      "file_path": "vehicles/fleet_van.webp",
+      "thumb_path": "vehicles/thumbs/fleet_van_thumb.webp",
+      "storage_bucket": null,
+      "storage_key": null,
+      "format": "WEBP",
+      "dimensions": {
+        "width": 1024,
+        "height": 572
+      },
+      "alt_ar": "شاحنة التوصيل المبردة",
+      "alt_en": "Refrigerated Delivery Van",
+      "source": "ai_generated",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "6ecbc067e9a44d9245076801b72802ee9f14724f8cb101e09a692f1fd93fa587"
+    },
+    {
+      "asset_id": "asset-showcase-shop_aisle",
+      "entity_type": "customer",
+      "entity_id": null,
+      "seed_key": "showcase:shop_aisle",
+      "file_path": "customers/shop_aisle.webp",
+      "thumb_path": "customers/thumbs/shop_aisle_thumb.webp",
+      "storage_bucket": null,
+      "storage_key": null,
+      "format": "WEBP",
+      "dimensions": {
+        "width": 1024,
+        "height": 572
+      },
+      "alt_ar": "متجر جملة نموذجي",
+      "alt_en": "Wholesale Supermarket Display",
+      "source": "ai_generated",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "b8078192dbcb5d2e5c31b7c43f330733bd75c48282e2cd6791ba9e339272a310"
+    },
+    {
+      "asset_id": "asset-showcase-proof_hero",
+      "entity_type": "deliverie",
+      "entity_id": null,
+      "seed_key": "showcase:proof_hero",
+      "file_path": "deliveries/proof_hero.webp",
+      "thumb_path": "deliveries/thumbs/proof_hero_thumb.webp",
+      "storage_bucket": null,
+      "storage_key": null,
+      "format": "WEBP",
+      "dimensions": {
+        "width": 1024,
+        "height": 765
+      },
+      "alt_ar": "تسليم طلبات جملة موثق",
+      "alt_en": "Documented Wholesale Delivery Drop",
+      "source": "ai_generated",
+      "license": "synthetic_local_demo_asset",
+      "sha256": "203fead17dead92cacae52b8207b328debd660e6ad4ef5458e58047c636d1ac1"
+    }
+  ]
+}

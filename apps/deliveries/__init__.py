@@ -1,0 +1,1 @@
+"""Deliveries domain app."""
