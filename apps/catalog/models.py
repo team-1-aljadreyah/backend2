@@ -102,3 +102,84 @@ class PriceChange(models.Model):
         indexes = [
             models.Index(fields=["item", "tier", "effective_from"]),
         ]
+
+
+class StockAlert(models.Model):
+    """Shop back-in-stock waitlist subscription («أعلمني عند التوفر»)."""
+
+    customer = models.ForeignKey("customers.Customer", on_delete=models.CASCADE, related_name="stock_alerts")
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="stock_alerts")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "catalog_stock_alert"
+        ordering = ["created_at", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["customer", "item"], name="uniq_stock_alert_customer_item"),
+        ]
+
+
+class Clearance(models.Model):
+    """Near-expiry batch clearance discount («عروض التصريف»)."""
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="clearances")
+    batch = models.ForeignKey("inventory.Batch", on_delete=models.CASCADE, related_name="clearances")
+    warehouse = models.ForeignKey("warehouses.Warehouse", on_delete=models.PROTECT)
+    percent = models.PositiveSmallIntegerField()
+    qty = models.PositiveIntegerField()
+    until = models.DateField(db_index=True)
+    expiry_date = models.DateField()
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "Active"),
+            ("sold", "Sold"),
+            ("expired", "Expired"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="active",
+        db_index=True,
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_clearances",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "catalog_clearance"
+        ordering = ["-id"]
+
+
+class ScheduledPrice(models.Model):
+    """Dated bulk or per-item price schedule («تغيير الأسعار من تاريخ»)."""
+
+    start = models.DateField(db_index=True)
+    items = models.JSONField(default=list)
+    percent = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    prices = models.JSONField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("scheduled", "Scheduled"),
+            ("applied", "Applied"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="scheduled",
+        db_index=True,
+    )
+    note = models.TextField(blank=True, default="")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_price_schedules",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    applied_at = models.DateTimeField(null=True, blank=True)
+    told = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "catalog_scheduled_price"
+        ordering = ["-id"]

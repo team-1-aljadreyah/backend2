@@ -1,5 +1,10 @@
 from django.urls import path
 
+from .extra_views import (
+    DaySummaryReportView,
+    LateShopsView,
+    ReorderDueView,
+)
 from .views import (
     DailySalesReportView,
     DashboardView,
@@ -19,5 +24,8 @@ urlpatterns = [
     path("reports/near-expiry", NearExpiryReportView.as_view(), name="report-near-expiry"),
     path("reports/debts", DebtsReportView.as_view(), name="report-debts"),
     path("reports/delivery-ratings", DeliveryRatingsReportView.as_view(), name="report-delivery-ratings"),
+    path("reports/day-summary", DaySummaryReportView.as_view(), name="report-day-summary"),
+    path("reorder/due", ReorderDueView.as_view(), name="reorder-due"),
+    path("reorder/late-shops", LateShopsView.as_view(), name="reorder-late-shops"),
     path("reps/targets", RepTargetsView.as_view(), name="reps-targets"),
 ]

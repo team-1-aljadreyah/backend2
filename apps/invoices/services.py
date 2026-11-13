@@ -81,6 +81,8 @@ def serialize_invoice(inv: Invoice, *, actor: User) -> dict[str, Any]:
         }
         if ln.offer_off:
             line_dict["offer_off"] = ln.offer_off
+        if getattr(ln, "clearance", False):
+            line_dict["clearance"] = True
         if show_batches:
             b_list = []
             for alloc in ln.batch_allocations.select_related("batch").order_by("id"):
@@ -123,6 +125,8 @@ def serialize_invoice(inv: Invoice, *, actor: User) -> dict[str, Any]:
         out["profit"] = inv.profit
     if inv.counter:
         out["counter"] = inv.counter
+    if inv.created_by_id:
+        out["created_by"] = {"id": inv.created_by_id, "name": inv.created_by.name}
     return out
 
 
@@ -245,6 +249,7 @@ def create_invoice_for_order(
         total=total,
         cost=0,
         usd_rate=usd_rate,
+        created_by=delivery_rep or order.created_by,
         delivered_at=dlv_time,
     )
     inv.number = f"INV-{inv.id:05d}"
@@ -292,6 +297,11 @@ def create_invoice_for_order(
 
     inv.cost = total_cost
     inv.save(update_fields=["number", "cost"])
+
+    from apps.payments.services import apply_available_credit_to_open_invoices
+
+    apply_available_credit_to_open_invoices(customer_id=order.customer_id)
+    inv.refresh_from_db(fields=["paid"])
     return inv
 
 
@@ -904,7 +914,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
 
         latest_usd = UsdRate.objects.order_by("-date").first()
         if latest_usd:
-            usd_rate_val = latest_usd.rate_iqd
+            usd_rate_val = latest_usd.rate
 
     inv = Invoice.objects.create(
         id=inv_id,
@@ -924,6 +934,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         returned=0,
         credited=0,
         usd_rate=usd_rate_val,
+        created_by=actor,
         delivered_at=now,
         counter=counter_info,
     )

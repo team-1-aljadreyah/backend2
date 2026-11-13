@@ -104,9 +104,9 @@ def test_multishop_special_price_and_customer_approval(phase5_setup):
     assert sp_res.status_code == 200
     assert shop.get(f"/api/v1/items/{item_id}").json()["data"]["prices"][0]["carton_price"] == 18500
 
-    # Keeper cannot see customer debt balance/limit
+    # Keeper cannot see customer debt balance/limit (omitted so UI treats them as undefined)
     k1_cust = k1.get(f"/api/v1/customers/{cust.id}").json()["data"]
-    assert k1_cust["balance"] is None and k1_cust["debt_limit"] is None
+    assert "balance" not in k1_cust and "debt_limit" not in k1_cust
 
     # Shop adds a branch and switches active shop
     branch = shop.post(
@@ -205,6 +205,7 @@ def test_order_rbac_discount_approval_and_multi_warehouse_prepare_pin_privacy(ph
         format="json",
     )
     assert mixed.status_code == 201
+    assert "prep_parts" not in mixed.json()["data"]
     mid = mixed.json()["data"]["id"]
     plan = k1.get(f"/api/v1/orders/{mid}/prep-plan").json()["data"]
     l1_id = plan[0]["line_id"]

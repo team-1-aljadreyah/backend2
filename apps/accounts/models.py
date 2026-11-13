@@ -132,6 +132,7 @@ class SystemSetting(models.Model):
     phone = models.CharField(max_length=40, default="07700000000")
     address = models.CharField(max_length=255, default="بغداد - جميلة التجارية")
     expense_approval_above = models.BigIntegerField(null=True, blank=True)
+    summary_hour = models.PositiveSmallIntegerField(default=21)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -271,3 +271,32 @@
 | POST | `/payments/online` | `shop`, `customer` | `{ amount, provider: "zaincash" \| "qi_card", return_url? }` | `OnlinePayment` | Starts online payment. For ZainCash (>= 1,000 IQD): initializes transaction via UAT `https://pg-api-uat.zaincash.iq` with OAuth2 token and returns redirect form URL. |
 | GET | `/payments/online/{id}` | Authenticated | None | `OnlinePayment` | Checks status, inquires gateway, verifies JWT return token, and marks settled with FIFO invoice allocation. |
 
+---
+
+## 16. Visits, Cash Custody, Stock Alerts, Clearances, Dated Prices, Reorder & Day Summary
+
+| Verb | Path | Auth / Roles | Request / Query | Response `data` | Domain Logic & Security Rules |
+| --- | --- | --- | --- | --- | --- |
+| GET | `/visits` | `rep`, `manager`, `accountant`, `staff` | `?day=YYYY-MM-DD&rep_id=` | `Visit[]` | Lists daily visits (`rep` sees own only). |
+| POST | `/visits` | `rep` | `{ customer_id, outcome, reason?, note?, lat?, lng? }` | `Visit` | Upserts today's visit for `(rep, customer, day)`. Computes Haversine `distance_m` and `far (> 200m)`. Auto-recorded on rep order/payment. |
+| POST | `/customers/{id}/visit-days` | `manager`, `staff`, `rep` (own) | `{ days: number[] }` (0–6) | `Customer` | Sets weekly planned visit days (`0 = Sun .. 6 = Sat`). |
+| GET | `/reports/visits` | `manager`, `accountant`, `staff` | `?from=&to=` | `VisitsReport` | Planned vs visited vs missed vs remaining vs extra vs far, per-rep totals & no-order reasons. |
+| GET | `/custody` | `manager`, `accountant`, `rep` (self) | None | `CustodyRow[]` | Per-rep cash collected, handed over, current holding, shortages, pending handover, and `oldest_at`. |
+| GET | `/custody/{repId}` | `manager`, `accountant`, `rep` (self) | None | `CustodyLog` | Rep custody summary, chronological cash-in / handover-out entries, and handover list. |
+| POST | `/custody/handovers` | `rep`, `manager`, `accountant` | `{ rep_id?, amount, note? }` | `CashHandover` | Rep submits `pending` handover (`<= holding`); manager/accountant records directly as `confirmed`. |
+| POST | `/custody/handovers/{id}/confirm` | `manager`, `accountant` | `{ received }` | `CashHandover` | Confirms pending handover (`0 <= received <= declared`), recording any shortage (`short = declared - received`). |
+| POST | `/custody/handovers/{id}/cancel` | `rep` (own), `manager`, `accountant` | None | `CashHandover` | Cancels a `pending` handover. |
+| GET | `/stock-alerts` | `shop` | None | `number[]` | Item IDs active shop is waiting for. |
+| POST | `/stock-alerts` | `shop` | `{ item_id, on }` | `number[]` | Subscribes or unsubscribes active shop from back-in-stock alerts. |
+| GET | `/stock-alerts/waitlist` | `manager`, `accountant`, `warehouse` | None | `StockWait[]` | Items shops are waiting for, sorted by shop count desc. Auto-notifies & clears on receipt/transfer-in. |
+| GET | `/clearances` | `manager`, `accountant`, `warehouse` | None | `Clearance[]` | Lists batch clearances (active first); syncs `sold` / `expired` status. |
+| POST | `/clearances` | `manager` | `{ batch_id, percent }` (5–70) | `Clearance` | Starts near-expiry batch discount (`until = expiry_date - 1d`), exposed on `Item.clearance` and applied to order pricing. |
+| POST | `/clearances/{id}/cancel` | `manager` | None | `Clearance` | Stops active clearance early. |
+| GET | `/price-schedule` | `manager`, `accountant` | None | `ScheduledPrice[]` | Lists scheduled & applied dated price changes (auto-applies due schedules). |
+| POST | `/price-schedule` | `manager` | `{ item_ids, start, percent?, prices?, note? }` | `ScheduledPrice` | Schedules future or immediate (`start <= today`) price changes; notifies 60-day active customers on rises immediately or drops on `start`. |
+| POST | `/price-schedule/{id}/cancel` | `manager` | None | `ScheduledPrice` | Cancels a pending `scheduled` price change. |
+| GET | `/items/{id}/price-history` | `manager`, `accountant` | None | `PriceHistory` | Tier price history (`from`/`until`) and pending scheduled changes with projected `next` prices. |
+| GET | `/reorder/due` | `shop` | None | `ReorderDue[]` | In-stock items the shop orders periodically that are due for reorder based on historical order gaps. |
+| GET | `/reorder/late-shops` | `rep` (own), `manager`, `accountant` | None | `LateShop[]` | Shops overdue for their next order relative to their historical cadence. |
+| GET | `/reports/day-summary` | `manager`, `accountant` | `?date=YYYY-MM-DD` | `DaySummary` | Target day KPIs vs yesterday & last week, `best_rep`, `counter_sales`, `late` deliveries, `low` stock, `hour` (`settings.summary_hour`), with role profit redaction. |
+

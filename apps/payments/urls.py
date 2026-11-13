@@ -1,6 +1,13 @@
 """URL routes for payments, refunds, statements, credit notes, and Qi Card under /api/v1/."""
 from django.urls import path
 
+from .custody_views import (
+    CustodyDetailView,
+    CustodyHandoverCancelView,
+    CustodyHandoverConfirmView,
+    CustodyHandoverCreateView,
+    CustodyListView,
+)
 from .views import (
     CustomerAllocationPreviewView,
     CustomerCreditNoteListView,
@@ -15,6 +22,11 @@ from .views import (
 )
 
 urlpatterns = [
+    path("custody", CustodyListView.as_view(), name="custody-list"),
+    path("custody/handovers", CustodyHandoverCreateView.as_view(), name="custody-handover-create"),
+    path("custody/handovers/<int:handover_id>/confirm", CustodyHandoverConfirmView.as_view(), name="custody-handover-confirm"),
+    path("custody/handovers/<int:handover_id>/cancel", CustodyHandoverCancelView.as_view(), name="custody-handover-cancel"),
+    path("custody/<int:rep_id>", CustodyDetailView.as_view(), name="custody-detail"),
     path("payments", PaymentListCreateView.as_view(), name="payments-list-create"),
     path("payments/online", OnlinePaymentListCreateView.as_view(), name="payments-online-list-create"),
     path("payments/online/<str:key>", OnlinePaymentDetailView.as_view(), name="payments-online-detail"),

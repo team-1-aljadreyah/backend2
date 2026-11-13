@@ -28,6 +28,7 @@ class SupplyOrder(models.Model):
     expected_date = models.DateField(null=True, blank=True)
     note = models.TextField(blank=True, default="")
     cancel_reason = models.TextField(blank=True, default="")
+    closed_short = models.JSONField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="created_supply_orders"
     )

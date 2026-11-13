@@ -32,6 +32,7 @@ class OrderLineSerializer(serializers.Serializer):
     pieces = serializers.IntegerField()
     unit_price = serializers.IntegerField()
     offer_off = serializers.IntegerField(required=False)
+    clearance = serializers.BooleanField(required=False)
     total = serializers.IntegerField()
 
 
@@ -44,7 +45,9 @@ class OrderSerializer(serializers.Serializer):
     warehouse_id = serializers.IntegerField()
     source = serializers.ChoiceField(choices=["shop", "rep", "office", "counter"])
     status = serializers.CharField()
+    created_at = serializers.CharField(required=False)
     lines = OrderLineSerializer(many=True)
+    short_lines = OrderLineSerializer(many=True, required=False)
     delivery = DeliverySerializer(required=False, allow_null=True)
     total = serializers.IntegerField()
     subtotal = serializers.IntegerField(required=False)

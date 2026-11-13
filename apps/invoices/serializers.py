@@ -39,6 +39,7 @@ class InvoiceLineSerializer(serializers.Serializer):
     returned_pieces = serializers.IntegerField(default=0)
     unit_price = serializers.IntegerField()
     offer_off = serializers.IntegerField(required=False)
+    clearance = serializers.BooleanField(required=False)
     total = serializers.IntegerField()
     batches = InvoiceBatchAllocSerializer(many=True, required=False)
 
@@ -74,6 +75,7 @@ class InvoiceSerializer(serializers.Serializer):
     cost = serializers.IntegerField(required=False)
     profit = serializers.IntegerField(required=False)
     counter = CounterInfoSerializer(required=False)
+    created_by = serializers.DictField(required=False)
     lines = InvoiceLineSerializer(many=True)
 
 
@@ -87,6 +89,7 @@ class ReturnLineSerializer(serializers.Serializer):
     unit = serializers.ChoiceField(choices=["carton", "piece"])
     qty = serializers.IntegerField()
     pieces = serializers.IntegerField()
+    condition = serializers.ChoiceField(choices=["good", "damaged"], required=False)
     amount = serializers.IntegerField()
 
 

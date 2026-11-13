@@ -59,6 +59,7 @@ def serialize_item(
     active_tier_id: int | None = None,
     storage: Any = None,
     custom_values: dict[str, Any] | None = None,
+    clearance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     prices_qs = sorted(item.prices.all(), key=lambda p: p.tier_id)
     if actor.role == Role.SHOP and active_tier_id is not None:
@@ -125,6 +126,8 @@ def serialize_item(
         out["offer"] = item.offer
     if item.deleted:
         out["deleted"] = True
+    if clearance:
+        out["clearance"] = clearance
     if custom_values:
         out["custom"] = custom_values
     if sees_cost(actor):
@@ -155,6 +158,9 @@ def _shop_context(actor: User) -> tuple[int | None, dict[int, tuple[int, int]]]:
 
 
 def list_items_for_actor(*, actor: User, request: Any = None) -> list[dict[str, Any]]:
+    from apps.catalog.features_services import active_clearance_map, apply_due_scheduled_prices
+
+    apply_due_scheduled_prices()
     phys, res, nearest_map, warehouses = build_item_stock_and_expiry_maps()
     active_tier_id, special_map = _shop_context(actor)
     storage = get_storage()
@@ -164,7 +170,9 @@ def list_items_for_actor(*, actor: User, request: Any = None) -> list[dict[str, 
         qs = qs.filter(active=True)
 
     items = list(qs)
-    custom_map = batch_custom_values("item", [it.id for it in items], actor)
+    item_ids = [it.id for it in items]
+    custom_map = batch_custom_values("item", item_ids, actor)
+    clearance_map = active_clearance_map(item_ids)
 
     return [
         serialize_item(
@@ -177,17 +185,22 @@ def list_items_for_actor(*, actor: User, request: Any = None) -> list[dict[str, 
             active_tier_id=active_tier_id,
             storage=storage,
             custom_values=custom_map.get(it.id),
+            clearance=clearance_map.get(it.id),
         )
         for it in items
     ]
 
 
 def get_item_for_actor(*, actor: User, item_id: int, request: Any = None) -> dict[str, Any]:
+    from apps.catalog.features_services import active_clearance_map, apply_due_scheduled_prices
+
+    apply_due_scheduled_prices()
     item = Item.objects.prefetch_related("prices").filter(id=item_id).first()
     if not item or (actor.role == Role.SHOP and not item.active):
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
     phys, res, nearest_map, warehouses = build_item_stock_and_expiry_maps()
     active_tier_id, special_map = _shop_context(actor)
+    clearance_map = active_clearance_map([item.id])
     return serialize_item(
         item,
         actor=actor,
@@ -197,6 +210,7 @@ def get_item_for_actor(*, actor: User, item_id: int, request: Any = None) -> dic
         special_price_map=special_map,
         active_tier_id=active_tier_id,
         custom_values=custom_values_for_object("item", item.id, actor),
+        clearance=clearance_map.get(item.id),
     )
 
 

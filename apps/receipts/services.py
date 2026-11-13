@@ -279,4 +279,7 @@ def create_receipt(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         summary=f"Created receipt {receipt.number} ({len(parsed_lines)} line(s))",
         after={"number": receipt.number, "warehouse_id": wh.id, "total_cost": total_cost},
     )
+    from apps.catalog.features_services import trigger_back_in_stock_alerts
+
+    trigger_back_in_stock_alerts([pl["item"].id for pl in parsed_lines])
     return get_receipt_for_actor(actor=actor, receipt_id=receipt.id)

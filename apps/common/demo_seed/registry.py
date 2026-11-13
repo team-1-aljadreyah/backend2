@@ -112,11 +112,11 @@ def clear_demo_data(*, delete_media: bool = True) -> dict[str, int]:
         UserSession,
     )
     from apps.audit.models import AuditLog
-    from apps.catalog.models import Category, Item, PriceChange
+    from apps.catalog.models import Category, Clearance, Item, PriceChange, ScheduledPrice, StockAlert
     from apps.chat.models import ChatMessage, ChatReadCursor
     from apps.commissions.models import ClosedCommissionMonth
     from apps.common.models import StorageObject
-    from apps.customers.models import Customer
+    from apps.customers.models import Customer, ShopList, Visit
     from apps.deliveries.models import Delivery, RepLocation, Vehicle
     from apps.exchange_rates.models import UsdRate
     from apps.expenses.models import Expense
@@ -124,7 +124,7 @@ def clear_demo_data(*, delete_media: bool = True) -> dict[str, int]:
     from apps.invoices.models import CreditNote, Invoice, ReturnDoc
     from apps.notifications.models import Notification, OutboxEvent
     from apps.orders.models import Order
-    from apps.payments.models import OnlinePayment, Payment, PaymentAllocation, Refund
+    from apps.payments.models import CashHandover, OnlinePayment, Payment, PaymentAllocation, Refund
     from apps.receipts.models import Receipt
     from apps.stocktakes.models import Stocktake
     from apps.supply_orders.models import SupplyOrder
@@ -165,6 +165,13 @@ def clear_demo_data(*, delete_media: bool = True) -> dict[str, int]:
                 Q(id__in=seed_invoices)
                 | Q(customer_id__in=seed_customers)
                 | Q(order_id__in=seed_orders)
+            )
+            .values_list("id", flat=True)
+        )
+    if seed_payments or seed_customers:
+        seed_payments = list(
+            Payment.objects.filter(
+                Q(id__in=seed_payments) | Q(customer_id__in=seed_customers)
             )
             .values_list("id", flat=True)
         )
@@ -209,14 +216,24 @@ def clear_demo_data(*, delete_media: bool = True) -> dict[str, int]:
     _del("invoices", Invoice.objects.filter(id__in=seed_invoices))
 
     # 2. Fulfillment & orders
+    if seed_orders or seed_customers:
+        # Include visits linked to orders/customers/reps
+        _del("visits", Visit.objects.filter(Q(customer_id__in=seed_customers) | Q(order_id__in=seed_orders)))
     if seed_orders:
         Order.objects.filter(id__in=seed_orders).update(rest_order=None, shipment_of=None)
         _del("deliveries", Delivery.objects.filter(order_id__in=seed_orders))
         _del("orders", Order.objects.filter(id__in=seed_orders))
     if seed_users:
+        _del("visits_by_rep", Visit.objects.filter(rep_id__in=seed_users))
+        _del("cash_handovers", CashHandover.objects.filter(Q(rep_id__in=seed_users) | Q(confirmed_by_id__in=seed_users)))
         _del("rep_locations", RepLocation.objects.filter(rep_id__in=seed_users))
 
-    # 3. Stocktakes / transfers / receipts / supply orders / inventory batches
+    # 3. Stocktakes / transfers / receipts / supply orders / inventory batches / clearances
+    _del("clearances", Clearance.objects.filter(Q(item_id__in=seed_items) | Q(warehouse_id__in=seed_warehouses)))
+    _del("stock_alerts", StockAlert.objects.filter(Q(item_id__in=seed_items) | Q(customer_id__in=seed_customers)))
+    _del("shop_lists", ShopList.objects.filter(customer_id__in=seed_customers))
+    if seed_users:
+        _del("scheduled_prices", ScheduledPrice.objects.filter(created_by_id__in=seed_users))
     _del("stocktakes", Stocktake.objects.filter(id__in=seed_stocktakes))
     _del("transfers", Transfer.objects.filter(id__in=seed_transfers))
     # Collect batches owned or derived from seeded receipts/transfers before clearing movements & receipts

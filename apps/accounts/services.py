@@ -198,11 +198,11 @@ def register_shop_account(data: dict[str, Any], *, request=None) -> dict[str, An
     return {
         "token": access,
         "refresh": refresh,
-        "user": serialize_user(user, active_customer_id=customer.id, customer_ids=[customer.id]),
+        "user": serialize_user(user, active_customer_id=customer.id, customer_ids=[customer.id], request=request),
     }
 
 
-def list_all_users() -> list[dict[str, Any]]:
+def list_all_users(*, request: Any = None) -> list[dict[str, Any]]:
     all_memberships = ShopMembership.objects.order_by("id").only("user_id", "customer_id", "is_active_shop")
     users = (
         User.objects.filter(deleted=False)
@@ -215,7 +215,7 @@ def list_all_users() -> list[dict[str, Any]]:
         cids = [m.customer_id for m in ms_list]
         active_m = next((m for m in ms_list if m.is_active_shop), None)
         cid = active_m.customer_id if active_m else (cids[0] if cids else None)
-        out.append(serialize_user(u, active_customer_id=cid, customer_ids=cids))
+        out.append(serialize_user(u, active_customer_id=cid, customer_ids=cids, request=request))
     return out
 
 
@@ -270,7 +270,7 @@ def _validate_user_role_fields(
 
 
 @transaction.atomic
-def create_user_by_manager(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
+def create_user_by_manager(*, actor: User, data: dict[str, Any], request: Any = None) -> dict[str, Any]:
     name = _validate_nonempty_str(data, "name", "الاسم", "Name")
     phone = normalize_phone(data.get("phone"))
     password = str(data.get("password") or "")
@@ -329,11 +329,11 @@ def create_user_by_manager(*, actor: User, data: dict[str, Any]) -> dict[str, An
         summary=f"Created user {user.name} ({user.role})",
         after=serialize_user(user),
     )
-    return serialize_user(user)
+    return serialize_user(user, request=request)
 
 
 @transaction.atomic
-def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any]) -> dict[str, Any]:
+def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any], request: Any = None) -> dict[str, Any]:
     target = User.objects.select_for_update().filter(id=user_id, deleted=False).first()
     if not target:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -420,7 +420,7 @@ def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any]) -
         before=before,
         after=serialize_user(target),
     )
-    return serialize_user(target)
+    return serialize_user(target, request=request)
 
 
 @transaction.atomic
@@ -498,6 +498,17 @@ def update_settings_by_manager(*, actor: User, data: dict[str, Any]) -> dict[str
                     message=("حد موافقة الصرفيات غير صحيح", "Invalid expense approval limit"),
                 ) from exc
             s.expense_approval_above = lim
+    if "summary_hour" in data:
+        try:
+            sh = int(data["summary_hour"])
+            if sh < 0 or sh > 23:
+                raise ValueError
+        except (TypeError, ValueError) as exc:
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("ساعة الملخص غير صحيحة (0-23)", "Invalid summary hour (0-23)"),
+            ) from exc
+        s.summary_hour = sh
 
     s.save()
     after = serialize_settings(s)
@@ -634,7 +645,7 @@ def build_lookups(user: User) -> dict[str, Any]:
 
 
 @transaction.atomic
-def set_user_profile(*, actor: User, user_id: int, profile_id: str | None) -> dict[str, Any]:
+def set_user_profile(*, actor: User, user_id: int, profile_id: str | None, request: Any = None) -> dict[str, Any]:
     target = User.objects.select_for_update().filter(id=user_id, deleted=False).first()
     if not target:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -673,7 +684,7 @@ def set_user_profile(*, actor: User, user_id: int, profile_id: str | None) -> di
         before=before,
         after=after,
     )
-    return after
+    return serialize_user(target, request=request)
 
 
 def _shop_blockers(customer_id: int) -> list[str]:
@@ -756,7 +767,7 @@ def delete_user_by_manager(*, actor: User, user_id: int) -> None:
 
 
 @transaction.atomic
-def remove_user_photo(*, actor: User, user_id: int) -> dict[str, Any]:
+def remove_user_photo(*, actor: User, user_id: int, request: Any = None) -> dict[str, Any]:
     target = User.objects.select_for_update().filter(id=user_id, deleted=False).first()
     if not target:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -771,7 +782,7 @@ def remove_user_photo(*, actor: User, user_id: int) -> dict[str, Any]:
         entity_id=target.id,
         summary=f"Removed the picture of {target.name}",
     )
-    return serialize_user(target)
+    return serialize_user(target, request=request)
 
 
 @transaction.atomic

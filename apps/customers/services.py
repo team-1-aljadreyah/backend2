@@ -28,9 +28,10 @@ from apps.notifications.services import notify_role, notify_user
 def customer_balance_map(customer_ids: list[int] | None = None) -> dict[int, int]:
     """
     Compute exact net IQD customer balance:
-    sum(max(0, total - paid - returned - credited) across invoices)
+    sum(total - paid - returned - credited across invoices)
     - sum(unallocated credit on non-reversed payments)
     + sum(refunds.amount)
+    Negative balance means credit in the customer's favor (overpayment, return, or credit note).
     """
     balances: dict[int, int] = {}
     if apps.is_installed("apps.invoices"):
@@ -40,13 +41,13 @@ def customer_balance_map(customer_ids: list[int] | None = None) -> dict[int, int
         if customer_ids is not None:
             inv_qs = inv_qs.filter(customer_id__in=customer_ids)
         for inv in inv_qs.only("customer_id", "total", "paid", "returned", "credited"):
-            rem = max(0, inv.total - inv.paid - inv.returned - inv.credited)
+            rem = inv.total - inv.paid - inv.returned - inv.credited
             balances[inv.customer_id] = balances.get(inv.customer_id, 0) + rem
 
     if apps.is_installed("apps.payments"):
         from apps.payments.models import Payment, Refund
 
-        pay_qs = Payment.objects.filter(reversed=False, unallocated_amount__gt=0)
+        pay_qs = Payment.objects.filter(reversed=False, reversal_of__isnull=True, unallocated_amount__gt=0)
         if customer_ids is not None:
             pay_qs = pay_qs.filter(customer_id__in=customer_ids)
         for row in pay_qs.values("customer_id").annotate(u=Sum("unallocated_amount")):
@@ -82,14 +83,6 @@ def serialize_customer(
     custom_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     can_debt = sees_debt(actor)
-    if can_debt:
-        bmap = balance_map if balance_map is not None else customer_balance_map([cust.id])
-        balance_val: int | None = bmap.get(cust.id, 0)
-        limit_val: int | None = cust.debt_limit
-    else:
-        balance_val = None
-        limit_val = None
-
     lmap = last_order_map if last_order_map is not None else last_order_at_map([cust.id])
     composed_address = cust.address_text or " - ".join(
         p for p in [cust.city, cust.area, cust.street, cust.landmark] if p
@@ -104,18 +97,22 @@ def serialize_customer(
         "street": cust.street,
         "landmark": cust.landmark,
         "address": composed_address,
-        "lat": float(cust.lat) if cust.lat is not None else None,
-        "lng": float(cust.lng) if cust.lng is not None else None,
         "tier_id": cust.tier_id,
         "rep_id": cust.rep_id or 0,
-        "debt_limit": limit_val,
-        "balance": balance_val,
         "active": bool(cust.active),
         "pending": cust.status == CustomerStatus.PENDING,
         "status": cust.status,
         "reject_reason": cust.reject_reason,
+        "visit_days": list(cust.visit_days or []),
         "last_order_at": lmap.get(cust.id),
     }
+    if can_debt:
+        bmap = balance_map if balance_map is not None else customer_balance_map([cust.id])
+        out["debt_limit"] = cust.debt_limit
+        out["balance"] = bmap.get(cust.id, 0)
+    if cust.lat is not None and cust.lng is not None:
+        out["lat"] = float(cust.lat)
+        out["lng"] = float(cust.lng)
     if isinstance(cust.address_info, dict) and cust.address_info:
         out["address_info"] = cust.address_info
     if custom_values:
@@ -577,7 +574,9 @@ def list_my_shops(*, actor: User) -> list[dict[str, Any]]:
 
 
 @transaction.atomic
-def switch_active_shop(*, actor: User, customer_id: int, session_id: str | None = None) -> dict[str, Any]:
+def switch_active_shop(
+    *, actor: User, customer_id: int, session_id: str | None = None, request: Any = None
+) -> dict[str, Any]:
     ms = ShopMembership.objects.select_for_update().filter(user=actor, customer_id=customer_id).first()
     if not ms:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
@@ -604,7 +603,7 @@ def switch_active_shop(*, actor: User, customer_id: int, session_id: str | None 
         warehouse_id=actor.warehouse_id,
         active_customer_id=ms.customer_id,
     )
-    return serialize_user(actor, active_customer_id=ms.customer_id)
+    return serialize_user(actor, active_customer_id=ms.customer_id, request=request)
 
 
 @transaction.atomic

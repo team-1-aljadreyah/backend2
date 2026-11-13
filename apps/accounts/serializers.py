@@ -36,6 +36,7 @@ def serialize_user(
         "phone": "" if user.deleted else user.phone,
         "role": user.role,
         "active": bool(user.active and not user.deleted),
+        "deleted": bool(user.deleted),
         "warehouse_id": user.warehouse_id,
         "customer_id": cid,
         "customer_ids": customer_ids,
@@ -58,10 +59,11 @@ def serialize_warehouse(wh: Warehouse) -> dict[str, Any]:
         "name_en": wh.name_en,
         "code": wh.code,
         "capacity": wh.capacity,
-        "lat": float(wh.lat) if wh.lat is not None else None,
-        "lng": float(wh.lng) if wh.lng is not None else None,
         "active": bool(wh.active),
     }
+    if wh.lat is not None and wh.lng is not None:
+        out["lat"] = float(wh.lat)
+        out["lng"] = float(wh.lng)
     if wh.layout is not None:
         out["layout"] = wh.layout
     if isinstance(wh.cover, dict):
@@ -107,6 +109,7 @@ def serialize_settings(s: SystemSetting) -> dict[str, Any]:
         "expense_approval_above": (
             int(s.expense_approval_above) if s.expense_approval_above is not None else 1_000_000
         ),
+        "summary_hour": int(getattr(s, "summary_hour", 21) if getattr(s, "summary_hour", None) is not None else 21),
     }
 
 

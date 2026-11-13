@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS accounts_system_setting (
     phone                   VARCHAR(40) NOT NULL DEFAULT '07700000000',
     address                 VARCHAR(255) NOT NULL DEFAULT 'Baghdad, Iraq',
     expense_approval_above  BIGINT NULL CHECK (expense_approval_above IS NULL OR expense_approval_above >= 0),
+    summary_hour            SMALLINT NOT NULL DEFAULT 21,
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -248,6 +249,7 @@ CREATE TABLE IF NOT EXISTS customers_customer (
     tier_id         BIGINT NOT NULL REFERENCES accounts_price_tier(id) ON DELETE RESTRICT,
     rep_id          BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
     debt_limit      BIGINT NOT NULL DEFAULT 0 CHECK (debt_limit >= 0),
+    visit_days      JSONB NOT NULL DEFAULT '[]'::jsonb,
     active          BOOLEAN NOT NULL DEFAULT TRUE,
     walk_in         BOOLEAN NOT NULL DEFAULT FALSE,
     status          VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'pending', 'rejected')),
@@ -405,6 +407,7 @@ CREATE TABLE IF NOT EXISTS supply_orders_order (
     expected_date   DATE NULL,
     note            TEXT NOT NULL DEFAULT '',
     cancel_reason   TEXT NOT NULL DEFAULT '',
+    closed_short    JSONB NULL,
     created_by_id   BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE RESTRICT,
     cancelled_by_id BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
     cancelled_at    TIMESTAMPTZ NULL,
@@ -526,6 +529,8 @@ CREATE TABLE IF NOT EXISTS transfers_transfer (
     to_warehouse_id     BIGINT NOT NULL REFERENCES warehouses_warehouse(id) ON DELETE RESTRICT,
     status              VARCHAR(20) NOT NULL DEFAULT 'sent' CHECK (status IN ('sent', 'received', 'discrepancy')),
     reason              TEXT NOT NULL DEFAULT '',
+    note                TEXT NOT NULL DEFAULT '',
+    diff_reason         TEXT NOT NULL DEFAULT '',
     client_ref          VARCHAR(100) NULL UNIQUE,
     created_by_id       BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE RESTRICT,
     received_by_id      BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
@@ -615,6 +620,7 @@ CREATE TABLE IF NOT EXISTS orders_order (
     rule_note           TEXT NOT NULL DEFAULT '',
     counter             JSONB NULL,
     rating              JSONB NULL,
+    short_lines         JSONB NOT NULL DEFAULT '[]'::jsonb,
     cancel_reason       TEXT NOT NULL DEFAULT '',
     cancelled_at        TIMESTAMPTZ NULL,
     accepted_by_id      BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
@@ -644,6 +650,7 @@ CREATE TABLE IF NOT EXISTS orders_line (
     pieces          INTEGER NOT NULL CHECK (pieces >= 1),
     unit_price      BIGINT NOT NULL CHECK (unit_price >= 0),
     offer_off       BIGINT NOT NULL DEFAULT 0 CHECK (offer_off >= 0),
+    clearance       BOOLEAN NOT NULL DEFAULT FALSE,
     total           BIGINT NOT NULL CHECK (total >= 0)
 );
 
@@ -776,6 +783,7 @@ CREATE TABLE IF NOT EXISTS invoices_invoice (
     credited            BIGINT NOT NULL DEFAULT 0 CHECK (credited >= 0),
     usd_rate            NUMERIC(12, 2) NOT NULL DEFAULT 1500.00 CHECK (usd_rate > 0),
     counter             JSONB NULL,
+    created_by_id       BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
     delivered_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -795,6 +803,7 @@ CREATE TABLE IF NOT EXISTS invoices_line (
     returned_pieces INTEGER NOT NULL DEFAULT 0 CHECK (returned_pieces >= 0 AND returned_pieces <= pieces),
     unit_price      BIGINT NOT NULL CHECK (unit_price >= 0),
     offer_off       BIGINT NOT NULL DEFAULT 0 CHECK (offer_off >= 0),
+    clearance       BOOLEAN NOT NULL DEFAULT FALSE,
     total           BIGINT NOT NULL CHECK (total >= 0),
     cost            BIGINT NOT NULL DEFAULT 0 CHECK (cost >= 0)
 );
@@ -1650,5 +1659,74 @@ CREATE POLICY p_expense_access ON expenses_expense
     FOR ALL
     USING (erp_session_role() IN ('manager', 'accountant'))
     WITH CHECK (erp_session_role() IN ('manager', 'accountant'));
+
+CREATE TABLE IF NOT EXISTS customers_visit (
+    id          BIGSERIAL PRIMARY KEY,
+    rep_id      BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE,
+    customer_id BIGINT NOT NULL REFERENCES customers_customer(id) ON DELETE CASCADE,
+    day         DATE NOT NULL,
+    at          TIMESTAMPTZ NOT NULL,
+    outcome     VARCHAR(16) NOT NULL,
+    reason      VARCHAR(20) NOT NULL DEFAULT '',
+    note        TEXT NOT NULL DEFAULT '',
+    lat         NUMERIC(9, 6) NULL,
+    lng         NUMERIC(9, 6) NULL,
+    distance_m  INTEGER NULL,
+    far         BOOLEAN NULL,
+    planned     BOOLEAN NOT NULL DEFAULT FALSE,
+    order_id    BIGINT NULL REFERENCES orders_order(id) ON DELETE SET NULL,
+    CONSTRAINT uniq_visit_rep_customer_day UNIQUE (rep_id, customer_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS payments_cash_handover (
+    id              BIGSERIAL PRIMARY KEY,
+    number          VARCHAR(40) NOT NULL UNIQUE,
+    rep_id          BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE RESTRICT,
+    declared        BIGINT NOT NULL CHECK (declared > 0),
+    received        BIGINT NULL,
+    short           BIGINT NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
+    note            TEXT NOT NULL DEFAULT '',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    confirmed_at    TIMESTAMPTZ NULL,
+    confirmed_by_id BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS catalog_stock_alert (
+    id          BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT NOT NULL REFERENCES customers_customer(id) ON DELETE CASCADE,
+    item_id     BIGINT NOT NULL REFERENCES catalog_item(id) ON DELETE CASCADE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uniq_stock_alert_customer_item UNIQUE (customer_id, item_id)
+);
+
+CREATE TABLE IF NOT EXISTS catalog_clearance (
+    id            BIGSERIAL PRIMARY KEY,
+    item_id       BIGINT NOT NULL REFERENCES catalog_item(id) ON DELETE CASCADE,
+    batch_id      BIGINT NOT NULL REFERENCES inventory_batch(id) ON DELETE CASCADE,
+    warehouse_id  BIGINT NOT NULL REFERENCES warehouses_warehouse(id) ON DELETE RESTRICT,
+    percent       SMALLINT NOT NULL,
+    qty           INTEGER NOT NULL,
+    until         DATE NOT NULL,
+    expiry_date   DATE NOT NULL,
+    status        VARCHAR(20) NOT NULL DEFAULT 'active',
+    created_by_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE RESTRICT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ended_at      TIMESTAMPTZ NULL
+);
+
+CREATE TABLE IF NOT EXISTS catalog_scheduled_price (
+    id            BIGSERIAL PRIMARY KEY,
+    start         DATE NOT NULL,
+    items         JSONB NOT NULL DEFAULT '[]'::jsonb,
+    percent       NUMERIC(6, 2) NULL,
+    prices        JSONB NULL,
+    status        VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+    note          TEXT NOT NULL DEFAULT '',
+    created_by_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE RESTRICT,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    applied_at    TIMESTAMPTZ NULL,
+    told          INTEGER NOT NULL DEFAULT 0
+);
 
 COMMIT;

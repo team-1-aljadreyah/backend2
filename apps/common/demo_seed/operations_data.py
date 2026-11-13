@@ -47,7 +47,7 @@ from apps.receipts.models import Receipt
 from apps.receipts.services import create_receipt
 from apps.stocktakes.models import Stocktake
 from apps.stocktakes.services import close_stocktake, create_stocktake, update_stocktake
-from apps.supply_orders.models import SupplyOrder
+from apps.supply_orders.models import SupplyOrder, SupplyStatus
 from apps.supply_orders.services import cancel_supply_order, create_supply_order
 from apps.transfers.models import Transfer, TransferStatus
 from apps.transfers.services import create_transfer, receive_transfer, review_transfer
@@ -107,15 +107,18 @@ def seed_operations(
         "image/webp",
     )
 
+    def _keeper_for(wh_obj: Warehouse) -> User:
+        return keepers[0] if wh_obj.id == warehouses[0].id else keepers[1]
+
     # ------------------------------------------------------------------
-    # 1. Supply Orders (10 total: linked, open pending, partial, cancelled)
+    # 1. Supply Orders (10 total: linked, closed_short, open pending, partial, cancelled)
     # ------------------------------------------------------------------
     supply_orders: list[SupplyOrder] = []
     for idx in range(1, 11):
         sk = f"supply:{idx:02d}"
         so = get_seeded(sk, SupplyOrder)
         if not so:
-            wh = warehouses[(idx - 1) % len(warehouses)]
+            wh = warehouses[(idx - 1) % 2]
             s_items = items[((idx - 1) * 6) % 70 : ((idx - 1) * 6) % 70 + 4]
             so_lines = [
                 {
@@ -134,7 +137,7 @@ def seed_operations(
                         "warehouse_id": wh.id,
                         "supplier": SUPPLIERS[(idx - 1) % len(SUPPLIERS)],
                         "expected_date": (today + timedelta(days=5 + idx)).isoformat(),
-                        "notes": f"طلبية تجهيز مخزنية رقم {idx} — دفعة شهرية",
+                        "notes": f"طلبية تجهيز مخزنية رقم {idx} — {'المخزن الرئيسي (الصناعة)' if wh.id == warehouses[0].id else 'المخزن الثاني (الحر)'}",
                         "lines": so_lines,
                     },
                 )
@@ -147,22 +150,22 @@ def seed_operations(
         supply_orders.append(so)
 
     # ------------------------------------------------------------------
-    # 2. Receipts & FEFO Batches (linked to supply_orders 1..7 + full 5-warehouse coverage)
+    # 2. Receipts & FEFO Batches (linked to supply_orders 1..7 + full 2-warehouse coverage)
     # ------------------------------------------------------------------
     created_batches: list[Batch] = []
     receipts: list[Receipt] = []
 
-    # 2a: Direct linked receipts fulfilling Supply Orders 1..6 completely and #7 partially
-    for s_idx, so in enumerate(supply_orders[:7], start=1):
+    # 2a: Direct linked receipts fulfilling Supply Orders 1..6 completely and #7..8 partially
+    for s_idx, so in enumerate(supply_orders[:8], start=1):
         rsk = f"rcpt:so:{s_idx:02d}"
         r_obj = get_seeded(rsk, Receipt)
         if not r_obj:
             dt = _hist_dt(84 - s_idx * 5, hour=11)
-            k_actor = keepers[(so.warehouse_id - warehouses[0].id) % len(keepers)] if warehouses else keepers[0]
+            k_actor = _keeper_for(so.warehouse)
             so_lines = list(so.lines.select_related("item").all())
             rec_lines = []
             for ln in so_lines:
-                q_rec = max(1, ln.qty // 2) if s_idx == 7 else ln.qty
+                q_rec = max(1, ln.qty // 2) if s_idx in (7, 8) else ln.qty
                 rec_lines.append(
                     {
                         "item_id": ln.item_id,
@@ -192,39 +195,42 @@ def seed_operations(
         register_seed(rsk, r_obj)
         receipts.append(r_obj)
 
-    # Step 2b: Comprehensive stock-in across WH1 (all 96 items), WH2 (0..49), WH3 (0..71), WH4 (0..79), WH5 (0..89)
-    receipt_specs: list[tuple[str, Warehouse, list[Item], int, int, int | None, int]] = []
-    # Chunk all 96 items into receipts so each receipt is crisp and readable (16 lines each)
-    for c_idx in range(6):
-        chunk = items[c_idx * 16 : (c_idx + 1) * 16]
-        receipt_specs.append((f"rcpt:main:{c_idx + 1}", warehouses[0], chunk, 90 - c_idx * 2, 260 + c_idx * 25, None, 1))
-    # WH2 Cold & secondary hub (dairy/beverages/tea/oils)
-    receipt_specs.append(("rcpt:cold:1", warehouses[1], items[20:50], 78, 190, None, 2))
-    receipt_specs.append(("rcpt:cold:2", warehouses[1], items[0:20], 68, 220, None, 2))
-    # WH3 Najaf (covers fast items 0..71)
-    receipt_specs.append(("rcpt:njf:1", warehouses[2], items[0:36], 74, 240, None, 3))
-    receipt_specs.append(("rcpt:njf:2", warehouses[2], items[36:72], 64, 270, None, 3))
-    # WH4 Baghdad (covers 0..79)
-    receipt_specs.append(("rcpt:bgd:1", warehouses[3], items[0:40], 72, 250, None, 4))
-    receipt_specs.append(("rcpt:bgd:2", warehouses[3], items[40:80], 60, 290, None, 4))
-    # WH5 Hillah (covers fast items 0..71 + 72..89)
-    receipt_specs.append(("rcpt:bab:1", warehouses[4], items[0:45], 66, 230, None, 5))
-    receipt_specs.append(("rcpt:bab:2", warehouses[4], items[45:90], 55, 280, None, 5))
-    # Short-expiry batches (15-35 days ahead) & future expired test batch candidates
-    receipt_specs.append(("rcpt:nearexp:1", warehouses[0], items[0:6], 58, 22, None, 1))
-    receipt_specs.append(("rcpt:nearexp:2", warehouses[1], items[20:26], 52, 16, None, 2))
-    receipt_specs.append(("rcpt:nearexp:3", warehouses[3], items[40:45], 45, 29, None, 4))
-    # Replenishment fresh batches across days -35..-5
-    for r_i, wh in enumerate(warehouses, start=1):
-        slice_items = items[(r_i - 1) * 10 : (r_i - 1) * 10 + 10]
-        receipt_specs.append((f"rcpt:repl:{r_i}", wh, slice_items, 35 - r_i * 5, 340 + r_i * 20, None, r_i))
+    # Close supply_orders[6] (#7) short after partial receipt -> showcases closed_short while #8 stays partial!
+    so_short = supply_orders[6]
+    if not so_short.closed_short:
+        so_short.status = SupplyStatus.RECEIVED
+        so_short.closed_short = {
+            "reason": "إغلاق الطلبية بالكمية المستلمة فعلياً لعدم توفر بقية الشحنة لدى المورّد",
+            "at": _hist_dt(44, hour=14).isoformat(),
+            "by": {"id": manager.id, "name": manager.name},
+        }
+        so_short.save(update_fields=["status", "closed_short", "updated_at"])
 
-    # Leave items[91..92] intentionally low stock, items[93..95] with light or zero replenishment
+    # Step 2b: Comprehensive stock-in across WH1 Al-Sina'a (94 items, leaving items[93..94] out of stock for waitlist)
+    # and WH2 Al-Hur (fast movers items[0:68] + oils/spices)
+    receipt_specs: list[tuple[str, Warehouse, list[Item], int, int, int | None, int]] = []
+    for c_idx in range(6):
+        chunk = [it for it in items[c_idx * 16 : (c_idx + 1) * 16] if it.id not in {items[93].id, items[94].id}]
+        if chunk:
+            receipt_specs.append((f"rcpt:main:{c_idx + 1}", warehouses[0], chunk, 90 - c_idx * 2, 260 + c_idx * 25, None, 0))
+    # WH2 Second Warehouse (Al-Hur): stocks all 68 fast_items + tea/cleaning
+    receipt_specs.append(("rcpt:hur:1", warehouses[1], items[0:34], 78, 220, None, 1))
+    receipt_specs.append(("rcpt:hur:2", warehouses[1], items[34:68], 70, 250, None, 1))
+    receipt_specs.append(("rcpt:hur:3", warehouses[1], items[68:88], 62, 280, None, 1))
+    # Short-expiry batches (16-29 days ahead) across WH1 & WH2 for Near-Expiry & Clearances
+    receipt_specs.append(("rcpt:nearexp:1", warehouses[0], items[0:6], 58, 22, None, 0))
+    receipt_specs.append(("rcpt:nearexp:2", warehouses[1], items[20:26], 52, 16, None, 1))
+    receipt_specs.append(("rcpt:nearexp:3", warehouses[0], items[40:45], 45, 28, None, 0))
+    # Replenishment fresh batches across days -35..-15 on both warehouses
+    receipt_specs.append(("rcpt:repl:1", warehouses[0], items[0:12], 32, 340, None, 0))
+    receipt_specs.append(("rcpt:repl:2", warehouses[1], items[12:24], 24, 360, None, 1))
+
+    # Leave items[91..92] intentionally low stock; items[93..94] zero stock for Back-in-Stock waitlist
     for sk, wh, batch_items, days_ago, exp_days_from_today, so_id, _kidx in receipt_specs:
         r_obj = get_seeded(sk, Receipt)
         if not r_obj:
             dt = _hist_dt(days_ago, hour=9, minute=30)
-            actor_k = keepers[min(_kidx - 1, len(keepers) - 1)]
+            actor_k = keepers[_kidx % 2]
             lines_payload = []
             for idx_it, it in enumerate(batch_items):
                 # Keep items[91..92] at low quantity (below min_stock), items[93..95] skipped on main extra hubs
@@ -301,20 +307,17 @@ def seed_operations(
                     register_seed(f"batch:{rl.created_batch.id}", rl.created_batch)
 
     # ------------------------------------------------------------------
-    # 3. Inter-Warehouse Transfers (14 transfers: received, discrepancy, in-transit sent)
+    # 3. Inter-Warehouse Transfers (14 transfers strictly between Al-Sina'a WH1 <-> Al-Hur WH2)
     # ------------------------------------------------------------------
-    # Transfer #1 first so it creates linked sibling lots we can demonstrate `hold_batch` on later!
     shared_lot_batch_id: int | None = None
     for tidx in range(1, 15):
         tkey = f"trf:{tidx:02d}"
-        from_wh = warehouses[0] if tidx <= 9 else warehouses[(tidx % 3) + 1]
-        to_wh = warehouses[(tidx % 4) + 1] if from_wh.id == warehouses[0].id else warehouses[0]
-        if from_wh.id == to_wh.id:
-            to_wh = warehouses[2]
+        from_wh = warehouses[0] if tidx <= 10 else warehouses[1]
+        to_wh = warehouses[1] if from_wh.id == warehouses[0].id else warehouses[0]
         t_items = [items[(tidx * 3 + k) % 35] for k in range(2)]
         t_dt = _hist_dt(50 - tidx * 3, hour=12)
-        k_from = keepers[warehouses.index(from_wh)]
-        k_to = keepers[warehouses.index(to_wh)]
+        k_from = _keeper_for(from_wh)
+        k_to = _keeper_for(to_wh)
 
         trf = get_seeded(tkey, Transfer) or Transfer.objects.filter(client_ref=f"seed-{tkey}").first()
         if not trf:
@@ -369,16 +372,16 @@ def seed_operations(
         hold_batch(actor=manager, batch_id=extra_hold.id, reason="مطابقة ملصق تاريخ الإنتاج مع المورّد")
 
     # ------------------------------------------------------------------
-    # 4. Closed Stocktakes (4 historical across warehouses; open stocktake happens after orders!)
+    # 4. Closed Stocktakes (4 historical across Al-Sina'a WH1 & Al-Hur WH2; open stocktake happens after orders!)
     # ------------------------------------------------------------------
     for sidx, (wh_idx, cat_name, d_ago) in enumerate(
-        [(0, CATEGORIES[9][0], 56), (2, CATEGORIES[8][0], 42), (3, CATEGORIES[6][0], 28), (4, CATEGORIES[5][0], 14)],
+        [(0, CATEGORIES[9][0], 56), (1, CATEGORIES[8][0], 42), (0, CATEGORIES[6][0], 28), (1, CATEGORIES[5][0], 14)],
         start=1,
     ):
         wh = warehouses[wh_idx]
         s_dt = _hist_dt(d_ago, hour=16)
         with frozen_now(s_dt):
-            st_dict = create_stocktake(actor=keepers[wh_idx], data={"warehouse_id": wh.id, "category": cat_name})
+            st_dict = create_stocktake(actor=_keeper_for(wh), data={"warehouse_id": wh.id, "category": cat_name})
             st = Stocktake.objects.prefetch_related("lines").get(id=st_dict["id"])
             upd_lines = []
             for lidx, sl in enumerate(st.lines.all()):
@@ -389,7 +392,7 @@ def seed_operations(
                     upd_lines.append({"item_id": sl.item_id, "counted_qty": sl.system_qty + 1, "damaged_qty": 0, "reason": "فرز كارتون إضافي"})
                 else:
                     upd_lines.append({"item_id": sl.item_id, "counted_qty": sl.system_qty, "damaged_qty": 0, "reason": ""})
-            update_stocktake(actor=keepers[wh_idx], stocktake_id=st.id, data={"lines": upd_lines})
+            update_stocktake(actor=_keeper_for(wh), stocktake_id=st.id, data={"lines": upd_lines})
             close_stocktake(actor=manager, stocktake_id=st.id)
         Stocktake.objects.filter(id=st.id).update(created_at=s_dt)
         register_seed(f"stk:closed:{sidx}", st)
@@ -402,14 +405,18 @@ def seed_operations(
     out_orders: list[Order] = []
     shop_users = list(User.objects.filter(role=Role.SHOP, deleted=False).order_by("id"))
 
+    # Reserve active_customers[25:29] with older delivered orders (>= 18 days ago) so /reorder/due & /reorder/late-shops are populated
+    fresh_customers = [c for idx_c, c in enumerate(active_customers) if not (25 <= idx_c <= 28)]
+
     # 5a: 86 historical CONFIRMED/DELIVERED orders over days -82..-1
     fast_items = items[:68]  # healthy stocked items across all categories 0..9
     for oidx in range(1, 87):
         days_ago = max(1, int(83 - (oidx * 0.94)))
         dt = _hist_dt(days_ago, hour=10 + (oidx % 6), minute=(oidx * 7) % 60)
-        cust = active_customers[(oidx - 1) % len(active_customers)]
-        # Primary warehouse matching geography, with occasional secondary WH split on prepare
-        wh_idx = 0 if cust.city == "كربلاء" else (2 if cust.city == "النجف" else (3 if cust.city == "بغداد" else 4))
+        cust_source = active_customers if days_ago >= 18 else fresh_customers
+        cust = cust_source[(oidx - 1) % len(cust_source)]
+        # Distributed cleanly between Main Al-Sina'a (0) and Second Al-Hur (1), with occasional cross-WH split on prepare
+        wh_idx = 0 if (oidx % 2 == 1) else 1
         wh = warehouses[wh_idx]
         creator = cust.rep or sales_reps[oidx % len(sales_reps)]
         # Make ~25% of orders placed directly by shop owner account if active shop matches
@@ -449,9 +456,7 @@ def seed_operations(
                     "note": f"توريد دوري — {cust.name}",
                     "client_ref": f"seed-{okey}",
                     "lines": line_specs,
-                    "custom": {
-                        "cf_order_channel": "تطبيق المتجر" if creator.role == Role.SHOP else "زيارة ميدانية",
-                    },
+                    **({"custom": {"cf_order_channel": "زيارة ميدانية"}} if creator.role != Role.SHOP else {}),
                 },
             )
             order = Order.objects.get(id=ord_dict["id"])
@@ -539,8 +544,8 @@ def seed_operations(
     # 5b: Live non-delivered orders (OUT x6, READY x6, PENDING x8, NEEDS_APPROVAL x6, WAITING_STOCK x4, CANCELLED x6)
     # Use tail end of days (today / 1-5 days ago) so dashboard live queues look crisp!
     for lidx in range(1, 37):
-        cust = active_customers[(lidx * 2) % len(active_customers)]
-        wh = warehouses[lidx % len(warehouses)]
+        cust = fresh_customers[(lidx * 2) % len(fresh_customers)]
+        wh = warehouses[lidx % 2]
         creator = cust.rep or sales_reps[lidx % len(sales_reps)]
         allowed_cats = set(creator.rep_categories or []) if creator.role == Role.REP else set()
         live_pool = [it for it in items[:45] if (not allowed_cats or it.category in allowed_cats)] or items[:45]
@@ -706,22 +711,27 @@ def seed_operations(
         pkey = f"pay:{idx + 1:03d}"
         with frozen_now(p_dt):
             if idx in (5, 15, 25, 35, 45, 55):
-                # Simulated settled Qi Card payment (`OnlinePayment` + real FIFO `Payment`)
+                is_zc = idx in (25, 45)
+                prov = "zaincash" if is_zc else "qi"
+                ref_prefix = "ZAINCASH-SIM" if is_zc else "QICARD-SIM"
+                req_prefix = "ZC-SIM" if is_zc else "REQ-SIM"
+                label = "ZainCash" if is_zc else "Qi Card"
                 p_res = create_payment(
                     actor=accountants[0],
                     data={
                         "customer_id": inv.customer_id,
                         "amount": amt,
                         "method": PaymentMethod.TRANSFER,
-                        "note": f"سداد إلكتروني Qi Card محاكى — مرجع QICARD-SIM-{idx + 1:04d}",
+                        "note": f"سداد إلكتروني {label} محاكى — مرجع {ref_prefix}-{idx + 1:04d}",
                         "client_ref": f"seed-{pkey}",
                     },
                 )
                 pay_obj = Payment.objects.get(id=p_res["id"])
                 op, _ = OnlinePayment.objects.get_or_create(
-                    request_id=f"REQ-SIM-{inv.id:05d}",
+                    request_id=f"{req_prefix}-{inv.id:05d}",
                     defaults={
-                        "payment_id": f"QICARD-SIM-{inv.id:05d}",
+                        "provider": prov,
+                        "payment_id": f"{ref_prefix}-{inv.id:05d}",
                         "customer_id": inv.customer_id,
                         "initiated_by": accountants[0],
                         "amount": amt,
@@ -730,7 +740,7 @@ def seed_operations(
                         "form_url": "",
                         "return_url": "https://aln.ama8.uk/payments",
                         "client_ref": f"seed-onlpay-{inv.id}",
-                        "raw_payload": {"simulated": True, "demo": True, "invoice_number": inv.number, "order_id": inv.order_id},
+                        "raw_payload": {"simulated": True, "provider": prov, "demo": True, "invoice_number": inv.number, "order_id": inv.order_id},
                     },
                 )
                 register_seed(f"onlpay:{idx + 1}", op)
@@ -851,9 +861,9 @@ def seed_operations(
         cat, paid_to, base_amt = exp_cats[(ex_idx - 1) % len(exp_cats)]
         amt = base_amt + (ex_idx % 4) * 25_000
         ex_date = (today - timedelta(days=min(80, ex_idx * 3))).isoformat()
-        wh = warehouses[(ex_idx - 1) % len(warehouses)]
+        wh = warehouses[(ex_idx - 1) % 2]
         veh = vehicles[(ex_idx - 1) % len(vehicles)] if cat in ("fuel", "maintenance") else None
-        creator_u = accountants[0] if ex_idx % 2 == 0 else keepers[ex_idx % len(keepers)]
+        creator_u = accountants[0] if ex_idx % 2 == 0 else _keeper_for(wh)
         bill_meta = None
         photo_url = None
         if with_media:
@@ -945,6 +955,25 @@ def seed_operations(
             if shop_actor:
                 mark_chat_read(actor=shop_actor, customer_id=cust.id)
 
+    # ------------------------------------------------------------------
+    # 11. Extended ERP Features (Counter Sales, Custody, Visits, Clearances, Price Schedule, Alerts, Ratings, ShopLists)
+    # ------------------------------------------------------------------
+    from apps.common.demo_seed.features_data import seed_extended_features
+
+    ext_ctx = seed_extended_features(
+        manager=manager,
+        accountants=accountants,
+        keepers=keepers,
+        sales_reps=sales_reps,
+        delivery_reps=delivery_reps,
+        warehouses=warehouses,
+        items=items,
+        active_customers=active_customers,
+        delivered_orders=delivered_orders,
+        shop_users=shop_users,
+        fresh_customers=fresh_customers,
+    )
+
     # Mark operations complete and flush outbox queue cleanly
     register_seed("ops:done", Order.objects.order_by("id").first())
     process_outbox_events_task(batch_size=200)
@@ -957,6 +986,7 @@ def seed_operations(
         "delivered_invoices": len(delivered_invoices),
         "out_orders": len(out_orders),
         "payments": len(payments_created),
+        "extended": ext_ctx,
         "proof_assets": proof_assets,
         "expense_assets": expense_assets,
     }

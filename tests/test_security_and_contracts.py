@@ -197,3 +197,38 @@ def test_openapi_schema_generation_and_validation(tmp_path):
     assert "/api/v1/auth/login" in content
     assert "/api/v1/orders" in content
     assert "/api/v1/payments" in content
+
+
+@pytest.mark.django_db
+def test_manager_users_list_and_profile_return_absolute_photo_urls(tmp_path, settings):
+    from apps.accounts.models import SiteConfig
+
+    settings.MEDIA_ROOT = tmp_path
+    cfg = SiteConfig.get_solo()
+    cfg.profiles = [{"id": "prof_wh_picker", "name": "Picker", "role": "staff", "denied": [], "limits": {}}]
+    cfg.save(update_fields=["profiles"])
+
+    User.objects.create_user(phone="07708880010", password="Password123", name="Mgr", role=Role.MANAGER)
+    staff = User.objects.create_user(
+        phone="07708880011",
+        password="Password123",
+        name="Staff",
+        role=Role.STAFF,
+        photo_path="user-photos/sample.webp",
+    )
+
+    client = _login("07708880010", "Password123")
+    res = client.get("/api/v1/users", HTTP_HOST="api.ama8.uk")
+    assert res.status_code == 200
+    rows = {r["id"]: r for r in res.json()["data"]}
+    assert rows[staff.id]["photo"].startswith("http://api.ama8.uk/media/"), rows[staff.id]
+
+    res_prof = client.post(
+        f"/api/v1/users/{staff.id}/profile",
+        {"profile_id": "prof_wh_picker"},
+        format="json",
+        HTTP_HOST="api.ama8.uk",
+    )
+    assert res_prof.status_code == 200
+    assert res_prof.json()["data"]["photo"].startswith("http://api.ama8.uk/media/")
+

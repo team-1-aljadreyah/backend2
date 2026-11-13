@@ -933,10 +933,10 @@ def test_deep_service_branches_and_edge_cases(tmp_path, settings):
     new_cid = cust_res.json()["data"]["id"]
     # Duplicate phone rejected
     assert mgr.post("/api/v1/customers", new_cust_payload, format="json").status_code == 400
-    # Warehouse/staff receive null redacted financial debt/balance on /customers
+    # Warehouse/staff omit redacted financial debt/balance on /customers (matches TS optional fields)
     wh_cust = wh_client.get(f"/api/v1/customers/{new_cid}")
     assert wh_cust.status_code == 200
-    assert wh_cust.json()["data"]["debt_limit"] is None and wh_cust.json()["data"]["balance"] is None
+    assert "debt_limit" not in wh_cust.json()["data"] and "balance" not in wh_cust.json()["data"]
     assert rep_client.get("/api/v1/customers").status_code == 200
 
     # Catalog validation branches

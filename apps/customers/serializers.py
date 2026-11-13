@@ -48,7 +48,7 @@ class CustomerSerializer(serializers.Serializer):
     lng = serializers.FloatField(required=False, allow_null=True)
     tier_id = serializers.IntegerField()
     rep_id = serializers.IntegerField(required=False, allow_null=True)
-    debt_limit = serializers.IntegerField()
+    debt_limit = serializers.IntegerField(required=False)
     active = serializers.BooleanField()
     balance = serializers.IntegerField(required=False)
     status = serializers.CharField()

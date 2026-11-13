@@ -53,6 +53,7 @@ def bind_demo_media(
             name_en=it.name_en,
             category=it.category,
             badge_text=badge,
+            barcode=it.barcode,
         )
         stored_key = storage.put_bytes("product-images", meta["storage_key"], meta["_bytes"], "image/webp")
         if it.image_path != stored_key:
@@ -62,9 +63,9 @@ def bind_demo_media(
         register_seed(f"media:item:{it.id}", it, extra={"bucket": "product-images", "key": stored_key})
         entries.append(meta)
 
-    # All 70 users -> unique role-styled portrait WebP + 160x160 thumb
+    # All demo users -> real portrait WebP + 160x160 thumb
     for u in users:
-        meta = render_user_portrait(seed_key=f"user:{u.id}", user_id=u.id, name=u.name, role=u.role)
+        meta = render_user_portrait(seed_key=f"user:{u.id}", user_id=u.id, name=u.name, role=u.role, phone=u.phone)
         stored_key = storage.put_bytes("product-images", meta["storage_key"], meta["_bytes"], "image/webp")
         if u.photo_path != stored_key:
             u.photo_path = stored_key

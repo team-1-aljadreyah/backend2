@@ -176,6 +176,15 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
         if order.approved_by:
             discount_obj["approved_by"] = {"id": order.approved_by_id, "name": order.approved_by.name}
 
+    prep_parts_out = [
+        {
+            "warehouse_id": p.warehouse_id,
+            **({"prepared_by": {"id": p.prepared_by_id, "name": p.prepared_by.name}} if p.prepared_by else {}),
+            **({"at": p.prepared_at.isoformat()} if p.prepared_at else {}),
+        }
+        for p in order.prep_parts.select_related("prepared_by").order_by("id")
+    ]
+
     return {
         "id": order.id,
         "number": order.number,
@@ -221,17 +230,12 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
                 "unit_price": ln.unit_price,
                 "total": ln.total,
                 **({"offer_off": ln.offer_off} if ln.offer_off else {}),
+                **({"clearance": True} if getattr(ln, "clearance", False) else {}),
             }
             for ln in order.lines.order_by("id")
         ],
-        "prep_parts": [
-            {
-                "warehouse_id": p.warehouse_id,
-                **({"prepared_by": {"id": p.prepared_by_id, "name": p.prepared_by.name}} if p.prepared_by else {}),
-                **({"at": p.prepared_at.isoformat()} if p.prepared_at else {}),
-            }
-            for p in order.prep_parts.select_related("prepared_by").order_by("id")
-        ],
+        **({"short_lines": list(order.short_lines)} if order.short_lines else {}),
+        **({"prep_parts": prep_parts_out} if prep_parts_out else {}),
         "delivery": serialize_delivery(dlv, actor=actor, order=order) if dlv else None,
         **(
             {
@@ -306,21 +310,29 @@ def get_order_for_actor(*, actor: User, order_id: int) -> dict[str, Any]:
 def _resolve_unit_price(item: Item, customer: Customer, unit: str, price_at: datetime | None) -> int:
     sp = SpecialPrice.objects.filter(customer=customer, item=item).first()
     if sp:
-        return sp.carton_price if unit == "carton" else sp.piece_price
-
-    if price_at is not None:
+        base = sp.carton_price if unit == "carton" else sp.piece_price
+    elif price_at is not None:
         hist = (
             PriceChange.objects.filter(item=item, tier_id=customer.tier_id, effective_from__lte=price_at)
             .order_by("-effective_from", "-id")
             .first()
         )
         if hist:
-            return hist.carton_price if unit == "carton" else hist.piece_price
+            base = hist.carton_price if unit == "carton" else hist.piece_price
+        else:
+            ip = ItemPrice.objects.filter(item=item, tier_id=customer.tier_id).first() or ItemPrice.objects.filter(item=item).order_by("tier_id").first()
+            base = (ip.carton_price if unit == "carton" else ip.piece_price) if ip else 0
+    else:
+        ip = ItemPrice.objects.filter(item=item, tier_id=customer.tier_id).first() or ItemPrice.objects.filter(item=item).order_by("tier_id").first()
+        base = (ip.carton_price if unit == "carton" else ip.piece_price) if ip else 0
 
-    ip = ItemPrice.objects.filter(item=item, tier_id=customer.tier_id).first() or ItemPrice.objects.filter(item=item).order_by("tier_id").first()
-    if not ip:
-        return 0
-    return ip.carton_price if unit == "carton" else ip.piece_price
+    if price_at is None and base > 0:
+        from apps.catalog.features_services import active_clearance_map
+
+        cl = active_clearance_map([item.id]).get(item.id)
+        if cl:
+            return max(250, round_250(int((Decimal(base) * Decimal(100 - cl["percent"]) / Decimal(100)).quantize(Decimal("1")))))
+    return base
 
 
 def _committed_order_debt(customer_id: int, exclude_order_id: int | None = None) -> int:
@@ -728,6 +740,10 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     publish_order_changed(primary_order.id)
     if wait_child is not None:
         publish_order_changed(wait_child.id)
+    if actor.role == Role.REP:
+        from apps.customers.visits_services import record_auto_visit
+
+        record_auto_visit(actor=actor, customer=customer, outcome="order", order_id=primary_order.id)
     return get_order_for_actor(actor=actor, order_id=primary_order.id)
 
 

@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--strict-full",
             action="store_true",
-            help="Enforce full-profile minimum counts (5+ warehouses, 90+ items, 60+ users, 50+ customers, media manifest).",
+            help="Enforce full-profile minimum counts (2 warehouses, 90+ items, 60+ users, 50+ customers, media manifest).",
         )
 
     def handle(self, *args, **options) -> None:
@@ -202,8 +202,8 @@ class Command(BaseCommand):
         order_count = Order.objects.count()
         batch_count = Batch.objects.count()
         if strict_full:
-            if wh_count < 4:
-                failures.append(f"Expected >= 4 active warehouses in full mode, found {wh_count}.")
+            if wh_count != 2:
+                failures.append(f"Expected 2 active warehouses in full mode, found {wh_count}.")
             if len(items) < 80:
                 failures.append(f"Expected >= 80 items in full mode, found {len(items)}.")
             if user_count < 63:

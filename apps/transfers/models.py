@@ -17,6 +17,8 @@ class Transfer(models.Model):
     to_warehouse = models.ForeignKey("warehouses.Warehouse", on_delete=models.PROTECT, related_name="incoming_transfers")
     status = models.CharField(max_length=20, choices=TransferStatus.choices, default=TransferStatus.SENT, db_index=True)
     reason = models.TextField(blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    diff_reason = models.TextField(blank=True, default="")
     client_ref = models.CharField(max_length=100, unique=True, null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="created_transfers")
     received_by = models.ForeignKey(

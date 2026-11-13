@@ -384,3 +384,87 @@ def test_qi_card_gateway_security_and_webhook_settlement(phase6_setup):
             assert inv_after["paid"] == 40000 and inv_after["remaining"] == 0 and inv_after["status"] == "paid"
             p_detail = shop.get(f"/api/v1/payments/{pay_id}").json()["data"]
             assert p_detail["gateway"]["card"] == "****4242" and p_detail["gateway"]["status"] == "success"
+
+
+@pytest.mark.django_db
+def test_balance_map_preserves_over_returned_invoice_credit_matching_statement(phase6_setup):
+    mgr = _c("07706000001")
+    keeper = _c("07706000003")
+    wh = phase6_setup["wh"]
+    tier = phase6_setup["tier"]
+    cust = phase6_setup["cust"]
+    exp = (baghdad_today() + timedelta(days=90)).isoformat()
+
+    item_id = mgr.post(
+        "/api/v1/items",
+        {"name": "عدس", "name_en": "Lentils", "category": "بقوليات", "pieces_per_carton": 10, "prices": [{"tier_id": tier.id, "carton_price": 20000, "piece_price": 2000}]},
+        format="json",
+    ).json()["data"]["id"]
+    keeper.post(
+        "/api/v1/receipts",
+        {"warehouse_id": wh.id, "lines": [{"item_id": item_id, "unit": "piece", "qty": 60, "expiry_date": exp, "purchase_price": 1000}]},
+        format="json",
+    )
+
+    # inv1 for 40,000 (20 pcs * 2,000) paid in full, then return 5 pcs (-10,000 credit)
+    inv1 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=20, unit_price=2000, suffix="OVRET1")
+    assert mgr.post("/api/v1/payments", {"customer_id": cust.id, "amount": 40000, "method": "cash"}, format="json").status_code == 200
+    assert mgr.post(
+        "/api/v1/returns",
+        {"invoice_id": inv1.id, "note": "Good return", "lines": [{"item_id": item_id, "unit": "piece", "qty": 5, "condition": "good"}]},
+        format="json",
+    ).status_code == 200
+
+    # Balance and statement must both preserve the -10,000 credit (not clamp inv1.remaining to 0)
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == -10000
+    assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == -10000
+
+    # Add inv2 for 60,000 (30 pcs * 2,000) -> net balance must be +50,000
+    _create_delivered_invoice(phase6_setup, item_id=item_id, qty=30, unit_price=2000, suffix="OVRET2")
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 50000
+    assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == 50000
+
+
+@pytest.mark.django_db
+def test_advance_payment_auto_allocates_on_new_invoice_without_double_spending_refunds(phase6_setup):
+    mgr = _c("07706000001")
+    keeper = _c("07706000003")
+    wh = phase6_setup["wh"]
+    tier = phase6_setup["tier"]
+    cust = phase6_setup["cust"]
+    exp = (baghdad_today() + timedelta(days=90)).isoformat()
+
+    item_id = mgr.post(
+        "/api/v1/items",
+        {"name": "برغل", "name_en": "Bulgur", "category": "حبوب", "pieces_per_carton": 10, "prices": [{"tier_id": tier.id, "carton_price": 10000, "piece_price": 1000}]},
+        format="json",
+    ).json()["data"]["id"]
+    keeper.post(
+        "/api/v1/receipts",
+        {"warehouse_id": wh.id, "lines": [{"item_id": item_id, "unit": "piece", "qty": 600, "expiry_date": exp, "purchase_price": 600}]},
+        format="json",
+    )
+
+    # Advance deposit 450,000 -> -450,000 credit, then refund 50,000 -> -400,000 genuine remaining credit
+    pay = mgr.post("/api/v1/payments", {"customer_id": cust.id, "amount": 450000, "method": "cash"}, format="json").json()["data"]
+    assert pay["unallocated_amount"] == 450000
+    assert mgr.post("/api/v1/customers/{}/refunds".format(cust.id), {"amount": 50000, "method": "cash", "reason": "Partial refund"}, format="json").status_code == 200
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == -400000
+
+    # Deliver inv1 for 99,000 -> automatically paid in full from unrefunded credit
+    inv1 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=99, unit_price=1000, suffix="ADV1")
+    inv1_data = mgr.get(f"/api/v1/invoices/{inv1.id}").json()["data"]
+    assert inv1_data["paid"] == 99000 and inv1_data["remaining"] == 0 and inv1_data["status"] == "paid"
+    pay_after_1 = Payment.objects.get(id=pay["id"])
+    assert pay_after_1.unallocated_amount == 351000
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == -301000
+    assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == -301000
+
+    # Deliver inv2 for 400,000 -> consumes only remaining 301,000 unrefunded credit (never re-spending 50,000 refund)
+    inv2 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=400, unit_price=1000, suffix="ADV2")
+    inv2_data = mgr.get(f"/api/v1/invoices/{inv2.id}").json()["data"]
+    assert inv2_data["paid"] == 301000 and inv2_data["remaining"] == 99000 and inv2_data["status"] == "partial"
+    pay_after_2 = Payment.objects.get(id=pay["id"])
+    assert pay_after_2.unallocated_amount == 50000
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 99000
+    assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == 99000

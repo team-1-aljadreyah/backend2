@@ -62,6 +62,8 @@ def serialize_supply_order(order: SupplyOrder) -> dict[str, Any]:
         out["note"] = order.note
     if order.cancel_reason:
         out["cancel_reason"] = order.cancel_reason
+    if order.closed_short:
+        out["closed_short"] = order.closed_short
     return out
 
 

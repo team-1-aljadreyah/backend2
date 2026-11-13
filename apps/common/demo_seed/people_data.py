@@ -32,15 +32,13 @@ DEMO_PASSWORDS: dict[str, str] = {
 
 ACCOUNTANT_SPECS = [
     ("usr:acc:1", "07701000011", "زينب عبد الكريم المياحي", True, "prof_senior_acc", 1),
-    ("usr:acc:2", "07701000012", "حسين علي جواد الصافي", True, None, 2),
+    ("usr:acc:2", "07701000012", "حسين علي جواد الصافي", True, "prof_jr_acc", 2),
 ]
 
-KEEPER_NAMES = [
-    "مرتضى قاسم كاظم الفتلاوي",
-    "علي فاضل هادي الكربلائي",
-    "مصطفى رحيم نوري الياسري",
-    "أحمد جبار عبد الأمير العاني",
-    "حيدر صباح مهدي الحلي",
+KEEPER_SPECS = [
+    ("usr:wh:1", "07701000021", "مرتضى قاسم كاظم الفتلاوي", 0, "prof_wh_supervisor", True),
+    ("usr:wh:2", "07701000022", "علي فاضل هادي الكربلائي", 1, "prof_wh_keeper", True),
+    ("usr:wh:3", "07701000023", "مصطفى رحيم نوري الياسري", 0, "prof_wh_keeper", False),
 ]
 
 STAFF_NAMES = [
@@ -71,11 +69,11 @@ REP_SPECS: list[tuple[str, str, str, list[str], list[str], int | None, bool, str
 ]
 
 VEHICLE_SPECS = [
-    ("veh:1", "براد النهرين 1 — كربلاء", "Al-Nahrain Reefer 1 (Karbala)", "كربلاء 41208 أ", 4800),
-    ("veh:2", "تريلة بغداد اللوجستية 2", "Baghdad Trunk Van 2", "بغداد 88514 ب", 6500),
-    ("veh:3", "شاحنة النجف السريعة 3", "Najaf Express Truck 3", "النجف 23190 ج", 3600),
-    ("veh:4", "فان بابل والحلة 4", "Hillah Distribution Van 4", "بابل 19402 هـ", 3000),
-    ("veh:5", "براد المحافظات المساند 5", "Regional Backup Van 5", "كربلاء 55091 د", 4200),
+    ("veh:1", "براد النهرين 1 — مخزن الصناعة", "Al-Nahrain Reefer 1 (Al-Sina'a)", "كربلاء 41208 أ", 4800),
+    ("veh:2", "تريلة النهرين 2 — مخزن الصناعة", "Al-Nahrain Trunk Van 2 (Al-Sina'a)", "كربلاء 88514 ب", 6500),
+    ("veh:3", "شاحنة النهرين 3 — مخزن الحر", "Al-Nahrain Express Truck 3 (Al-Hur)", "كربلاء 23190 ج", 3600),
+    ("veh:4", "فان التوزيع 4 — مخزن الحر", "Distribution Van 4 (Al-Hur)", "كربلاء 19402 هـ", 3000),
+    ("veh:5", "براد الخط السريع 5 — طوارئ", "Backup Reefer 5", "كربلاء 55091 د", 4200),
 ]
 
 # 52 Synthetic Iraqi Shops across Karbala, Najaf, Baghdad, Hillah/Babil, Diwaniyah
@@ -225,7 +223,7 @@ def seed_people_and_network(
     tiers: list[PriceTier],
     items: list[Item],
 ) -> dict[str, Any]:
-    """Seed all 70 synthetic users, 52 Iraqi shops/customers, SpecialPrices, Vehicles, and RepLocations."""
+    """Seed all 69 synthetic users, 52 Iraqi shops/customers, SpecialPrices, Vehicles, and RepLocations across the 2 warehouses."""
     now_dt = baghdad_now()
     all_users: list[User] = [manager]
     accountants: list[User] = []
@@ -251,31 +249,33 @@ def seed_people_and_network(
         accountants.append(u)
         all_users.append(u)
 
-    # Warehouse Keepers (5 — one active keeper per warehouse)
-    for idx, wh in enumerate(warehouses, start=1):
+    # Warehouse Keepers (1 active keeper per warehouse: Al-Sina'a + Al-Hur, plus 1 inactive former keeper)
+    for idx, (sk, phone, name, wh_idx, prof_id, is_act) in enumerate(KEEPER_SPECS, start=1):
+        wh = warehouses[wh_idx]
         u = _create_or_get_user(
-            seed_key=f"usr:wh:{idx}",
+            seed_key=sk,
             actor_manager=manager,
-            phone=f"0770100002{idx}",
+            phone=phone,
             password=DEMO_PASSWORDS["warehouse"],
-            name=KEEPER_NAMES[idx - 1],
+            name=name,
             role=Role.WAREHOUSE,
             warehouse_id=wh.id,
-            active=True,
-            profile_id="prof_wh_keeper",
-            last_login_days_ago=idx % 3,
+            active=is_act,
+            profile_id=prof_id,
+            last_login_days_ago=(idx % 3) if is_act else None,
         )
         keepers.append(u)
         all_users.append(u)
 
-    # Set a realistic temporary warehouse cover (Karbala Cold keeper also covers Karbala Main briefly if empty)
+    # Temporary cover: Al-Hur keeper covers Al-Sina'a briefly
     if not warehouses[0].cover and len(keepers) >= 2:
         set_warehouse_cover(actor=manager, warehouse_id=warehouses[0].id, user_id=keepers[1].id, hours=12)
 
-    # Warehouse Staff (10 — two per warehouse; staff #10 inactive/disabled)
+    # Warehouse Staff (10 — 5 in Al-Sina'a + 5 in Al-Hur; #9 read-only counter, #10 disabled)
     for idx in range(1, 11):
-        wh = warehouses[(idx - 1) // 2]
+        wh = warehouses[0] if idx <= 5 else warehouses[1]
         is_active = idx != 10
+        prof_id = "prof_wh_counter_readonly" if idx == 9 else ("prof_wh_picker" if (idx % 2 == 1 and is_active) else None)
         u = _create_or_get_user(
             seed_key=f"usr:staff:{idx}",
             actor_manager=manager,
@@ -285,7 +285,7 @@ def seed_people_and_network(
             role=Role.STAFF,
             warehouse_id=wh.id,
             active=is_active,
-            profile_id="prof_wh_picker" if (idx % 2 == 1 and is_active) else None,
+            profile_id=prof_id,
             last_login_days_ago=None if idx in (9, 10) else (idx % 5),
         )
         staff_users.append(u)
@@ -542,9 +542,11 @@ def _write_demo_accounts_doc(
     for a in accountants:
         lines.append(f"| `accountant` | {a.name} | `{a.phone}` | `{DEMO_PASSWORDS['accountant']}` | active | profile=`{a.profile_id or 'default'}` |")
     for k in keepers:
-        lines.append(f"| `warehouse` | {k.name} | `{k.phone}` | `{DEMO_PASSWORDS['warehouse']}` | active | warehouse_id=`{k.warehouse_id}` |")
-    for st in staff_users[:3]:
-        lines.append(f"| `staff` | {st.name} | `{st.phone}` | `{DEMO_PASSWORDS['staff']}` | {'active' if st.active else 'disabled'} | warehouse_id=`{st.warehouse_id}` |")
+        wh_label = k.warehouse.name if k.warehouse_id and hasattr(k, "warehouse") and k.warehouse else f"wh#{k.warehouse_id}"
+        lines.append(f"| `warehouse` | {k.name} | `{k.phone}` | `{DEMO_PASSWORDS['warehouse']}` | {'active' if k.active else 'disabled'} | {wh_label} (`{k.profile_id or 'default'}`) |")
+    for st in [staff_users[0], staff_users[5], staff_users[8]]:
+        wh_label = st.warehouse.name if st.warehouse_id and hasattr(st, "warehouse") and st.warehouse else f"wh#{st.warehouse_id}"
+        lines.append(f"| `staff` | {st.name} | `{st.phone}` | `{DEMO_PASSWORDS['staff']}` | {'active' if st.active else 'disabled'} | {wh_label} (`{st.profile_id or 'default'}`) |")
     for sr in sales_reps:
         lines.append(f"| `rep (sales)` | {sr.name} | `{sr.phone}` | `{DEMO_PASSWORDS['rep']}` | active | target=`{sr.sales_target or 0:,}` IQD |")
     for dr in delivery_reps:

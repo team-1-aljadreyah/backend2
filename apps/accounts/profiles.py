@@ -102,6 +102,57 @@ _DENIED_PAGE_API_MAP: tuple[tuple[str, tuple[str, ...]], ...] = (
 )
 
 
+def _normalize_profile(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    item = copy.deepcopy(raw)
+    item.pop("can", None)
+    item["denied"] = list(item.get("denied")) if isinstance(item.get("denied"), list) else []
+    item["limits"] = dict(item.get("limits")) if isinstance(item.get("limits"), dict) else {}
+    if "deny_actions" in item and not isinstance(item["deny_actions"], list):
+        item.pop("deny_actions", None)
+    return item
+
+
+def _normalize_app(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    item = copy.deepcopy(raw)
+    item["color"] = str(item.get("color") or "#e1692b")
+    item["icon"] = str(item.get("icon") or "grid")
+    item["pages"] = list(item.get("pages")) if isinstance(item.get("pages"), list) else []
+    item["roles"] = list(item.get("roles")) if isinstance(item.get("roles"), list) else []
+    item["profiles"] = list(item.get("profiles")) if isinstance(item.get("profiles"), list) else []
+    item["active"] = bool(item.get("active", True))
+    return item
+
+
+def _normalize_field(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    item = copy.deepcopy(raw)
+    item["view_roles"] = list(item.get("view_roles")) if isinstance(item.get("view_roles"), list) else []
+    item["edit_roles"] = list(item.get("edit_roles")) if isinstance(item.get("edit_roles"), list) else []
+    item["active"] = bool(item.get("active", True))
+    item["required"] = bool(item.get("required", False))
+    if "in_table" in item:
+        item["in_table"] = bool(item["in_table"])
+    if item.get("type") == "list":
+        item["options"] = list(item.get("options")) if isinstance(item.get("options"), list) else []
+    return item
+
+
+def _normalize_rule(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    item = copy.deepcopy(raw)
+    item["active"] = bool(item.get("active", True))
+    item["conditions"] = list(item.get("conditions")) if isinstance(item.get("conditions"), list) else []
+    item["notify"] = list(item.get("notify")) if isinstance(item.get("notify"), list) else []
+    item["approval"] = bool(item.get("approval", False))
+    return item
+
+
 def serialize_site(cfg: SiteConfig, *, request: Any = None) -> dict[str, Any]:
     brand = copy.deepcopy(DEFAULT_SITE["brand"])
     if isinstance(cfg.brand_extra, dict):
@@ -127,6 +178,11 @@ def serialize_site(cfg: SiteConfig, *, request: Any = None) -> dict[str, Any]:
     if isinstance(cfg.dashboard, dict):
         dashboard.update(cfg.dashboard)
 
+    profiles = [p for raw in (cfg.profiles or []) if (p := _normalize_profile(raw)) is not None] if isinstance(cfg.profiles, list) else []
+    apps = [a for raw in (cfg.apps or []) if (a := _normalize_app(raw)) is not None] if isinstance(cfg.apps, list) else []
+    fields = [f for raw in (cfg.fields or []) if (f := _normalize_field(raw)) is not None] if isinstance(cfg.fields, list) else []
+    rules = [r for raw in (cfg.rules or []) if (r := _normalize_rule(raw)) is not None] if isinstance(cfg.rules, list) else []
+
     return {
         "brand": brand,
         "nav": nav,
@@ -135,10 +191,10 @@ def serialize_site(cfg: SiteConfig, *, request: Any = None) -> dict[str, Any]:
         "texts": dict(cfg.texts) if isinstance(cfg.texts, dict) else {},
         "layouts": dict(cfg.layouts) if isinstance(cfg.layouts, dict) else {},
         "look": dict(cfg.look) if isinstance(cfg.look, dict) else {},
-        "profiles": list(cfg.profiles) if isinstance(cfg.profiles, list) else [],
-        "apps": list(cfg.apps) if isinstance(cfg.apps, list) else [],
-        "fields": list(cfg.fields) if isinstance(cfg.fields, list) else [],
-        "rules": list(cfg.rules) if isinstance(cfg.rules, list) else [],
+        "profiles": profiles,
+        "apps": apps,
+        "fields": fields,
+        "rules": rules,
         "banners": list(cfg.banners) if isinstance(cfg.banners, list) else [],
     }
 
@@ -315,6 +371,10 @@ def save_site_config(*, actor: User, data: dict[str, Any], request: Any = None) 
         "rules": list(data.get("rules") or []),
     }
     _validate_advanced_site(next_site)
+    next_site["profiles"] = [p for raw in next_site["profiles"] if (p := _normalize_profile(raw)) is not None]
+    next_site["apps"] = [a for raw in next_site["apps"] if (a := _normalize_app(raw)) is not None]
+    next_site["fields"] = [f for raw in next_site["fields"] if (f := _normalize_field(raw)) is not None]
+    next_site["rules"] = [r for raw in next_site["rules"] if (r := _normalize_rule(raw)) is not None]
 
     # Clear assigned profile_id on users if the profile was removed or its role changed.
     valid_profiles = {p["id"]: p for p in next_site["profiles"]}
@@ -459,10 +519,16 @@ def enforce_request_profile_access(user: Any, request: Any) -> None:
             )
 
     denied_pages = prof.get("denied") or []
+    # Reference endpoints required by AppShell on every page load must remain readable on GET.
+    _APP_SHELL_READ_PATHS = ("/api/v1/items", "/api/v1/categories", "/api/v1/price-tiers")
     if denied_pages:
         for page_prefix, api_prefixes in _DENIED_PAGE_API_MAP:
             if any(p == page_prefix or p.startswith(page_prefix + "/") for p in denied_pages):
                 if any(path == ap or path.startswith(ap + "/") for ap in api_prefixes):
+                    if method in ("GET", "HEAD", "OPTIONS") and any(
+                        path == rp or path.startswith(rp + "/") for rp in _APP_SHELL_READ_PATHS
+                    ):
+                        continue
                     raise ApiException(
                         code=ErrorCode.FORBIDDEN,
                         message=("هذه الصفحة محجوبة عن ملف صلاحياتك", "Your profile does not allow access to this section"),

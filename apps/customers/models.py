@@ -37,6 +37,7 @@ class Customer(models.Model):
         related_name="assigned_customers",
     )
     debt_limit = models.BigIntegerField(default=0)
+    visit_days = models.JSONField(default=list, blank=True)
     active = models.BooleanField(default=True, db_index=True)
     walk_in = models.BooleanField(default=False, db_index=True)
     status = models.CharField(
@@ -128,4 +129,51 @@ class ShopList(models.Model):
     class Meta:
         db_table = "customers_shop_list"
         ordering = ["-updated_at", "-id"]
+
+
+class Visit(models.Model):
+    """Daily marketing rep shop visit record («خط السير»)."""
+
+    rep = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="visits",
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="visits",
+    )
+    day = models.DateField(db_index=True)
+    at = models.DateTimeField()
+    outcome = models.CharField(
+        max_length=16,
+        choices=[
+            ("order", "Order"),
+            ("payment", "Payment"),
+            ("no_order", "No Order"),
+            ("closed", "Closed"),
+        ],
+    )
+    reason = models.CharField(max_length=20, blank=True, default="")
+    note = models.TextField(blank=True, default="")
+    lat = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    lng = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    distance_m = models.IntegerField(null=True, blank=True)
+    far = models.BooleanField(null=True, blank=True)
+    planned = models.BooleanField(default=False)
+    order = models.ForeignKey(
+        "orders.Order",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="visits",
+    )
+
+    class Meta:
+        db_table = "customers_visit"
+        ordering = ["-at", "-id"]
+        constraints = [
+            models.UniqueConstraint(fields=["rep", "customer", "day"], name="uniq_visit_rep_customer_day"),
+        ]
 

@@ -54,7 +54,7 @@ def test_seed_demo_full_idempotent_validation_and_safe_clear(monkeypatch, tmp_pa
         res1 = json.loads(out1.getvalue())
         assert res1["profile"] == "full"
         assert res1["already_seeded"] is False
-        assert Warehouse.objects.filter(active=True).count() >= 5
+        assert Warehouse.objects.filter(active=True).count() == 2
         assert Item.objects.count() >= 90
         assert User.objects.filter(deleted=False).count() >= 65
         assert Customer.objects.count() >= 50

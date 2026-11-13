@@ -11,6 +11,14 @@ class QtyOfferSerializer(serializers.Serializer):
     until = serializers.DateField(required=False, allow_null=True)
 
 
+class ItemClearanceSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    percent = serializers.IntegerField()
+    warehouse_id = serializers.IntegerField()
+    until = serializers.CharField()
+    left = serializers.IntegerField()
+
+
 class ItemPriceSerializer(serializers.Serializer):
     tier_id = serializers.IntegerField()
     carton_price = serializers.IntegerField(min_value=0)
@@ -57,6 +65,7 @@ class ItemSerializer(serializers.Serializer):
     prices = ItemPriceSerializer(many=True)
     active = serializers.BooleanField()
     deleted = serializers.BooleanField(required=False)
+    clearance = ItemClearanceSerializer(required=False, allow_null=True)
     stock = ItemStockSerializer()
     nearest_expiry = serializers.CharField(required=False, allow_null=True)
     avg_cost = serializers.IntegerField(required=False)

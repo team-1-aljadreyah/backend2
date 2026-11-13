@@ -29,6 +29,9 @@ def serialize_transfer(t: Transfer) -> dict[str, Any]:
         "to_warehouse_id": t.to_warehouse_id,
         "status": t.status,
         "reason": t.reason,
+        "note": t.note or None,
+        "diff_reason": t.diff_reason or None,
+        "client_ref": t.client_ref or None,
         "created_at": t.created_at.isoformat(),
         "received_at": t.received_at.isoformat() if t.received_at else None,
         "reviewed_at": t.reviewed_at.isoformat() if t.reviewed_at else None,
@@ -119,6 +122,7 @@ def create_transfer(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         to_warehouse=to_wh,
         status=TransferStatus.SENT,
         reason=str(data.get("reason") or "").strip(),
+        note=str(data.get("note") or "").strip(),
         client_ref=client_ref,
         created_by=actor,
     )
@@ -260,10 +264,12 @@ def receive_transfer(*, actor: User, transfer_id: int, data: dict[str, Any]) -> 
 
     transfer.status = TransferStatus.DISCREPANCY if has_discrepancy else TransferStatus.RECEIVED
     if reason:
-        transfer.reason = reason
+        transfer.diff_reason = reason
+        if not transfer.reason:
+            transfer.reason = reason
     transfer.received_by = actor
     transfer.received_at = datetime.now(tz=UTC)
-    transfer.save(update_fields=["status", "reason", "received_by", "received_at"])
+    transfer.save(update_fields=["status", "reason", "diff_reason", "received_by", "received_at"])
 
     if has_discrepancy:
         notify_role(
@@ -285,6 +291,9 @@ def receive_transfer(*, actor: User, transfer_id: int, data: dict[str, Any]) -> 
         summary=f"Received transfer {transfer.number} ({transfer.status})",
         after={"status": transfer.status, "reason": reason},
     )
+    from apps.catalog.features_services import trigger_back_in_stock_alerts
+
+    trigger_back_in_stock_alerts([ln.item_id for ln, qty in line_qtys if qty > 0])
     return serialize_transfer(Transfer.objects.select_related("created_by", "received_by", "reviewed_by").prefetch_related("lines").get(id=transfer.id))
 
 

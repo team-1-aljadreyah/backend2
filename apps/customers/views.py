@@ -135,7 +135,9 @@ class MyShopSwitchView(APIView):
     def post(self, request):
         cid = request.data.get("customer_id") if isinstance(request.data, dict) else None
         sid = getattr(request.user, "_session_id", None)
-        return ok_response(switch_active_shop(actor=request.user, customer_id=int(cid or 0), session_id=sid))
+        return ok_response(
+            switch_active_shop(actor=request.user, customer_id=int(cid or 0), session_id=sid, request=request)
+        )
 
 
 class ShopListsView(APIView):

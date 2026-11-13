@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from django.apps import apps
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from rest_framework import status as http_status
 
 from apps.accounts.models import Role, User
@@ -54,6 +54,7 @@ def serialize_payment(p: Payment) -> dict[str, Any]:
     return {
         "id": p.id,
         "number": p.number,
+        "client_ref": p.client_ref or None,
         "date": p.created_at.isoformat(),
         "customer_id": p.customer_id,
         "amount": p.amount,
@@ -256,6 +257,67 @@ def _allocate_payment_fifo(
     )
 
 
+def apply_available_credit_to_open_invoices(*, customer_id: int) -> None:
+    """
+    Allocate unrefunded advance payment credits FIFO to open customer invoices.
+    Caller must already hold an @transaction.atomic block.
+    """
+    invs = list(
+        Invoice.objects.select_for_update()
+        .filter(customer_id=customer_id)
+        .order_by("delivered_at", "id")
+    )
+    open_invs = [inv for inv in invs if inv.remaining > 0]
+    if not open_invs:
+        return
+
+    pays = list(
+        Payment.objects.select_for_update()
+        .filter(
+            customer_id=customer_id,
+            reversed=False,
+            reversal_of__isnull=True,
+            unallocated_amount__gt=0,
+        )
+        .order_by("created_at", "id")
+    )
+    unalloc_total = sum(p.unallocated_amount for p in pays)
+    if unalloc_total <= 0:
+        return
+
+    total_refunds = int(
+        Refund.objects.filter(customer_id=customer_id).aggregate(s=Sum("amount"))["s"] or 0
+    )
+    over_credit_from_invoices = sum(max(0, -inv.remaining) for inv in invs)
+    # Subtract refunds not already backed by over-returned/credited invoices so refunded cash is never reused.
+    refunds_consuming_unalloc = max(0, total_refunds - over_credit_from_invoices)
+    pool = max(0, unalloc_total - refunds_consuming_unalloc)
+    if pool <= 0:
+        return
+
+    for pay in pays:
+        if pool <= 0:
+            break
+        avail = min(pay.unallocated_amount, pool)
+        used = 0
+        for inv in open_invs:
+            if avail <= 0:
+                break
+            rem = inv.remaining
+            if rem <= 0:
+                continue
+            take = min(rem, avail)
+            inv.paid += take
+            inv.save(update_fields=["paid"])
+            PaymentAllocation.objects.create(payment=pay, invoice=inv, amount=take)
+            avail -= take
+            used += take
+        if used > 0:
+            pay.unallocated_amount -= used
+            pay.save(update_fields=["unallocated_amount"])
+            pool -= used
+
+
 @transaction.atomic
 def create_payment(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     if actor.role not in (Role.MANAGER, Role.ACCOUNTANT, Role.REP):
@@ -312,6 +374,10 @@ def create_payment(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         by=actor.name,
         customer=customer.name,
     )
+    if actor.role == Role.REP:
+        from apps.customers.visits_services import record_auto_visit
+
+        record_auto_visit(actor=actor, customer=customer, outcome="payment")
     return serialize_payment(pay)
 
 
@@ -378,6 +444,8 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
     orig.reversed_at = now
     orig.reason = clean_reason
     orig.save(update_fields=["reversed", "reversed_by", "reversed_at", "reason"])
+
+    apply_available_credit_to_open_invoices(customer_id=orig.customer_id)
 
     notify_role(
         role=Role.MANAGER,

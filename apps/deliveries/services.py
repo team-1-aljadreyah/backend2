@@ -352,9 +352,11 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
 
             order.status = OrderStatus.CONFIRMED
             order.reserved_until = None
+            if remaining_specs:
+                order.short_lines = remaining_specs
             if rest_order:
                 order.rest_order = rest_order
-            order.save(update_fields=["status", "reserved_until", "rest_order"])
+            order.save(update_fields=["status", "reserved_until", "short_lines", "rest_order"])
             sync_shipments(order)
 
             dlv.status = DeliveryStatus.DELIVERED

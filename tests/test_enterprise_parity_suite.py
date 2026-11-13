@@ -618,3 +618,83 @@ async def test_websocket_jwt_token_query_auth_matches_frontend(erp_seed):
     bad_comm = WebsocketCommunicator(application, "/ws?token=invalid.jwt.value")
     bad_ok, close_code = await bad_comm.connect()
     assert bad_ok is False and close_code == 4001
+
+
+@pytest.mark.django_db
+def test_delivery_rep_profile_denied_items_allows_app_shell_reads(erp_seed):
+    mgr_cli, _, _ = _auth_client("07750000001")
+    rep2 = erp_seed["rep2"]
+    rep2.rep_kinds = ["delivery"]
+    rep2.save(update_fields=["rep_kinds"])
+
+    r_site = mgr_cli.patch(
+        "/api/v1/settings/site",
+        {
+            "profiles": [
+                {
+                    "id": "prof_dlv_rep",
+                    "name": "سائق توصيل",
+                    "role": "rep",
+                    "denied": ["/items", "/stocktakes", "/supply", "/reports"],
+                    "limits": {},
+                }
+            ]
+        },
+        format="json",
+    )
+    assert r_site.status_code == 200, r_site.content
+    assert mgr_cli.post(f"/api/v1/users/{rep2.id}/profile", {"profile_id": "prof_dlv_rep"}, format="json").status_code == 200
+
+    rep_cli, _, _ = _auth_client(rep2.phone)
+    # AppShell reference reads required on /deliveries/ must succeed even when /items is in denied
+    assert rep_cli.get("/api/v1/items").status_code == 200
+    assert rep_cli.get("/api/v1/orders").status_code == 200
+    assert rep_cli.get("/api/v1/lookups").status_code == 200
+    # Write operations on /items and unrelated denied endpoints remain blocked
+    assert rep_cli.post("/api/v1/items", {"name": "forbidden"}, format="json").status_code == 403
+    assert rep_cli.get("/api/v1/reports/sales").status_code == 403
+
+
+@pytest.mark.django_db
+def test_site_serializer_normalizes_legacy_profiles_apps_fields_and_rules(erp_seed):
+    from apps.accounts.models import SiteConfig
+
+    cfg = SiteConfig.get_solo()
+    cfg.profiles = [
+        {"id": "p_legacy", "name": "ملف قديم", "role": "staff", "denied": ["/reports"], "can": {"orders": True}}
+    ]
+    cfg.apps = [{"id": "a_legacy", "name": "تطبيق قديم", "color": "#1d4ed8", "pages": ["/orders"]}]
+    cfg.fields = [{"id": "f_legacy", "object": "customer", "label": "حقل قديم", "type": "list"}]
+    cfg.rules = [{"id": "r_legacy", "name": "قاعدة قديمة", "trigger": "order_created"}]
+    cfg.save()
+
+    mgr_cli, _, _ = _auth_client("07750000001")
+    r_site = mgr_cli.get("/api/v1/site")
+    assert r_site.status_code == 200
+    data = r_site.json()["data"]
+
+    prof = data["profiles"][0]
+    assert prof["limits"] == {}
+    assert prof["denied"] == ["/reports"]
+    assert "can" not in prof
+
+    app = data["apps"][0]
+    assert app["roles"] == []
+    assert app["profiles"] == []
+    assert app["icon"] == "grid"
+    assert app["active"] is True
+
+    fld = data["fields"][0]
+    assert fld["view_roles"] == []
+    assert fld["edit_roles"] == []
+    assert fld["active"] is True
+    assert fld["required"] is False
+    assert fld["options"] == []
+
+    rule = data["rules"][0]
+    assert rule["active"] is True
+    assert rule["conditions"] == []
+    assert rule["notify"] == []
+    assert rule["approval"] is False
+
+

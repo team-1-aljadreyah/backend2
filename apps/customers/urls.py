@@ -11,12 +11,20 @@ from .views import (
     ShopListDetailView,
     ShopListsView,
 )
+from .visits_views import (
+    CustomerVisitDaysView,
+    VisitListCreateView,
+    VisitsReportView,
+)
 
 urlpatterns = [
     path("customers", CustomerListCreateView.as_view(), name="customers-list-create"),
     path("customers/<int:customer_id>", CustomerDetailUpdateView.as_view(), name="customer-detail"),
     path("customers/<int:customer_id>/reject", CustomerRejectView.as_view(), name="customer-reject"),
     path("customers/<int:customer_id>/prices", CustomerSpecialPricesView.as_view(), name="customer-special-prices"),
+    path("customers/<int:customer_id>/visit-days", CustomerVisitDaysView.as_view(), name="customer-visit-days"),
+    path("visits", VisitListCreateView.as_view(), name="visits-list-create"),
+    path("reports/visits", VisitsReportView.as_view(), name="reports-visits"),
     path("me/shops", MyShopsListCreateView.as_view(), name="me-shops"),
     path("me/shop", MyShopSwitchView.as_view(), name="me-shop-switch"),
     path("shop-lists", ShopListsView.as_view(), name="shop-lists"),

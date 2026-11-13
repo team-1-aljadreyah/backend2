@@ -146,3 +146,44 @@ class WebhookEvent(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["provider", "event_id"], name="uniq_payment_webhook_provider_event"),
         ]
+
+
+class CashHandover(models.Model):
+    """Rep cash custody handover to accountant («العهدة»)."""
+
+    number = models.CharField(max_length=40, unique=True, db_index=True)
+    rep = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="cash_handovers",
+    )
+    declared = models.BigIntegerField(validators=[MinValueValidator(1)])
+    received = models.BigIntegerField(null=True, blank=True)
+    short = models.BigIntegerField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("confirmed", "Confirmed"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="pending",
+        db_index=True,
+    )
+    note = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="confirmed_handovers",
+    )
+
+    class Meta:
+        db_table = "payments_cash_handover"
+        ordering = ["-id"]
+        constraints = [
+            models.CheckConstraint(condition=Q(declared__gt=0), name="cash_handover_declared_gt_zero"),
+        ]

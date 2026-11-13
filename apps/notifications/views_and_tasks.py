@@ -71,7 +71,7 @@ def _visible_notifications_qs(actor: User):
 
 
 def serialize_notification(n: Notification, *, is_read: bool) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "id": n.id,
         "type": n.kind,
         "title": n.title_ar,
@@ -81,7 +81,11 @@ def serialize_notification(n: Notification, *, is_read: bool) -> dict[str, Any]:
         "link": _derive_link(n.ref_type, n.ref_id),
         "created_at": n.created_at.isoformat(),
         "read": is_read,
+        "roles": [n.target_role] if n.target_role else [],
     }
+    if n.user_id is not None:
+        out["user_id"] = n.user_id
+    return out
 
 
 def list_notifications_for_actor(*, actor: User) -> list[dict[str, Any]]:

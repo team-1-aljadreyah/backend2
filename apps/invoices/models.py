@@ -47,6 +47,13 @@ class Invoice(models.Model):
     credited = models.BigIntegerField(default=0)
     usd_rate = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("1500.00"))
     counter = models.JSONField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_invoices",
+    )
 
     delivered_at = models.DateTimeField(default=timezone.now, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -89,6 +96,7 @@ class InvoiceLine(models.Model):
     returned_pieces = models.PositiveIntegerField(default=0)
     unit_price = models.BigIntegerField()
     offer_off = models.BigIntegerField(default=0)
+    clearance = models.BooleanField(default=False)
     total = models.BigIntegerField()
     cost = models.BigIntegerField(default=0)
 

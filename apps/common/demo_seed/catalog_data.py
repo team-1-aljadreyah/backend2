@@ -38,63 +38,34 @@ CATEGORIES: list[tuple[str, str, int]] = [
 
 WAREHOUSES: list[dict[str, Any]] = [
     {
-        "key": "wh:kbl_main",
-        "code": "WH-KBL-MAIN",
-        "name": "المستودع المركزي - كربلاء",
-        "name_en": "Karbala Central Hub",
-        "address": "كربلاء المقدسة — الحي الصناعي، قرب مجسر العباس (ساعات العمل 07:30-17:30 | 32.6085, 44.0312)",
+        "key": "wh:sinaa",
+        "code": "WH-SINA",
+        "name": "المخزن الرئيسي - حي الصناعة",
+        "name_en": "Main Warehouse - Al-Sina'a",
+        "address": "كربلاء المقدسة — الحي الصناعي، الشارع الرئيسي (32.6085, 44.0312)",
+        "capacity": 6000,
+        "lat": "32.608500",
+        "lng": "44.031200",
         "zones": [
             {"code": "A1", "name": "رفوف الحبوب والأرز"},
             {"code": "B1", "name": "ممر الزيوت والمعلبات"},
             {"code": "C1", "name": "قسم المنظفات والعناية"},
-            {"code": "D1", "name": "المشروبات والحلويات"},
+            {"code": "D1", "name": "المشروبات والشاي والبهارات"},
         ],
     },
     {
-        "key": "wh:kbl_cold",
-        "code": "WH-KBL-COLD",
-        "name": "مستودع النهرين المبرد - كربلاء",
-        "name_en": "Karbala Cold Storage",
-        "address": "كربلاء المقدسة — طريق الحر السريع، مجمع النهرين المبرد (32.6340, 43.9985)",
+        "key": "wh:hur",
+        "code": "WH-HUR",
+        "name": "المخزن الثاني - الحر",
+        "name_en": "Second Warehouse - Al-Hur",
+        "address": "كربلاء المقدسة — طريق الحر السريع، منطقة الحر (32.6340, 43.9985)",
+        "capacity": 4000,
+        "lat": "32.634000",
+        "lng": "43.998500",
         "zones": [
-            {"code": "C1", "name": "غرفة التبريد (ألبان وأجبان)"},
-            {"code": "C2", "name": "منطقة المشروبات المبردة"},
-            {"code": "S1", "name": "الفرز والتحضير السريع"},
-        ],
-    },
-    {
-        "key": "wh:njf_depot",
-        "code": "WH-NJF-01",
-        "name": "فرع ومستودع النجف الأشرف",
-        "name_en": "Najaf Regional Depot",
-        "address": "النجف الأشرف — حي الحرفيين، الشارع الرئيسي (32.0258, 44.3462)",
-        "zones": [
-            {"code": "N1", "name": "الجناح الغذائي الشمالي"},
-            {"code": "N2", "name": "قسم المنظفات والبهارات"},
-            {"code": "STG", "name": "رصيف التحميل"},
-        ],
-    },
-    {
-        "key": "wh:bgd_karkh",
-        "code": "WH-BGD-01",
-        "name": "فرع ومستودع بغداد / الكرخ",
-        "name_en": "Baghdad Karkh Hub",
-        "address": "بغداد — الكرخ، المنطقة الصناعية / عويريج اللوجستي (33.2491, 44.3518)",
-        "zones": [
-            {"code": "K1", "name": "خط المواد الأساسية السريع"},
-            {"code": "K2", "name": "قسم المشروبات والضيافة"},
-            {"code": "K3", "name": "قسم التنظيف التجاري"},
-        ],
-    },
-    {
-        "key": "wh:bab_hillah",
-        "code": "WH-BAB-01",
-        "name": "فرع ومستودع الحلة / بابل",
-        "name_en": "Hillah Babil Depot",
-        "address": "بابل / الحلة — حي النسيج الصناعي، قرب تقاطع الجامعة (32.4735, 44.4321)",
-        "zones": [
-            {"code": "H1", "name": "مخزون بابل العام"},
-            {"code": "H2", "name": "التسليم الفوري"},
+            {"code": "H1", "name": "جناح الألبان والمبردات"},
+            {"code": "H2", "name": "قسم المشروبات والعصائر"},
+            {"code": "H3", "name": "المبيعات المباشرة والتحميل السريع"},
         ],
     },
 ]
@@ -223,12 +194,11 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
         "brand": {
             "name": "النهرين",
             "name_en": "Al-Nahrain",
-            "tagline": "توزيع المواد الغذائية والاستهلاكية بالجملة — العراق",
-            "tagline_en": "Wholesale Food & FMCG Distribution — Iraq",
-            "company": "شركة النهرين الذهبية للتجارة العامة والتوزيع المحدودة",
-            "company_en": "Al-Nahrain Golden Trading & Wholesale Distribution Co.",
+            "tagline": "للمواد الغذائية بالجملة",
+            "tagline_en": "Wholesale foods",
+            "company": "شركة النهرين للمواد الغذائية",
+            "company_en": "Al-Nahrain Foods Co.",
             "phone": "07701000000",
-            **({"logo": logo_data_url} if logo_data_url else {}),
         },
         "nav": {
             "order": [],
@@ -250,32 +220,74 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
             "tax_notice": "جميع الأسعار بالدينار العراقي (IQD)",
         },
         "layouts": {},
-        "look": {
-            "action": "#0f766e",
-        },
+        "look": {},
         "apps": [
             {
                 "id": "app_wh_ops",
-                "name": "عمليات المستودعات",
-                "name_en": "Warehouse Ops",
+                "name": "عمليات المخزن الرئيسي والحر",
+                "name_en": "Warehouse Operations",
+                "description": "إدارة المخزون والاستلام والتحويلات والجرد والبيع المباشر",
                 "color": "#0f766e",
-                "pages": ["/inventory", "/receipts", "/transfers", "/stocktakes", "/deliveries"],
+                "icon": "boxes",
+                "pages": ["/inventory", "/receipts", "/transfers", "/stocktakes", "/supply", "/deliveries"],
+                "roles": ["warehouse", "staff"],
+                "profiles": ["prof_wh_keeper", "prof_wh_supervisor", "prof_wh_picker", "prof_wh_counter_readonly"],
+                "active": True,
             },
             {
                 "id": "app_fin_desk",
-                "name": "مكتب المحاسبة والتحصيل",
-                "name_en": "Finance & Collections",
+                "name": "مكتب المحاسبة والعهدة والتحصيل",
+                "name_en": "Finance & Custody",
+                "description": "الفواتير والتسديدات وعهدة المندوبين والمصروفات والمرتجعات والعمولات",
                 "color": "#1d4ed8",
-                "pages": ["/invoices", "/payments", "/expenses", "/returns", "/commissions", "/reports"],
+                "icon": "wallet",
+                "pages": ["/invoices", "/payments", "/custody", "/expenses", "/returns", "/commissions", "/reports"],
+                "roles": ["accountant"],
+                "profiles": ["prof_senior_acc", "prof_jr_acc"],
+                "active": True,
+            },
+            {
+                "id": "app_sales_field",
+                "name": "المبيعات الميدانية والزيارات",
+                "name_en": "Field Sales & Visits",
+                "description": "إنشاء الطلبات وزيارات الأسواق وتنبيهات إعادة الطلب والأسعار",
+                "color": "#047857",
+                "icon": "briefcase",
+                "pages": ["/orders", "/visits", "/customers", "/items", "/payments", "/custody"],
+                "roles": ["rep"],
+                "profiles": ["prof_sales_rep"],
+                "active": True,
+            },
+            {
+                "id": "app_dlv_ops",
+                "name": "أسطول التوصيل والتسليم",
+                "name_en": "Fleet Deliveries",
+                "description": "متابعة طلبات التوصيل من الصناعة والحر والتحصيل وتوثيق الاستلام",
+                "color": "#b45309",
+                "icon": "truck",
+                "pages": ["/deliveries", "/payments", "/custody", "/visits"],
+                "roles": ["rep"],
+                "profiles": ["prof_dlv_rep"],
+                "active": True,
             },
         ],
         "profiles": [
             {
                 "id": "prof_wh_keeper",
-                "name": "أمين مستودع قياسي",
+                "name": "أمين مخزن قياسي",
                 "name_en": "Standard Warehouse Keeper",
                 "role": "warehouse",
                 "denied": ["/reports", "/expenses", "/payments"],
+                "limits": {},
+                "default_app": "app_wh_ops",
+            },
+            {
+                "id": "prof_wh_supervisor",
+                "name": "مشرف مخزن رئيسي (الصناعة)",
+                "name_en": "Main Warehouse Supervisor",
+                "role": "warehouse",
+                "denied": ["/payments", "/commissions"],
+                "limits": {},
                 "default_app": "app_wh_ops",
             },
             {
@@ -283,7 +295,18 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "name": "موظف تجهيز وتحميل",
                 "name_en": "Picker & Loader",
                 "role": "staff",
-                "denied": ["/invoices", "/payments", "/expenses", "/reports"],
+                "denied": ["/invoices", "/payments", "/expenses", "/reports", "/custody"],
+                "limits": {},
+                "default_app": "app_wh_ops",
+            },
+            {
+                "id": "prof_wh_counter_readonly",
+                "name": "مراقب جرد (قراءة فقط)",
+                "name_en": "Read-Only Stock Auditor",
+                "role": "staff",
+                "denied": ["/orders", "/invoices", "/payments", "/expenses", "/reports"],
+                "limits": {"read_only": True},
+                "deny_actions": ["create", "edit", "delete"],
                 "default_app": "app_wh_ops",
             },
             {
@@ -292,7 +315,9 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "name_en": "Field Sales Rep",
                 "role": "rep",
                 "denied": ["/stocktakes", "/supply", "/expenses"],
-                "can": {"orders": True, "payments": True, "returns": False},
+                "limits": {},
+                "deny_actions": ["returns"],
+                "default_app": "app_sales_field",
             },
             {
                 "id": "prof_dlv_rep",
@@ -300,7 +325,8 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "name_en": "Fleet Delivery Driver",
                 "role": "rep",
                 "denied": ["/items", "/stocktakes", "/supply", "/reports"],
-                "can": {"orders": False, "payments": True, "returns": True},
+                "limits": {},
+                "default_app": "app_dlv_ops",
             },
             {
                 "id": "prof_senior_acc",
@@ -308,6 +334,17 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "name_en": "Senior Financial Accountant",
                 "role": "accountant",
                 "denied": [],
+                "limits": {},
+                "default_app": "app_fin_desk",
+            },
+            {
+                "id": "prof_jr_acc",
+                "name": "محاسب تحصيل ومراجعة (بدون أرباح)",
+                "name_en": "Collections Accountant (No Profit)",
+                "role": "accountant",
+                "denied": ["/commissions", "/settings"],
+                "limits": {"no_profit": True},
+                "deny_actions": ["returns", "export"],
                 "default_app": "app_fin_desk",
             },
             {
@@ -316,6 +353,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "name_en": "VIP Shop Buyer",
                 "role": "shop",
                 "denied": [],
+                "limits": {},
             },
         ],
         "fields": [
@@ -326,6 +364,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "label_en": "Item SKU",
                 "type": "text",
                 "required": False,
+                "in_table": True,
+                "view_roles": [],
+                "edit_roles": ["warehouse"],
+                "active": True,
             },
             {
                 "id": "cf_item_brand",
@@ -334,6 +376,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "label_en": "Brand",
                 "type": "text",
                 "required": False,
+                "in_table": False,
+                "view_roles": [],
+                "edit_roles": ["warehouse"],
+                "active": True,
             },
             {
                 "id": "cf_item_origin",
@@ -342,6 +388,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "label_en": "Country of Origin",
                 "type": "text",
                 "required": False,
+                "in_table": False,
+                "view_roles": [],
+                "edit_roles": ["warehouse"],
+                "active": True,
             },
             {
                 "id": "cf_cust_type",
@@ -351,6 +401,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "type": "list",
                 "options": ["هايبر ماركت", "سوبرماركت", "أسواق جملة", "موزع محلي", "تموين مطاعم"],
                 "required": False,
+                "in_table": True,
+                "view_roles": [],
+                "edit_roles": ["accountant", "rep"],
+                "active": True,
             },
             {
                 "id": "cf_cust_gov",
@@ -360,6 +414,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "type": "list",
                 "options": ["كربلاء المقدسة", "النجف الأشرف", "بغداد", "بابل", "الديوانية"],
                 "required": False,
+                "in_table": True,
+                "view_roles": [],
+                "edit_roles": ["accountant", "rep"],
+                "active": True,
             },
             {
                 "id": "cf_cust_contract",
@@ -368,6 +426,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "label_en": "Contract Date",
                 "type": "date",
                 "required": False,
+                "in_table": False,
+                "view_roles": ["accountant"],
+                "edit_roles": ["accountant"],
+                "active": True,
             },
             {
                 "id": "cf_order_channel",
@@ -377,6 +439,10 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "type": "list",
                 "options": ["زيارة ميدانية", "تطبيق المتجر", "اتصال هاتفي", "مزامنة أوفلاين"],
                 "required": False,
+                "in_table": True,
+                "view_roles": [],
+                "edit_roles": ["staff", "rep"],
+                "active": True,
             },
         ],
         "rules": [
@@ -384,6 +450,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "id": "rule_high_order_value",
                 "name": "إشعار الطلبات الكبيرة فوق 2 مليون",
                 "name_en": "Alert on Large Orders > 2M IQD",
+                "active": True,
                 "trigger": "order_created",
                 "conditions": [{"field": "total", "op": "gt", "value": 2000000}],
                 "notify": ["manager", "accountant"],
@@ -393,6 +460,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "id": "rule_high_discount_approval",
                 "name": "موافقة الخصومات التجارية فوق 10%",
                 "name_en": "Approval on Commercial Discount > 10%",
+                "active": True,
                 "trigger": "order_created",
                 "conditions": [{"field": "discount", "op": "gt", "value": 10}],
                 "notify": ["manager"],
@@ -402,6 +470,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "id": "rule_big_payment",
                 "name": "إشعار استلام دفعة فوق 5 مليون",
                 "name_en": "Alert on Collection > 5M IQD",
+                "active": True,
                 "trigger": "payment_created",
                 "conditions": [{"field": "amount", "op": "gte", "value": 5000000}],
                 "notify": ["manager", "accountant"],
@@ -411,6 +480,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "id": "rule_big_return",
                 "name": "مراجعة المرتجعات فوق 500 ألف",
                 "name_en": "Review Returns > 500K IQD",
+                "active": True,
                 "trigger": "return_created",
                 "conditions": [{"field": "amount", "op": "gt", "value": 500000}],
                 "notify": ["manager", "warehouse"],
@@ -420,6 +490,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
                 "id": "rule_high_expense",
                 "name": "تنبيه الصرفيات التشغيلية فوق 400 ألف",
                 "name_en": "Alert Operating Expense > 400K IQD",
+                "active": True,
                 "trigger": "expense_created",
                 "conditions": [{"field": "amount", "op": "gt", "value": 400000}],
                 "notify": ["manager", "accountant"],
@@ -430,7 +501,7 @@ def _build_site_payload(logo_data_url: str | None) -> dict[str, Any]:
 
 
 def seed_catalog_foundation(manager: User, *, with_media: bool = False) -> dict[str, Any]:
-    """Seed SiteConfig, SystemSettings, USD rates, 5 warehouses, 4 price tiers, 10 categories, and 96 items."""
+    """Seed SiteConfig, SystemSettings, USD rates, 2 warehouses (Al-Sina'a & Al-Hur), 4 price tiers, 10 categories, and 96 items."""
     logo_meta: dict[str, Any] | None = None
     logo_data_url: str | None = None
     if with_media:
@@ -453,10 +524,13 @@ def seed_catalog_foundation(manager: User, *, with_media: bool = False) -> dict[
     # Commercial settings
     s = SystemSetting.get_solo()
     s.usd_rate = Decimal("1500.00")
-    s.reservation_minutes = 90
-    s.low_stock_threshold = 24
+    s.reservation_hours = 24
+    s.near_expiry_days = 45
+    s.slow_moving_days = 30
     s.commission_pct = Decimal("1.50")
-    s.expiry_warn_days = 45
+    s.summary_hour = 21
+    s.phone = "07701000000"
+    s.address = "كربلاء المقدسة — الحي الصناعي — المخزن الرئيسي"
     s.save()
     register_seed("settings:system", s)
 
@@ -503,7 +577,7 @@ def seed_catalog_foundation(manager: User, *, with_media: bool = False) -> dict[
         register_seed(ckey, cat)
         categories[ar_name] = cat
 
-    # 5 Iraqi Warehouses
+    # 2 Official Warehouses (Main - Al-Sina'a & Second - Al-Hur)
     warehouses: dict[str, Warehouse] = {}
     for spec in WAREHOUSES:
         wh = get_seeded(spec["key"], Warehouse) or Warehouse.objects.filter(code=spec["code"]).first()
@@ -515,10 +589,20 @@ def seed_catalog_foundation(manager: User, *, with_media: bool = False) -> dict[
                     "name": spec["name"],
                     "name_en": spec["name_en"],
                     "address": spec["address"],
+                    "capacity": spec.get("capacity", 5000),
+                    "lat": spec.get("lat"),
+                    "lng": spec.get("lng"),
                     "active": True,
                 },
             )
             wh = Warehouse.objects.get(id=res["id"])
+        else:
+            wh.capacity = spec.get("capacity", wh.capacity)
+            if spec.get("lat") is not None:
+                wh.lat = Decimal(str(spec["lat"]))
+            if spec.get("lng") is not None:
+                wh.lng = Decimal(str(spec["lng"]))
+            wh.save(update_fields=["capacity", "lat", "lng"])
         register_seed(spec["key"], wh)
         warehouses[spec["key"]] = wh
 

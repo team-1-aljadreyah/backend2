@@ -208,8 +208,36 @@ def render_product_image(
     name_en: str,
     category: str,
     badge_text: str,
+    barcode: str = "",
 ) -> dict[str, Any]:
-    """Render a unique 640x640 studio product WebP + thumbnail for an inventory catalog item."""
+    """Use real product photograph if downloaded into seed_assets/real_products, else render studio fallback."""
+    rel_full = f"products/{seed_key.replace(':', '_')}.webp"
+    rel_thumb = f"products/thumbs/{seed_key.replace(':', '_')}_thumb.webp"
+    storage_key = f"items/{item_id}/catalog.webp"
+    real_file = SEED_ASSETS_DIR / "real_products" / f"{barcode}.webp" if barcode else None
+    if real_file and real_file.is_file() and real_file.stat().st_size > 1500:
+        with Image.open(real_file) as src_img:
+            real_img = src_img.convert("RGB")
+            raw, sha, w, h_px = _save_webp_pair(real_img, rel_full, rel_thumb, (220, 220))
+        return {
+            "asset_id": f"asset-product-{item_id}",
+            "entity_type": "product",
+            "entity_id": item_id,
+            "seed_key": seed_key,
+            "file_path": rel_full,
+            "thumb_path": rel_thumb,
+            "storage_bucket": "product-images",
+            "storage_key": storage_key,
+            "format": "WEBP",
+            "dimensions": {"width": w, "height": h_px},
+            "alt_ar": f"صورة منتج {name_en}",
+            "alt_en": name_en,
+            "source": "real_product_photo",
+            "license": "wikimedia_commons_real_photo",
+            "sha256": sha,
+            "_bytes": raw,
+        }
+
     h = _seed_hash(seed_key)
     bg_top, primary, accent = _PALETTES[h % len(_PALETTES)]
     # Shift hue gently per item index so adjacent products never look identical
@@ -274,8 +302,35 @@ def render_product_image(
     }
 
 
-def render_user_portrait(*, seed_key: str, user_id: int, name: str, role: str) -> dict[str, Any]:
-    """Render a crisp studio headshot avatar WebP + thumbnail customized by role and seed."""
+def render_user_portrait(*, seed_key: str, user_id: int, name: str, role: str, phone: str = "") -> dict[str, Any]:
+    """Use real headshot portrait if downloaded into seed_assets/real_users, else render studio fallback."""
+    rel_full = f"users/{seed_key.replace(':', '_')}.webp"
+    rel_thumb = f"users/thumbs/{seed_key.replace(':', '_')}_thumb.webp"
+    storage_key = f"user-photos/{user_id}.webp"
+    real_file = SEED_ASSETS_DIR / "real_users" / f"{phone}.webp" if phone else None
+    if real_file and real_file.is_file() and real_file.stat().st_size > 1500:
+        with Image.open(real_file) as src_img:
+            real_img = src_img.convert("RGB")
+            raw, sha, w, h_px = _save_webp_pair(real_img, rel_full, rel_thumb, (160, 160))
+        return {
+            "asset_id": f"asset-user-{user_id}",
+            "entity_type": "user",
+            "entity_id": user_id,
+            "seed_key": seed_key,
+            "file_path": rel_full,
+            "thumb_path": rel_thumb,
+            "storage_bucket": "product-images",
+            "storage_key": storage_key,
+            "format": "WEBP",
+            "dimensions": {"width": w, "height": h_px},
+            "alt_ar": f"صورة حساب {name}",
+            "alt_en": f"Portrait for {name} ({role})",
+            "source": "real_human_portrait",
+            "license": "randomuser_demo_portrait",
+            "sha256": sha,
+            "_bytes": raw,
+        }
+
     h = _seed_hash(seed_key)
     role_colors = {
         "manager": ((20, 83, 45), (15, 118, 110)),

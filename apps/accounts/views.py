@@ -243,7 +243,7 @@ class UsersListCreateView(APIView):
         responses={200: UserSerializer(many=True)},
     )
     def get(self, request):
-        return ok_response(list_all_users())
+        return ok_response(list_all_users(request=request))
 
     @extend_schema(
         summary="Create company staff/user",
@@ -251,7 +251,7 @@ class UsersListCreateView(APIView):
         responses={201: UserSerializer},
     )
     def post(self, request):
-        return created_response(create_user_by_manager(actor=request.user, data=request.data))
+        return created_response(create_user_by_manager(actor=request.user, data=request.data, request=request))
 
 
 class UserDetailView(APIView):
@@ -263,7 +263,9 @@ class UserDetailView(APIView):
         responses={200: UserSerializer},
     )
     def patch(self, request, user_id: int):
-        return ok_response(update_user_by_manager(actor=request.user, user_id=user_id, data=request.data))
+        return ok_response(
+            update_user_by_manager(actor=request.user, user_id=user_id, data=request.data, request=request)
+        )
 
     @extend_schema(
         summary="Delete user (anonymize/soft delete)",
@@ -283,7 +285,9 @@ class UserProfileView(APIView):
     )
     def post(self, request, user_id: int):
         profile_id = (request.data or {}).get("profile_id")
-        return ok_response(set_user_profile(actor=request.user, user_id=user_id, profile_id=profile_id))
+        return ok_response(
+            set_user_profile(actor=request.user, user_id=user_id, profile_id=profile_id, request=request)
+        )
 
 
 class UserPhotoRemoveView(APIView):
@@ -294,7 +298,7 @@ class UserPhotoRemoveView(APIView):
         responses={200: UserSerializer},
     )
     def delete(self, request, user_id: int):
-        return ok_response(remove_user_photo(actor=request.user, user_id=user_id))
+        return ok_response(remove_user_photo(actor=request.user, user_id=user_id, request=request))
 
 
 class SettingsUpdateView(APIView):
