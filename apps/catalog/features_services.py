@@ -9,12 +9,13 @@ from django.db import transaction
 from django.db.models import Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import round_amount_by_rule, rules_of
 from apps.accounts.models import PriceTier, Role, User
 from apps.accounts.permissions import get_active_customer_id
 from apps.audit.services import record_audit
 from apps.catalog.models import Clearance, Item, ItemPrice, PriceChange, ScheduledPrice, StockAlert
 from apps.common.exceptions import ApiException, ErrorCode
-from apps.common.utils import baghdad_now, baghdad_today, round_250
+from apps.common.utils import baghdad_now, baghdad_today
 from apps.customers.models import ShopMembership
 from apps.inventory.models import Batch
 from apps.notifications.services import notify_user
@@ -37,6 +38,12 @@ def get_my_stock_alerts(*, actor: User) -> list[int]:
 def set_stock_alert(*, actor: User, item_id: int, on: bool) -> list[int]:
     if actor.role != Role.SHOP:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    if on and not rules_of()["features"]["notify_me"]:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            message=("التنبيه بالتوفر متوقف", "Back-in-stock alerts are off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     cid = get_active_customer_id(actor)
     if not cid:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -82,7 +89,7 @@ def get_stock_waitlist(*, actor: User) -> list[dict[str, Any]]:
 
 def trigger_back_in_stock_alerts(item_ids: list[int]) -> int:
     """Notify waiting shops when items become sellable (> 0 non-expired unheld stock)."""
-    if not item_ids:
+    if not item_ids or not rules_of()["features"]["notify_me"]:
         return 0
     unique_ids = list({int(i) for i in item_ids})
     alerts = list(
@@ -163,6 +170,8 @@ def sync_clearances_status() -> None:
 
 def active_clearance_map(item_ids: list[int] | None = None) -> dict[int, dict[str, Any]]:
     """Return {item_id: ItemClearance} for active clearances."""
+    if not rules_of()["features"]["clearance"]:
+        return {}
     sync_clearances_status()
     today = baghdad_today()
     qs = Clearance.objects.select_related("batch").filter(
@@ -219,6 +228,12 @@ def list_clearances_for_actor(*, actor: User) -> list[dict[str, Any]]:
 def start_clearance(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     if actor.role != Role.MANAGER:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    if not rules_of()["features"]["clearance"]:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            message=("التصفية متوقفة", "Clearance offers are off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
 
     sync_clearances_status()
     batch = Batch.objects.select_for_update().select_related("item").filter(id=data.get("batch_id")).first()
@@ -343,9 +358,10 @@ def _apply_scheduled_price_obj(sp: ScheduledPrice, *, actor: User | None) -> Non
         return
     if sp.percent is not None:
         factor = Decimal("1") + (Decimal(sp.percent) / Decimal("100"))
+        min_step = max(1, int(rules_of().get("round_to") or 1))
         for ip in ItemPrice.objects.select_for_update().filter(item_id__in=item_ids).order_by("id"):
-            new_c = max(250, round_250(int((Decimal(ip.carton_price) * factor).quantize(Decimal("1")))))
-            new_p = max(0, round_250(int((Decimal(ip.piece_price) * factor).quantize(Decimal("1")))))
+            new_c = max(min_step, round_amount_by_rule(int((Decimal(ip.carton_price) * factor).quantize(Decimal("1")))))
+            new_p = max(0, round_amount_by_rule(int((Decimal(ip.piece_price) * factor).quantize(Decimal("1")))))
             if new_c != ip.carton_price or new_p != ip.piece_price:
                 ip.carton_price = new_c
                 ip.piece_price = new_p
@@ -589,11 +605,12 @@ def get_item_price_history(*, actor: User, item_id: int) -> dict[str, Any]:
             base = serialize_scheduled_price(sp)
             if sp.percent is not None:
                 factor = Decimal("1") + (Decimal(sp.percent) / Decimal("100"))
+                min_step = max(1, int(rules_of().get("round_to") or 1))
                 base["next"] = [
                     {
                         "tier_id": ip.tier_id,
-                        "carton_price": max(250, round_250(int((Decimal(ip.carton_price) * factor).quantize(Decimal("1"))))),
-                        "piece_price": max(0, round_250(int((Decimal(ip.piece_price) * factor).quantize(Decimal("1"))))),
+                        "carton_price": max(min_step, round_amount_by_rule(int((Decimal(ip.carton_price) * factor).quantize(Decimal("1"))))),
+                        "piece_price": max(0, round_amount_by_rule(int((Decimal(ip.piece_price) * factor).quantize(Decimal("1"))))),
                     }
                     for ip in sorted(item.prices.all(), key=lambda p: p.tier_id)
                 ]

@@ -12,8 +12,26 @@ from django.utils import timezone
 from rest_framework import status as http_status
 
 from apps.accounts.authentication import issue_tokens_for_user
+from apps.accounts.business_rules import (
+    DEFAULT_RULES,
+    check_rules,
+    changed_rules,
+    diff_settings_changes,
+    rules_of,
+)
 from apps.accounts.health import is_weak_password
-from apps.accounts.models import LoginAttempt, PriceTier, Role, SiteConfig, SystemSetting, User, UserSession
+from apps.accounts.models import (
+    LoginAttempt,
+    OtpPurpose,
+    PriceTier,
+    Role,
+    SettingsChange,
+    SiteConfig,
+    SystemSetting,
+    User,
+    UserSession,
+)
+from apps.accounts.otp import spend_otp_token
 from apps.accounts.profiles import in_hours, profile_of
 from apps.accounts.serializers import (
     serialize_settings,
@@ -48,6 +66,31 @@ def login_with_phone(raw_phone: str, password: str, *, request=None) -> dict[str
 
     ip = client_ip(request)
     user = User.objects.filter(phone=phone, deleted=False).first()
+
+    rules = rules_of()
+    lock_after = int(rules.get("login_lock_after") or 0)
+    lock_minutes = int(rules.get("login_lock_minutes") or 15)
+    if lock_after > 0:
+        from datetime import timedelta
+
+        window_start = datetime.now(tz=UTC) - timedelta(minutes=lock_minutes)
+        wrong_streak = 0
+        for att in LoginAttempt.objects.filter(phone=phone).only("ok", "reason", "created_at").order_by("-id"):
+            if att.ok or att.created_at < window_start:
+                break
+            if att.reason == "wrong":
+                wrong_streak += 1
+        if wrong_streak >= lock_after:
+            LoginAttempt.objects.create(phone=phone, user=user, ok=False, reason="locked", ip_address=ip)
+            raise ApiException(
+                code=ErrorCode.LOCKED,
+                message=(
+                    f"محاولات دخول كثيرة. انتظر {lock_minutes} دقيقة",
+                    f"Too many wrong tries. Wait {lock_minutes} min",
+                ),
+                status_code=http_status.HTTP_423_LOCKED,
+            )
+
     if not user or not user.check_password(password):
         LoginAttempt.objects.create(phone=phone, user=user, ok=False, reason="wrong", ip_address=ip)
         raise ApiException(
@@ -96,14 +139,26 @@ def login_with_phone(raw_phone: str, password: str, *, request=None) -> dict[str
 def register_shop_account(data: dict[str, Any], *, request=None) -> dict[str, Any]:
     from apps.customers.services import clean_shop_address
 
+    rules = rules_of()
+    if not rules["features"]["self_signup"]:
+        raise ApiException(
+            code=ErrorCode.SIGNUP_CLOSED,
+            message=("تسجيل الحسابات الجديدة متوقف حالياً", "New account registration is turned off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
+
     name = str(data.get("owner_name") or data.get("name") or "").strip()
     if not name:
         msg = ("الاسم الكامل مطلوب", "Owner name is required")
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"owner_name": msg})
     phone = normalize_phone(data.get("phone"))
+    pw_min = int(rules.get("password_min") or 6)
     password = str(data.get("password") or "")
-    if len(password) < 6:
-        msg = ("كلمة المرور يجب أن تكون 6 أحرف على الأقل", "Password must be at least 6 characters")
+    if len(password) < pw_min:
+        msg = (
+            f"كلمة المرور يجب أن تكون {pw_min} أحرف على الأقل",
+            f"Password must be at least {pw_min} characters",
+        )
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"password": msg})
 
     shop_name = _validate_nonempty_str(data, "shop_name", "اسم المحل", "Shop name")
@@ -122,6 +177,11 @@ def register_shop_account(data: dict[str, Any], *, request=None) -> dict[str, An
         msg = ("رقم الهاتف مسجل مسبقاً", "This phone number is already registered")
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"phone": msg})
 
+    from integrations.wevlix import WevlixClient
+
+    if WevlixClient().is_configured():
+        spend_otp_token(otp_token=data.get("otp_token"), phone=phone, purpose=OtpPurpose.REGISTER)
+
     lat = data.get("lat") if data.get("lat") not in (None, "") else (address_info or {}).get("lat")
     lng = data.get("lng") if data.get("lng") not in (None, "") else (address_info or {}).get("lng")
     try:
@@ -133,9 +193,19 @@ def register_shop_account(data: dict[str, Any], *, request=None) -> dict[str, An
             message=("إحداثيات الموقع غير صالحة", "Invalid location coordinates"),
         ) from exc
 
-    default_tier = PriceTier.objects.order_by("sort_order", "id").first()
+    want_tier_id = rules.get("signup_tier_id")
+    default_tier = (
+        PriceTier.objects.filter(id=int(want_tier_id)).first()
+        if want_tier_id is not None
+        else None
+    )
+    if default_tier is None:
+        default_tier = PriceTier.objects.order_by("sort_order", "id").last()
     if not default_tier:
         default_tier = PriceTier.objects.create(name="جملة", name_en="Wholesale", sort_order=1)
+
+    auto_approve = bool(rules.get("signup_auto_approve", False))
+    signup_debt_limit = int(rules.get("signup_debt_limit") or 0)
 
     customer = Customer.objects.create(
         name=shop_name,
@@ -150,9 +220,9 @@ def register_shop_account(data: dict[str, Any], *, request=None) -> dict[str, An
         lat=lat_dec,
         lng=lng_dec,
         tier=default_tier,
-        debt_limit=0,
-        active=False,
-        status=CustomerStatus.PENDING,
+        debt_limit=signup_debt_limit,
+        active=auto_approve,
+        status=CustomerStatus.ACTIVE if auto_approve else CustomerStatus.PENDING,
     )
     user = User.objects.create_user(
         phone=phone,
@@ -273,9 +343,13 @@ def _validate_user_role_fields(
 def create_user_by_manager(*, actor: User, data: dict[str, Any], request: Any = None) -> dict[str, Any]:
     name = _validate_nonempty_str(data, "name", "الاسم", "Name")
     phone = normalize_phone(data.get("phone"))
+    pw_min = int(rules_of().get("password_min") or 6)
     password = str(data.get("password") or "")
-    if len(password) < 6:
-        msg = ("كلمة المرور يجب أن تكون 6 أحرف على الأقل", "Password must be at least 6 characters")
+    if len(password) < pw_min:
+        msg = (
+            f"كلمة المرور يجب أن تكون {pw_min} أحرف على الأقل",
+            f"Password must be at least {pw_min} characters",
+        )
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"password": msg})
 
     if User.objects.filter(phone=phone).exists():
@@ -392,9 +466,13 @@ def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any], r
             target.sales_target = None
 
     if data.get("password"):
+        pw_min = int(rules_of().get("password_min") or 6)
         pw = str(data["password"])
-        if len(pw) < 6:
-            msg = ("كلمة المرور يجب أن تكون 6 أحرف على الأقل", "Password must be at least 6 characters")
+        if len(pw) < pw_min:
+            msg = (
+                f"كلمة المرور يجب أن تكون {pw_min} أحرف على الأقل",
+                f"Password must be at least {pw_min} characters",
+            )
             raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"password": msg})
         target.set_password(pw)
         target.weak_password = is_weak_password(pw, target.phone)
@@ -510,8 +588,48 @@ def update_settings_by_manager(*, actor: User, data: dict[str, Any]) -> dict[str
             ) from exc
         s.summary_hour = sh
 
+    how_raw = str(data.get("how") or "").strip()
+    how = how_raw if how_raw in ("import", "reset") else ""
+
+    if how == "reset" and "advanced" not in data:
+        s.auto_confirm_rep_orders = bool(DEFAULT_RULES["auto_confirm_rep_orders"])
+        s.advanced = {}
+    elif "advanced" in data:
+        raw_adv = data.get("advanced")
+        if raw_adv is None and how == "reset":
+            raw_adv = {}
+        if not isinstance(raw_adv, dict):
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("صيغة القواعد المتقدمة غير صالحة", "Invalid advanced rules format"),
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        next_rules = rules_of(raw_adv)
+        if "auto_confirm_rep_orders" in data:
+            next_rules["auto_confirm_rep_orders"] = s.auto_confirm_rep_orders
+        else:
+            s.auto_confirm_rep_orders = bool(next_rules.get("auto_confirm_rep_orders", False))
+        tier_ids = set(PriceTier.objects.values_list("id", flat=True))
+        rule_errors = check_rules(next_rules, tier_ids)
+        if rule_errors:
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("تحقق من القواعد المدخلة", "Check the entered rules"),
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                errors=rule_errors,
+            )
+        s.advanced = changed_rules(next_rules)
+    elif "auto_confirm_rep_orders" in data:
+        next_rules = rules_of(s)
+        next_rules["auto_confirm_rep_orders"] = s.auto_confirm_rep_orders
+        s.advanced = changed_rules(next_rules)
+
     s.save()
     after = serialize_settings(s)
+
+    diff_changes = diff_settings_changes(before, after)
+    if diff_changes:
+        SettingsChange.objects.create(by=actor, changes=diff_changes, how=how)
 
     if usd_changed and apps.is_installed("apps.exchange_rates"):
         from apps.common.utils import baghdad_today
@@ -529,6 +647,20 @@ def update_settings_by_manager(*, actor: User, data: dict[str, Any]) -> dict[str
         after=after,
     )
     return after
+
+
+def list_settings_history(*, limit: int = 200) -> list[dict[str, Any]]:
+    rows = SettingsChange.objects.select_related("by").order_by("-id")[:limit]
+    return [
+        {
+            "id": r.id,
+            "at": r.at.isoformat(),
+            "by": {"id": r.by_id, "name": r.by.name} if r.by else {"id": 0, "name": "النظام"},
+            "changes": list(r.changes or []),
+            **({"how": r.how} if r.how else {}),
+        }
+        for r in rows
+    ]
 
 
 @transaction.atomic
@@ -821,8 +953,12 @@ def change_my_password(*, actor: User, current_password: str, new_password: str)
             status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
             errors={"current": msg},
         )
-    if len(new_password or "") < 6:
-        msg = ("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل", "New password must be at least 6 characters")
+    pw_min = int(rules_of().get("password_min") or 6)
+    if len(new_password or "") < pw_min:
+        msg = (
+            f"كلمة المرور الجديدة يجب أن تكون {pw_min} أحرف على الأقل",
+            f"New password must be at least {pw_min} characters",
+        )
         raise ApiException(
             code=ErrorCode.VALIDATION,
             message=msg,
@@ -970,4 +1106,81 @@ def delete_my_account(*, actor: User, password: str) -> dict[str, bool]:
         ref_id=customers[0].id if customers else "",
     )
     return {"ok": True}
+
+
+@transaction.atomic
+def reset_password_with_otp(*, raw_phone: Any, otp_token: Any, password: Any) -> None:
+    """Reset forgotten password with a verified OTP token and revoke all existing sessions."""
+    phone = normalize_phone(raw_phone)
+    pw_min = int(rules_of().get("password_min") or 6)
+    pw = str(password or "")
+    if len(pw) < pw_min:
+        raise ApiException(
+            code=ErrorCode.VALIDATION,
+            message=("تحقق من كلمة المرور", "Check the password"),
+            status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            errors={"password": (f"{pw_min} أحرف على الأقل", f"At least {pw_min} characters")},
+        )
+
+    spend_otp_token(otp_token=otp_token, phone=phone, purpose=OtpPurpose.RESET)
+
+    user = User.objects.select_for_update().filter(phone=phone, deleted=False).first()
+    if not user:
+        raise ApiException(
+            code=ErrorCode.NOT_FOUND,
+            message=("لا يوجد حساب بهذا الرقم", "No account with this number"),
+            status_code=http_status.HTTP_404_NOT_FOUND,
+        )
+
+    user.set_password(pw)
+    user.weak_password = is_weak_password(pw, user.phone)
+    user.token_version += 1
+    user.save(update_fields=["password", "weak_password", "token_version", "updated_at"])
+    UserSession.objects.filter(user=user, revoked=False).update(revoked=True, revoked_at=timezone.now())
+
+    record_audit(
+        actor=user,
+        action="user.reset_password",
+        entity_type="user",
+        entity_id=user.id,
+        summary=f"{user.name} reset password via OTP",
+    )
+
+
+@transaction.atomic
+def change_my_phone_with_otp(
+    *, actor: User, raw_phone: Any, otp_token: Any, request: Any = None
+) -> dict[str, Any]:
+    """Change the signed-in user's login phone after verifying the new number via OTP."""
+    phone = normalize_phone(raw_phone)
+    user = User.objects.select_for_update().get(id=actor.id)
+    if user.phone == phone:
+        raise ApiException(
+            code=ErrorCode.VALIDATION,
+            message=("هذا رقمك الحالي", "That's your current number"),
+            status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            errors={"phone": ("اكتب الرقم الجديد", "Write the new number")},
+        )
+    if User.objects.filter(phone=phone, deleted=False).exclude(id=user.id).exists():
+        raise ApiException(
+            code=ErrorCode.BAD_STATE,
+            message=("هذا الرقم لحساب آخر", "That number belongs to another account"),
+            status_code=http_status.HTTP_409_CONFLICT,
+            errors={"phone": ("الرقم مستخدم", "In use")},
+        )
+
+    spend_otp_token(otp_token=otp_token, phone=phone, purpose=OtpPurpose.PHONE)
+
+    old_phone = user.phone
+    user.phone = phone
+    user.save(update_fields=["phone", "updated_at"])
+
+    record_audit(
+        actor=user,
+        action="user.change_phone",
+        entity_type="user",
+        entity_id=user.id,
+        summary=f"{user.name} changed phone from {old_phone} to {phone}",
+    )
+    return serialize_user(user, request=request)
 

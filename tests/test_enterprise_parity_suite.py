@@ -698,3 +698,86 @@ def test_site_serializer_normalizes_legacy_profiles_apps_fields_and_rules(erp_se
     assert rule["approval"] is False
 
 
+@pytest.mark.django_db
+def test_partial_site_patch_preserves_profiles_apps_fields_rules_and_user_assignments(erp_seed):
+    mgr_cli, _, _ = _auth_client("07750000001")
+    acct = erp_seed["acct"]
+
+    full_payload = {
+        "brand": {
+            "name": "النهرين",
+            "company": "شركة النهرين",
+            "logo": _png_data_url(),
+        },
+        "texts": {"hq_city": "كربلاء"},
+        "profiles": [
+            {
+                "id": "prof_senior_acc",
+                "name": "محاسب رئيسي",
+                "role": "accountant",
+                "denied": [],
+                "limits": {},
+            }
+        ],
+        "apps": [
+            {
+                "id": "app_fin",
+                "name": "المالية",
+                "color": "#1d4ed8",
+                "pages": ["/invoices"],
+                "roles": ["accountant"],
+                "profiles": ["prof_senior_acc"],
+                "active": True,
+            }
+        ],
+        "fields": [
+            {
+                "id": "f_tax",
+                "object": "customer",
+                "label": "الرقم الضريبي",
+                "type": "text",
+                "view_roles": ["manager", "accountant"],
+                "edit_roles": ["manager", "accountant"],
+                "required": False,
+                "active": True,
+            }
+        ],
+        "rules": [
+            {
+                "id": "r_big",
+                "name": "طلب كبير",
+                "trigger": "order_created",
+                "conditions": [{"field": "total", "op": "gte", "value": 500000}],
+                "notify": ["manager"],
+                "approval": True,
+                "active": True,
+            }
+        ],
+    }
+    assert mgr_cli.patch("/api/v1/settings/site", full_payload, format="json").status_code == 200
+    assert mgr_cli.post(f"/api/v1/users/{acct.id}/profile", {"profile_id": "prof_senior_acc"}, format="json").status_code == 200
+
+    # Partial PATCH updating only texts/look/brand name (omitting profiles/apps/fields/rules/logo)
+    r_partial = mgr_cli.patch(
+        "/api/v1/settings/site",
+        {"brand": {"tagline": "تحديث الشعار النصي"}, "texts": {"hq_city": "كربلاء - المركز"}, "look": {"action": "#ea580c"}},
+        format="json",
+    )
+    assert r_partial.status_code == 200, r_partial.content
+    saved = r_partial.json()["data"]
+    assert saved["brand"]["name"] == "النهرين"
+    assert saved["brand"]["company"] == "شركة النهرين"
+    assert saved["brand"]["tagline"] == "تحديث الشعار النصي"
+    assert saved["brand"].get("logo")
+    assert saved["texts"] == {"hq_city": "كربلاء - المركز"}
+    assert saved["look"] == {"action": "#ea580c"}
+    assert [p["id"] for p in saved["profiles"]] == ["prof_senior_acc"]
+    assert [a["id"] for a in saved["apps"]] == ["app_fin"]
+    assert [f["id"] for f in saved["fields"]] == ["f_tax"]
+    assert [r["id"] for r in saved["rules"]] == ["r_big"]
+
+    acct.refresh_from_db()
+    assert acct.profile_id == "prof_senior_acc"
+
+
+

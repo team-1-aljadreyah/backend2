@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections import deque
 from datetime import UTC, datetime
@@ -131,6 +132,14 @@ def _origin_allowed(scope: dict[str, Any]) -> bool:
     )
     if raw_origin in allowed:
         return True
+
+    for pattern in getattr(settings, "CORS_ALLOWED_ORIGIN_REGEXES", []) or []:
+        if isinstance(pattern, re.Pattern):
+            if pattern.match(raw_origin):
+                return True
+        elif isinstance(pattern, str) and pattern:
+            if re.match(pattern, raw_origin):
+                return True
 
     parsed = urlparse(raw_origin)
     host_hdr = headers.get(b"host", b"").decode("latin1").strip()

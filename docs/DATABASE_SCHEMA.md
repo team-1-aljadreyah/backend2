@@ -130,11 +130,20 @@
 ## Enterprise Parity Schema Extensions (`SiteConfig`, `Profiles`, `Vehicles`, `Expenses`)
 - **`Accounts & Governance`**:
   - `accounts_user` additions: `deleted`, `deleted_at`, `deleted_phone`, `photo_path`, `profile_id`, `sales_target`, `weak_password`, `token_version` (paired with partial unique phone index excluding `deleted = TRUE`).
+  - `accounts_otp_challenge`: Wevlix OTP challenge tracking (`request_id`, `phone`, `purpose`, `wevlix_message_id`, `real_sent`, `attempts`, `expires_at`, `resend_at`, `otp_token`, `token_expires_at`, `used_at`).
   - `accounts_site_config` (branding, `categories`, `profiles`, `apps`, `fields`, `rules`), `accounts_login_attempt` (24h security health telemetry), `accounts_custom_field_value`, `accounts_rule_run`.
 - **`Warehouses & Catalog`**:
   - `warehouses_warehouse`: `layout` JSONB, `cover` JSONB (`{ user_id, until }` temporary warehouse coverage).
   - `catalog_item`: `weight_kg` (`CheckConstraint > 0` or nullable fallback to `guess_weight_kg`).
 - **`Vehicles & Shipment Splitting`**:
-  - `deliveries_vehicle` (`name`, `capacity_kg`, `driver`, `active`), `deliveries_delivery` additions (`vehicle`, `loaded_at`, `loaded_by`), and `orders_order` additions (`shipment_of`, `shipment_no`, `rule_note`, `custom`).
+  - `deliveries_vehicle` (`name`, `capacity_kg`, `driver`, `active`), `deliveries_delivery` additions (`vehicle`, `loaded_at`, `loaded_by`), and `orders_order` additions (`shipment_of`, `shipment_no`, `rule_note`, `carrier_pick`, `custom`).
 - **`Expenses` (`expenses_expense`)**:
   - `Expense` (`number`, `category`, `title`, `amount > 0`, `date`, `notes`, `warehouse`, `created_by`, `status` `approved|pending|rejected`, `approved_by`, `approved_at`, `rejected_reason`).
+
+---
+
+## Advanced Business Rules Schema Extensions (`settings.advanced`)
+
+- **`SystemSetting` (`accounts_system_setting`)**: Added `advanced` (`JSONField`, default `{}`) storing only rules differing from `DEFAULT_RULES` (`changed_rules()`).
+- **`SettingsChange` (`accounts_settings_change`)**: Audit/history trail tracking manager rule edits (`key`, `old_val`, `new_val`, `user` FK, `user_name`, `created_at`) with RLS policy in [`backend/database/schema.sql`](file:///c:/Users/Administrator/Desktop/Alnahrian/backend/database/schema.sql).
+- **`Delivery` (`deliveries_delivery`)**: Added `payment` (`JSONField`, nullable) storing door collection details (`method`, `amount`, `status`, `payment_id`, `online_id`, `ref`) recorded on `/orders/{id}/deliver`.

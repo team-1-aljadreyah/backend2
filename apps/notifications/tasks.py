@@ -128,25 +128,43 @@ def reconcile_online_payments_task() -> int:
     from apps.payments.models import OnlinePayment, OnlinePaymentStatus
     from apps.payments.services import settle_online_payment
     from integrations.qi_card.client import QiCardGateway
+    from integrations.zaincash.client import get_zaincash_client
 
     gw = QiCardGateway()
-    if not gw.is_configured():
-        return 0
+    zc = get_zaincash_client()
     updated = 0
     cutoff = datetime.now(tz=UTC) - timedelta(minutes=2)
     for op in OnlinePayment.objects.filter(
         status=OnlinePaymentStatus.CREATED, created_at__lte=cutoff
     )[:30]:
         try:
-            st = gw.get_payment_status(op.payment_id)
-            if st.status != op.status:
-                settle_online_payment(
-                    online_payment_id=op.id,
-                    new_status=st.status,
-                    raw_payload=st.raw,
-                    masked_card=st.masked_card,
-                )
-                updated += 1
+            if op.provider == "zaincash":
+                if not op.gateway_id or not zc.client_id or not zc.client_secret:
+                    continue
+                inq = zc.inquire_transaction(op.gateway_id)
+                st_val = zc.map_status(inq.get("status"))
+                if st_val != op.status:
+                    wallet = inq.get("phone") or ""
+                    hidden_wallet = f"{wallet[:5]}•••••{wallet[-3:]}" if (wallet and len(wallet) >= 8) else (wallet or "ZainCash")
+                    settle_online_payment(
+                        online_payment_id=op.id,
+                        new_status=st_val,
+                        raw_payload={"status": st_val, "wallet": wallet},
+                        masked_card=hidden_wallet,
+                    )
+                    updated += 1
+            else:
+                if not gw.is_configured():
+                    continue
+                st = gw.get_payment_status(op.payment_id)
+                if st.status != op.status:
+                    settle_online_payment(
+                        online_payment_id=op.id,
+                        new_status=st.status,
+                        raw_payload=st.raw,
+                        masked_card=st.masked_card,
+                    )
+                    updated += 1
         except Exception:
             continue
     return updated

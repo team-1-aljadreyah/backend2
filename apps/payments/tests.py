@@ -1,6 +1,7 @@
 """Tests for Invoices, Payments FIFO Allocation, Reversals, Credit Notes, Refunds, Returns, and Qi Card."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
@@ -468,3 +469,132 @@ def test_advance_payment_auto_allocates_on_new_invoice_without_double_spending_r
     assert pay_after_2.unallocated_amount == 50000
     assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 99000
     assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == 99000
+
+
+@pytest.mark.django_db
+def test_qi_card_v2_basic_auth_status_endpoint_and_rsa_webhook(phase6_setup):
+    """Covers Qi Card v2.0.4 Basic Auth, /payment/{id}/status polling via requestId, and RSA X-Signature webhook."""
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
+
+    shop = _c("07706000010")
+    mgr = _c("07706000001")
+    keeper = _c("07706000003")
+    wh = phase6_setup["wh"]
+    tier = phase6_setup["tier"]
+    exp = (baghdad_today() + timedelta(days=90)).isoformat()
+
+    item_id = mgr.post(
+        "/api/v1/items",
+        {"name": "سكر", "name_en": "Sugar", "category": "غذائية", "pieces_per_carton": 10, "prices": [{"tier_id": tier.id, "carton_price": 25000, "piece_price": 2500}]},
+        format="json",
+    ).json()["data"]["id"]
+    keeper.post(
+        "/api/v1/receipts",
+        {"warehouse_id": wh.id, "lines": [{"item_id": item_id, "unit": "piece", "qty": 20, "expiry_date": exp, "purchase_price": 1500}]},
+        format="json",
+    )
+    inv = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=10, unit_price=2500, suffix="QIV2")  # 25,000
+
+    seen_requests: list[tuple[str, str, str, str, dict]] = []
+
+    def _v2_transport(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content.decode("utf-8")) if request.content else {}
+        seen_requests.append((
+            request.method,
+            str(request.url),
+            request.headers.get("Authorization", ""),
+            request.headers.get("X-Terminal-Id", ""),
+            body,
+        ))
+        if request.method == "POST":
+            return httpx.Response(
+                200,
+                json={
+                    "requestId": body.get("requestId"),
+                    "paymentId": "qi-v2-uuid-1",
+                    "status": "CREATED",
+                    "canceled": False,
+                    "formUrl": "https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/qi-v2-uuid-1",
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "paymentId": "qi-v2-uuid-1",
+                "status": "SUCCESS",
+                "canceled": False,
+                "details": {"maskedPan": "521372******8582"},
+            },
+        )
+
+    priv_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pub_pem = priv_key.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    ).decode("utf-8")
+
+    with override_settings(
+        QI_CARD_MODE="sandbox",
+        QI_CARD_BASE_URL="https://uat-sandbox-3ds-api.qi.iq/api/v1",
+        QI_CARD_MERCHANT_ID="",
+        QI_CARD_TERMINAL_ID="237984",
+        QI_CARD_USERNAME="paymentgatewaytest",
+        QI_CARD_PASSWORD="secret-pass",
+        QI_CARD_API_KEY="",
+        QI_CARD_WEBHOOK_SECRET="",
+        QI_CARD_PUBLIC_KEY=pub_pem,
+    ):
+        gw = QiCardGateway(transport=httpx.MockTransport(_v2_transport))
+        assert gw.is_configured() is True
+        assert gw.map_status("AUTHENTICATION_FAILED") == "authentication_failed"
+
+        with patch("apps.payments.services.QiCardGateway", return_value=gw):
+            start_res = shop.post(
+                "/api/v1/payments/online",
+                {"customer_id": phase6_setup["cust"].id, "amount": 25000, "provider": "qi", "return_url": "/statement"},
+                format="json",
+            )
+            assert start_res.status_code == 200
+            op_data = start_res.json()["data"]
+            assert op_data["payment_id"] == "qi-v2-uuid-1"
+            assert "https://aln.ama8.uk/statement?payment=QI-" in op_data["return_url"]
+
+            # Verify Basic Auth + X-Terminal-Id + /api/v1/payment (without duplicated /api/v1/api/v1)
+            m, url, auth, term, sent_body = seen_requests[0]
+            expected_basic = "Basic " + base64.b64encode(b"paymentgatewaytest:secret-pass").decode("ascii")
+            assert m == "POST"
+            assert url == "https://uat-sandbox-3ds-api.qi.iq/api/v1/payment"
+            assert auth == expected_basic
+            assert term == "237984"
+            assert sent_body["finishPaymentUrl"] == op_data["return_url"]
+
+            # Return polling via ?payment=<request_id> uses /payment/{paymentId}/status & settles invoice!
+            req_key = op_data["return_url"].split("payment=")[1].split("&")[0]
+            poll_res = shop.get(f"/api/v1/payments/online/{req_key}")
+            assert poll_res.status_code == 200
+            assert poll_res.json()["data"]["status"] == "success"
+            assert seen_requests[1][1] == "https://uat-sandbox-3ds-api.qi.iq/api/v1/payment/qi-v2-uuid-1/status"
+
+        inv_after = mgr.get(f"/api/v1/invoices/{inv.id}").json()["data"]
+        assert inv_after["paid"] == 25000 and inv_after["status"] == "paid"
+
+        # RSA X-Signature webhook verification per Qi Card v2.0.4 docs
+        wh_payload = {
+            "requestId": req_key,
+            "paymentId": "qi-v2-uuid-1",
+            "status": "SUCCESS",
+            "amount": 25000,
+            "currency": "IQD",
+            "creationDate": "2026-11-14T08:00:00",
+            "details": {"maskedPan": "521372******8582"},
+        }
+        raw_wh = json.dumps(wh_payload).encode("utf-8")
+        data_str = "qi-v2-uuid-1|25000.000|IQD|2026-11-14T08:00:00|SUCCESS"
+        rsa_sig = base64.b64encode(
+            priv_key.sign(data_str.encode("utf-8"), padding.PKCS1v15(), hashes.SHA256())
+        ).decode("ascii")
+
+        anon = APIClient()
+        assert anon.post("/api/v1/webhooks/qi-card", data=raw_wh, content_type="application/json", HTTP_X_SIGNATURE="invalid").status_code == 403
+        ok_wh = anon.post("/api/v1/webhooks/qi-card", data=raw_wh, content_type="application/json", HTTP_X_SIGNATURE=rsa_sig)
+        assert ok_wh.status_code == 200 and ok_wh.json()["data"]["status"] == "success"

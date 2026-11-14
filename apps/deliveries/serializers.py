@@ -50,6 +50,7 @@ class DeliverInputSerializer(serializers.Serializer):
     photo = serializers.CharField(required=False, allow_blank=True)
     lines = DeliverLineInputSerializer(many=True, required=False)
     rest = serializers.ChoiceField(choices=["keep", "cancel"], required=False, default="keep")
+    payment = serializers.DictField(required=False, allow_null=True)
 
 
 class ProblemInputSerializer(serializers.Serializer):

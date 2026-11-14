@@ -29,6 +29,7 @@ from apps.orders.services import (
     plan_shipments,
     prepare_order,
     rate_order_delivery,
+    set_order_carrier,
     update_order,
 )
 
@@ -122,8 +123,32 @@ class OrderPrepareView(APIView):
         responses={200: OrderSerializer},
     )
     def post(self, request, order_id: int):
-        warehouses = request.data.get("warehouses", {}) if isinstance(request.data, dict) else {}
-        return ok_response(prepare_order(actor=request.user, order_id=order_id, warehouses_map=warehouses))
+        body = request.data if isinstance(request.data, dict) else {}
+        warehouses = body.get("warehouses", {})
+        carrier = body.get("carrier") if isinstance(body.get("carrier"), dict) else {}
+        rep_id = body.get("rep_id", carrier.get("rep_id"))
+        vehicle_id = body.get("vehicle_id", carrier.get("vehicle_id"))
+        return ok_response(
+            prepare_order(
+                actor=request.user,
+                order_id=order_id,
+                warehouses_map=warehouses,
+                rep_id=rep_id,
+                vehicle_id=vehicle_id,
+            )
+        )
+
+
+class OrderDeliveryCarrierView(APIView):
+    permission_classes = [role_permission(Role.MANAGER, Role.WAREHOUSE, Role.STAFF)]
+
+    @extend_schema(
+        summary="Assign or update delivery rep and vehicle before shipment is loaded",
+        responses={200: OrderSerializer},
+    )
+    def post(self, request, order_id: int):
+        body = request.data if isinstance(request.data, dict) else {}
+        return ok_response(set_order_carrier(actor=request.user, order_id=order_id, data=body))
 
 
 class OrderDiscountView(APIView):

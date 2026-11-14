@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import Max
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import get_active_customer_id
 from apps.audit.services import record_audit
@@ -108,6 +109,12 @@ def get_my_chat(*, actor: User) -> dict[str, Any]:
 def send_my_chat_message(*, actor: User, text: str) -> dict[str, Any]:
     if actor.role != Role.SHOP:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    if not rules_of()["features"]["support_chat"]:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            message=("دردشة الدعم متوقفة", "Support chat is turned off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     customer_id = get_active_customer_id(actor)
     if not customer_id:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)

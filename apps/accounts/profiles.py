@@ -200,12 +200,15 @@ def serialize_site(cfg: SiteConfig, *, request: Any = None) -> dict[str, Any]:
 
 
 def get_site_payload(request: Any = None, *, include_advanced: bool = True) -> dict[str, Any]:
+    from apps.accounts.business_rules import public_rules
+
     data = serialize_site(SiteConfig.get_solo(), request=request)
     if not include_advanced:
         data["profiles"] = []
         data["apps"] = []
         data["fields"] = []
         data["rules"] = []
+    data["live"] = public_rules()
     return data
 
 
@@ -332,43 +335,58 @@ def save_site_config(*, actor: User, data: dict[str, Any], request: Any = None) 
     cfg = SiteConfig.objects.select_for_update().filter(pk=1).first() or SiteConfig.get_solo()
     old_site = serialize_site(cfg, request=request)
 
-    merged_brand = {**copy.deepcopy(DEFAULT_SITE["brand"]), **(data.get("brand") if isinstance(data.get("brand"), dict) else {})}
+    raw_brand = data.get("brand") if isinstance(data.get("brand"), dict) else None
+    merged_brand = {**copy.deepcopy(DEFAULT_SITE["brand"]), **copy.deepcopy(old_site["brand"])}
+    if raw_brand is not None:
+        merged_brand.update(raw_brand)
     if not str(merged_brand.get("name") or "").strip() or not str(merged_brand.get("company") or "").strip():
         msg = ("اسم الشركة مطلوب", "The company name is required")
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"name": msg})
 
-    logo_val = merged_brand.get("logo")
     new_logo_path = cfg.brand_logo_path
-    if logo_val is None or logo_val == "":
-        if cfg.brand_logo_path:
-            get_storage().delete("product-images", cfg.brand_logo_path)
-        new_logo_path = ""
-    elif isinstance(logo_val, str) and logo_val.startswith("data:image/"):
-        if len(logo_val) > 400_000:
-            raise ApiException(code=ErrorCode.VALIDATION, message=("الصورة كبيرة جداً", "The picture is too big"))
-        raw_bytes, ext, mime_type = decode_image_data_url(logo_val, max_bytes=300 * 1024, max_dim=800)
-        new_logo_path = get_storage().put_bytes("product-images", f"brand/logo.{ext}", raw_bytes, mime_type)
+    if raw_brand is not None and "logo" in raw_brand:
+        logo_val = raw_brand.get("logo")
+        if logo_val is None or logo_val == "":
+            if cfg.brand_logo_path:
+                get_storage().delete("product-images", cfg.brand_logo_path)
+            new_logo_path = ""
+        elif isinstance(logo_val, str) and logo_val.startswith("data:image/"):
+            if len(logo_val) > 400_000:
+                raise ApiException(code=ErrorCode.VALIDATION, message=("الصورة كبيرة جداً", "The picture is too big"))
+            raw_bytes, ext, mime_type = decode_image_data_url(logo_val, max_bytes=300 * 1024, max_dim=800)
+            new_logo_path = get_storage().put_bytes("product-images", f"brand/logo.{ext}", raw_bytes, mime_type)
 
-    look = data.get("look") if isinstance(data.get("look"), dict) else {}
-    action_color = look.get("action")
-    if action_color and not _HEX_COLOR_RE.match(str(action_color)):
-        raise ApiException(code=ErrorCode.VALIDATION, message=("اللون غير صحيح", "The color isn't valid"))
+    if "look" in data:
+        look = dict(data["look"]) if isinstance(data.get("look"), dict) else {}
+        action_color = look.get("action")
+        if action_color and not _HEX_COLOR_RE.match(str(action_color)):
+            raise ApiException(code=ErrorCode.VALIDATION, message=("اللون غير صحيح", "The color isn't valid"))
+    else:
+        look = copy.deepcopy(old_site["look"])
 
     next_site = {
         "brand": merged_brand,
-        "nav": {**copy.deepcopy(DEFAULT_SITE["nav"]), **(data.get("nav") if isinstance(data.get("nav"), dict) else {})},
-        "dashboard": {
-            **copy.deepcopy(DEFAULT_SITE["dashboard"]),
-            **(data.get("dashboard") if isinstance(data.get("dashboard"), dict) else {}),
-        },
-        "categories": list(data.get("categories") or []),
-        "texts": dict(data.get("texts") or {}),
-        "layouts": dict(data.get("layouts") or {}),
-        "look": dict(look),
-        "profiles": list(data.get("profiles") or []),
-        "apps": list(data.get("apps") or []),
-        "fields": list(data.get("fields") or []),
-        "rules": list(data.get("rules") or []),
+        "nav": (
+            {**copy.deepcopy(DEFAULT_SITE["nav"]), **(data.get("nav") if isinstance(data.get("nav"), dict) else {})}
+            if "nav" in data
+            else copy.deepcopy(old_site["nav"])
+        ),
+        "dashboard": (
+            {
+                **copy.deepcopy(DEFAULT_SITE["dashboard"]),
+                **(data.get("dashboard") if isinstance(data.get("dashboard"), dict) else {}),
+            }
+            if "dashboard" in data
+            else copy.deepcopy(old_site["dashboard"])
+        ),
+        "categories": list(data.get("categories") or []) if "categories" in data else copy.deepcopy(old_site["categories"]),
+        "texts": dict(data.get("texts") or {}) if "texts" in data else copy.deepcopy(old_site["texts"]),
+        "layouts": dict(data.get("layouts") or {}) if "layouts" in data else copy.deepcopy(old_site["layouts"]),
+        "look": look,
+        "profiles": list(data.get("profiles") or []) if "profiles" in data else copy.deepcopy(old_site["profiles"]),
+        "apps": list(data.get("apps") or []) if "apps" in data else copy.deepcopy(old_site["apps"]),
+        "fields": list(data.get("fields") or []) if "fields" in data else copy.deepcopy(old_site["fields"]),
+        "rules": list(data.get("rules") or []) if "rules" in data else copy.deepcopy(old_site["rules"]),
     }
     _validate_advanced_site(next_site)
     next_site["profiles"] = [p for raw in next_site["profiles"] if (p := _normalize_profile(raw)) is not None]
@@ -442,6 +460,9 @@ def save_site_config(*, actor: User, data: dict[str, Any], request: Any = None) 
     _audit_diff(old_site["apps"], result["apps"], "app")
     _audit_diff(old_site["fields"], result["fields"], "field")
     _audit_diff(old_site["rules"], result["rules"], "rule")
+    from apps.accounts.business_rules import public_rules
+
+    result["live"] = public_rules()
     return result
 
 

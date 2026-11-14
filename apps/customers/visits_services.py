@@ -9,11 +9,13 @@ from typing import Any
 from django.db import transaction
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import Role, User
 from apps.common.exceptions import ApiException, ErrorCode
 from apps.common.utils import baghdad_now, baghdad_today
 from apps.customers.models import Customer, Visit
 from apps.customers.services import serialize_customer
+from apps.notifications.services import notify_role
 
 VISIT_NEAR_M = 200
 VALID_OUTCOMES = ("order", "payment", "no_order", "closed")
@@ -116,6 +118,8 @@ def record_visit(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     distance_m: int | None = None
     far: bool | None = None
 
+    rules = rules_of()
+    near_m = int(rules.get("visit_near_m") or VISIT_NEAR_M)
     if lat_raw is not None and lng_raw is not None and lat_raw != "" and lng_raw != "":
         try:
             lat_f = float(lat_raw)
@@ -126,7 +130,7 @@ def record_visit(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             raise ApiException(code=ErrorCode.VALIDATION, message=("الإحداثيات غير صحيحة", "Invalid coordinates")) from exc
         if cust.lat is not None and cust.lng is not None:
             distance_m = _haversine_m(lat_f, lng_f, float(cust.lat), float(cust.lng))
-            far = distance_m > VISIT_NEAR_M
+            far = distance_m > near_m
 
     now = baghdad_now()
     today = now.date()
@@ -159,6 +163,18 @@ def record_visit(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             distance_m=distance_m,
             far=far,
             planned=planned,
+        )
+
+    if far and rules.get("far_visit_alert"):
+        notify_role(
+            role=Role.MANAGER,
+            kind="needs_approval",
+            title_ar=f"زيارة بعيدة عن {cust.name}",
+            title_en=f"Far visit at {cust.name}",
+            body_ar=f"{actor.name} · {distance_m} م",
+            body_en=f"{actor.name} · {distance_m} m",
+            ref_type="customer",
+            ref_id=cust.id,
         )
 
     visit = Visit.objects.select_related("rep", "customer").get(id=visit.id)

@@ -71,6 +71,7 @@ class Delivery(models.Model):
     loaded_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=DeliveryStatus.choices, default=DeliveryStatus.READY, db_index=True)
     photo_path = models.CharField(max_length=255, blank=True, default="")
+    payment = models.JSONField(null=True, blank=True)
     problem_reason = models.TextField(blank=True, default="")
     problem_note = models.TextField(blank=True, default="")
     problem_by = models.ForeignKey(

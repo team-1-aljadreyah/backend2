@@ -6,10 +6,12 @@ from typing import Any
 from django.db import transaction
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import Role, User
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
 from apps.common.utils import BAGHDAD_TZ, baghdad_now, baghdad_today
+from apps.notifications.models import Notification
 from apps.notifications.services import notify_role, notify_user
 from apps.payments.models import CashHandover, Payment, PaymentMethod
 
@@ -103,6 +105,32 @@ def list_custody_for_actor(*, actor: User) -> list[dict[str, Any]]:
     reps = list(User.objects.filter(role=Role.REP, deleted=False).order_by("id"))
     rows = [_compute_custody_row(r) for r in reps]
     return [r for r in rows if r["collected"] > 0 or r["holding"] != 0 or r.get("pending") or User.objects.filter(id=r["rep"]["id"], active=True).exists()]
+
+
+def check_rep_custody_cap(rep: User) -> None:
+    """Notify accountant & manager once per Baghdad day if rep's cash holding exceeds `custody_cap`."""
+    if rep is None or rep.role != Role.REP:
+        return
+    cap = int(rules_of().get("custody_cap") or 0)
+    if cap <= 0:
+        return
+    holding = _compute_custody_row(rep)["holding"]
+    if holding <= cap:
+        return
+    day_key = f"cap:{rep.id}:{baghdad_today().isoformat()}"
+    if Notification.objects.filter(kind="custody", ref_type="custody", ref_id=day_key).exists():
+        return
+    for target_role in (Role.ACCOUNTANT, Role.MANAGER):
+        notify_role(
+            role=target_role,
+            kind="custody",
+            title_ar=f"عهدة {rep.name} تجاوزت {cap:,} د.ع",
+            title_en=f"{rep.name}'s cash passed {cap:,} IQD",
+            body_ar=f"الرصيد المعلّق الآن: {holding:,} د.ع",
+            body_en=f"Cash on hand now: {holding:,} IQD",
+            ref_type="custody",
+            ref_id=day_key,
+        )
 
 
 def get_custody_log_for_actor(*, actor: User, rep_id: int) -> dict[str, Any]:

@@ -33,7 +33,7 @@ def build_health_report() -> dict[str, Any]:
 
     attempts_24h = list(LoginAttempt.objects.filter(created_at__gte=day_ago).select_related("user").order_by("id"))
     failed_24h = [a for a in attempts_24h if not a.ok]
-    reasons: dict[str, int] = {"wrong": 0, "stopped": 0, "hours": 0}
+    reasons: dict[str, int] = {"wrong": 0, "stopped": 0, "hours": 0, "locked": 0}
     for f in failed_24h:
         r = f.reason if f.reason in reasons else "wrong"
         reasons[r] += 1

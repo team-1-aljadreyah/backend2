@@ -20,7 +20,7 @@
   { "success": false, "message": "<localized message>", "code": "<ErrorCode>", "errors": { "<field>": "<localized error>" } }
   ```
 - **Typed Error Codes (`ErrorCode`)**:
-  `VALIDATION`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `OUT_OF_STOCK`, `DEBT_LIMIT`, `RETURN_TOO_MUCH`, `ALREADY_REVERSED`, `MONTH_CLOSED`, `BAD_STATE`, `NETWORK`.
+  `VALIDATION`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `OUT_OF_STOCK`, `DEBT_LIMIT`, `RETURN_TOO_MUCH`, `ALREADY_REVERSED`, `MONTH_CLOSED`, `BAD_STATE`, `RATE_LIMITED`, `MIN_ORDER`, `EDIT_CLOSED`, `MAINTENANCE`, `FEATURE_OFF`, `SIGNUP_CLOSED`, `TOO_OLD`, `LOCKED`, `NETWORK`.
 - **List Responses**: Returned directly as JSON arrays in `data` (never nested under `{ results, count }`) unless opt-in query/header pagination is explicitly requested.
 - **Monetary Representation**: All IQD amounts are whole integers; percentages and USD exchange rates are numeric (`Decimal` in Django, serialized cleanly to JSON numbers where TS `number` expects them).
 
@@ -227,8 +227,8 @@
 
 | Method | Path | Auth / Roles | Input | Response (`data`) | Key Rules |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/site` | Public / Auth | — | `SitePayload` | Public callers receive branding only; authenticated callers receive full `profiles`, `apps`, `fields`, `rules` |
-| PATCH | `/settings/site` | `manager` | Partial `SiteConfig` | `SitePayload` | Updates branding, `categories`, `profiles`, `apps`, `fields`, `rules` |
+| GET | `/site` | Public / Auth | — | `SitePayload` | Public callers receive branding + `live`; authenticated callers receive full `profiles`, `apps`, `fields`, `rules`, `live` |
+| PATCH | `/settings/site` | `manager` | Partial `SiteConfig` | `SitePayload` | Updates branding, `categories`, `profiles`, `apps`, `fields`, `rules`; returns updated `SitePayload` including `live` |
 | POST | `/users/{id}/profile` | `manager` | `{ profile_id }` | `User` | Assigns or clears permission profile (`denied`, `read_only`, `deny_actions`, `hours`, `limits`) |
 | DELETE | `/users/{id}` | `manager` | — | `{ ok: true }` | Soft-deletes inactive/former user cleanly & frees phone for reuse; blocks self-delete (`409`) |
 | GET | `/setup/health` | `manager` | — | `SecurityHealth` | Returns score, 6 weighted checks, 24h login breakdown, idle & `weak` password users |
@@ -243,7 +243,8 @@
 | POST | `/categories/rename` | `manager` | `{ from, to }` (also accepts `old`/`next`) | `{ old, next, updated_items }` | Renames item category across items & `SiteConfig` |
 | POST | `/vehicles` | `manager` | `VehicleInput` | `Vehicle` | Creates delivery vehicle with `capacity_kg` and optional assigned `driver_id` |
 | PATCH | `/vehicles/{id}` | `manager` | Partial `VehicleInput` | `Vehicle` | Updates vehicle details/status |
-| POST | `/orders/{id}/shipments` | `manager`, `warehouse` | `ShipmentLoad[]` | `Order` | Splits prepared order across vehicles (`shipment_of`, `shipment_no`) & checks `capacity_kg` |
+| POST | `/orders/{id}/shipments` | `manager`, `warehouse`, `staff` | `{ loads: ShipmentLoad[] }` (`driver_id?` per load) | `Order` | Assigns or splits prepared order across vehicles (`shipment_of`, `shipment_no`) & checks `capacity_kg`; optional `driver_id` overrides vehicle driver |
+| POST | `/orders/{id}/delivery/carrier` | `manager`, `warehouse`, `staff` | `{ rep_id, vehicle_id \| null }` | `Order` | Sets/updates delivery rep and optional vehicle (`null` removes vehicle) after prep and before loading/splitting; notifies new driver |
 | POST | `/orders/{id}/delivery/load` | `manager`, `warehouse` | — | `Order` | Marks prepared order loaded on vehicle & notifies assigned driver |
 | GET / POST | `/expenses` | `manager`, `accountant` (`view`/`create`) | `NewExpense` | `Expense[]` / `Expense` | Auto-approves below `expense_approval_above`; routes large expenses to `pending` |
 | PATCH | `/expenses/{id}` | `manager`, `accountant` | Partial `Expense` | `Expense` | Edits pending expense |
@@ -299,4 +300,27 @@
 | GET | `/reorder/due` | `shop` | None | `ReorderDue[]` | In-stock items the shop orders periodically that are due for reorder based on historical order gaps. |
 | GET | `/reorder/late-shops` | `rep` (own), `manager`, `accountant` | None | `LateShop[]` | Shops overdue for their next order relative to their historical cadence. |
 | GET | `/reports/day-summary` | `manager`, `accountant` | `?date=YYYY-MM-DD` | `DaySummary` | Target day KPIs vs yesterday & last week, `best_rep`, `counter_sales`, `late` deliveries, `low` stock, `hour` (`settings.summary_hour`), with role profit redaction. |
+
+---
+
+## 17. Wevlix OTP & Carrier Selection Updates
+
+| Verb | Path | Auth / Roles | Request / Query | Response `data` | Domain Logic & Security Rules |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/otp/send` | Public (`register` \| `reset`), Auth (`phone`) | `{ phone, purpose }` | `{ request_id, expires_at, resend_at, sandbox_code? }` | Calls Wevlix `POST /v1/otp/send` (`+9647...`, `otpMode: "generated"`, `locale: "ar"`), or generates & hashes a local 6-digit `sandbox_code` when `WEVLIX_MODE=demo` (non-production). Enforces 60s resend cooldown, 5/hr/phone cap (`429 RATE_LIMITED`), `409` conflict checks (`register`/`phone`), uniform response on `reset` without exposing missing phones. Returns `404` when `WEVLIX_MODE=disabled`. |
+| POST | `/otp/verify` | Public | `{ request_id, code }` | `{ otp_token, expires_at }` | Calls Wevlix `POST /v1/otp/verify` (or checks local `code_hash` in `demo` mode). Enforces 5-min TTL (`410`), max 5 tries (`422` on `1..4`, `429 RATE_LIMITED` on `5`), mints single-use 15-min `otp_token`. |
+| POST | `/auth/reset-password` | Public | `{ phone, otp_token, password }` | `null` | Consumes single-use `reset` `otp_token`, enforces password length >= 6 (`422`), updates password, bumps `token_version` & revokes active `UserSession`s. |
+| POST | `/me/phone` | Authenticated | `{ phone, otp_token }` | `User` | Consumes single-use `phone` `otp_token` and updates signed-in user's login phone (`409` if in use by another account). |
+| POST | `/orders/{id}/prepare` | `manager`, `warehouse` | `{ warehouses, rep_id?, vehicle_id? }` | `Order` | Supports optional driver/vehicle pick (or persists `Order.carrier_pick` across multi-warehouse prep until the last part finishes, then notifies chosen driver). |
+
+---
+
+## 18. Advanced Business Rules (`settings.advanced`)
+
+| Verb | Path | Auth / Roles | Request / Query | Response `data` | Domain Logic & Security Rules |
+| --- | --- | --- | --- | --- | --- |
+| PATCH | `/settings` | `manager` | `{ ..., advanced?, how? }` (`how`: `"import"` \| `"reset"`) | `Settings` (with full `advanced` merged) | Validates `advanced` via `check_rules` (returns `422 VALIDATION` with field-keyed `errors`), persists only diffs from `DEFAULT_RULES` (`changed_rules`), syncs `auto_confirm_rep_orders`, and appends per-field `SettingsChange` rows (`من ← إلى`). |
+| GET | `/settings/history` | `manager` | `?limit=` (optional) | `SettingsChange[]` (`{ id, at, user_id, user_name, key, from, to }`) | Returns chronological change log for advanced business rules. |
+| GET | `/site` | Public | None | `{ site, live }` | Includes `live = { self_signup, features, maintenance, announcement, password_min, names, users_page }` without authentication. |
+| POST | `/orders/{id}/deliver` | `manager`, `rep` | `{ pin, photo?, delivery_lat?, delivery_lng?, payment? }` | `{ ok, order }` | Enforces `pin_tries`, optional `photo` when `photo_required=false`, and `door_methods` (`cash`/`qi`/`zaincash`) on `payment` (`403 FEATURE_OFF` when disabled). |
 

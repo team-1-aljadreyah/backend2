@@ -15,6 +15,7 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import DOOR_METHODS_ALL, round_amount_by_rule, rules_of
 from apps.accounts.models import Role, SystemSetting, User
 from apps.accounts.permissions import (
     get_active_customer_id,
@@ -26,12 +27,16 @@ from apps.accounts.serializers import serialize_vehicle
 from apps.audit.services import record_audit
 from apps.catalog.services import item_piece_weight_kg
 from apps.common.exceptions import ApiException, ErrorCode
-from apps.common.utils import calc_percent_round, decode_image_data_url, decrypt_secret, round_250
+from apps.common.utils import calc_percent_round, decode_image_data_url, decrypt_secret
+from apps.customers.services import customer_balance_map
 from apps.deliveries.models import Delivery, DeliveryStatus, RepLocation, Vehicle
 from apps.invoices.services import create_invoice_for_order
 from apps.notifications.services import notify_customer, notify_role, notify_user
 from apps.orders.models import Order, OrderLine, OrderStatus
 from apps.orders.services import can_see_order, get_order_for_actor
+from apps.payments.custody_services import check_rep_custody_cap
+from apps.payments.models import Payment, PaymentMethod
+from apps.payments.services import _allocate_payment_fifo
 from apps.realtime.broadcaster import publish_order_changed, publish_rep_location
 from integrations.storage import get_storage
 
@@ -166,17 +171,18 @@ def _check_delivery_pin_step(*, actor: User, order_id: int, raw_pin: str) -> dic
             matched = bool(submitted) and hmac.compare_digest(submitted, expected_pin)
 
         if not matched:
+            pin_tries = max(1, int(rules_of().get("pin_tries") or MAX_PIN_ATTEMPTS))
             dlv.pin_attempts += 1
-            left = max(0, MAX_PIN_ATTEMPTS - dlv.pin_attempts)
-            if dlv.pin_attempts >= MAX_PIN_ATTEMPTS:
+            left = max(0, pin_tries - dlv.pin_attempts)
+            if dlv.pin_attempts >= pin_tries:
                 dlv.locked = True
                 notify_role(
                     role=Role.MANAGER,
                     kind="delivery_locked",
                     title_ar=f"قفل تسليم الشحنة {dlv.order.number}",
                     title_en=f"Delivery locked for {dlv.order.number}",
-                    body_ar="تم إدخال رمز استلام خاطئ 5 مرات",
-                    body_en="5 consecutive invalid delivery PIN attempts",
+                    body_ar=f"تم إدخال رمز استلام خاطئ {pin_tries} مرات",
+                    body_en=f"{pin_tries} consecutive invalid delivery PIN attempts",
                     ref_type="order",
                     ref_id=dlv.order_id,
                 )
@@ -240,15 +246,52 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
     if not pin_check["ok"]:
         return pin_check
 
+    rules = rules_of()
+    pay_raw = data.get("payment")
+    pay_method: str | None = None
+    pay_amt: int = 0
+    if pay_raw is not None:
+        if not isinstance(pay_raw, dict):
+            msg = ("بيانات الدفع غير صالحة", "Invalid payment payload")
+            raise ApiException(code=ErrorCode.VALIDATION, message=msg, status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY, errors={"payment": msg})
+        pay_method = str(pay_raw.get("method") or "").strip()
+        if pay_method not in DOOR_METHODS_ALL:
+            msg = ("طريقة الدفع غير صالحة", "Invalid payment method")
+            raise ApiException(code=ErrorCode.VALIDATION, message=msg, status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY, errors={"payment": msg})
+        allowed_door = rules.get("door_methods") or list(DOOR_METHODS_ALL)
+        if pay_method not in allowed_door or (pay_method in ("qi", "zaincash") and not rules["features"]["online_pay"]):
+            raise ApiException(
+                code=ErrorCode.FEATURE_OFF,
+                message=("طريقة الدفع هذه موقفة", "That payment method is off"),
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                errors={"payment": ("طريقة الدفع موقفة", "Payment method is off")},
+            )
+        raw_amt = pay_raw.get("amount")
+        if isinstance(raw_amt, bool) or raw_amt in (None, ""):
+            msg = ("المبلغ يجب أن يكون موجباً", "Amount must be positive")
+            raise ApiException(code=ErrorCode.VALIDATION, message=msg, status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY, errors={"payment": msg})
+        try:
+            pay_amt = int(raw_amt)
+            if pay_amt <= 0:
+                raise ValueError
+        except (TypeError, ValueError) as exc:
+            msg = ("المبلغ يجب أن يكون موجباً", "Amount must be positive")
+            raise ApiException(code=ErrorCode.VALIDATION, message=msg, status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY, errors={"payment": msg}) from exc
+        if pay_method == "zaincash" and pay_amt < 1000:
+            msg = ("زين كاش يقبل الدفع من 1,000 د.ع فأكثر", "ZainCash starts from 1,000 IQD")
+            raise ApiException(code=ErrorCode.VALIDATION, message=msg, status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY, errors={"payment": msg})
+
+    photo_required = bool(rules.get("photo_required", True))
     photo_raw = data.get("photo")
-    if not photo_raw:
+    storage_key = ""
+    bucket = settings.SUPABASE_BUCKET_DELIVERY_PROOFS
+    if photo_raw:
+        raw_bytes, ext, mime = decode_image_data_url(photo_raw, max_dim=1200)
+        storage_key = f"order-{order_id}-{uuid4().hex[:12]}.{ext}"
+        get_storage().put_bytes(bucket=bucket, key=storage_key, content=raw_bytes, content_type=mime)
+    elif photo_required:
         msg = ("صورة إثبات التسليم مطلوبة", "Delivery proof photo is required")
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"photo": msg})
-
-    raw_bytes, ext, mime = decode_image_data_url(photo_raw, max_dim=1200)
-    storage_key = f"order-{order_id}-{uuid4().hex[:12]}.{ext}"
-    bucket = settings.SUPABASE_BUCKET_DELIVERY_PROOFS
-    get_storage().put_bytes(bucket=bucket, key=storage_key, content=raw_bytes, content_type=mime)
 
     rest_mode = str(data.get("rest") or "cancel").strip().lower()
     if rest_mode not in ("keep", "cancel"):
@@ -315,7 +358,7 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
                 disc_pct = order.discount_percent
                 disc_amt = calc_percent_round(sub, disc_pct)
                 after = max(0, sub - disc_amt)
-                tot = round_250(after)
+                tot = round_amount_by_rule(after)
                 rnd = tot - after
                 res_hours = SystemSetting.get_solo().reservation_hours
 
@@ -359,9 +402,58 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
             order.save(update_fields=["status", "reserved_until", "short_lines", "rest_order"])
             sync_shipments(order)
 
+            door_payment_obj: dict[str, Any] | None = None
+            if pay_method is not None:
+                owed = customer_balance_map([order.customer_id]).get(order.customer_id, 0)
+                if pay_amt > owed:
+                    raise ApiException(
+                        code=ErrorCode.VALIDATION,
+                        message=("المبلغ أكبر من الدين", "Amount is more than the debt"),
+                        status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        errors={
+                            "payment": (
+                                f"دين المحل مع هذه الفاتورة {owed:,} د.ع",
+                                f"The shop's debt with this invoice is {owed:,} IQD",
+                            )
+                        },
+                    )
+                if pay_method == "cash":
+                    door_cref = f"door:{order.id}"
+                    pay_rec = Payment.objects.filter(client_ref=door_cref).first()
+                    if not pay_rec:
+                        pay_rec = _allocate_payment_fifo(
+                            customer=order.customer,
+                            amount=pay_amt,
+                            method=PaymentMethod.CASH,
+                            note=f"نقداً عند تسليم {order.number}",
+                            received_by=actor,
+                            received_by_name=actor.name,
+                            received_by_role=actor.role,
+                            client_ref=door_cref,
+                        )
+                        if actor.role == Role.REP:
+                            check_rep_custody_cap(actor)
+                    door_payment_obj = {
+                        "method": "cash",
+                        "amount": pay_amt,
+                        "status": "paid",
+                        "at": now.isoformat(),
+                        "payment_id": pay_rec.id,
+                        "paid_amount": pay_rec.amount,
+                        "paid_at": now.isoformat(),
+                    }
+                else:
+                    door_payment_obj = {
+                        "method": pay_method,
+                        "amount": pay_amt,
+                        "status": "requested",
+                        "at": now.isoformat(),
+                    }
+
             dlv.status = DeliveryStatus.DELIVERED
             dlv.delivered_by = actor
             dlv.photo_path = storage_key
+            dlv.payment = door_payment_obj
             dlv.delivered_at = now
             dlv.problem_reason = ""
             dlv.problem_note = ""
@@ -372,6 +464,7 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
                     "status",
                     "delivered_by",
                     "photo_path",
+                    "payment",
                     "delivered_at",
                     "problem_reason",
                     "problem_note",
@@ -405,7 +498,8 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
             if rest_order is not None:
                 publish_order_changed(rest_order.id)
     except Exception:
-        get_storage().delete(bucket=bucket, key=storage_key)
+        if storage_key:
+            get_storage().delete(bucket=bucket, key=storage_key)
         raise
 
     return {"ok": True, "order": get_order_for_actor(actor=actor, order_id=order_id)}

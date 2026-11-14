@@ -25,10 +25,18 @@ class ErrorCode:
     NOT_FOUND = "NOT_FOUND"
     OUT_OF_STOCK = "OUT_OF_STOCK"
     DEBT_LIMIT = "DEBT_LIMIT"
+    MIN_ORDER = "MIN_ORDER"
+    EDIT_CLOSED = "EDIT_CLOSED"
     RETURN_TOO_MUCH = "RETURN_TOO_MUCH"
     ALREADY_REVERSED = "ALREADY_REVERSED"
     MONTH_CLOSED = "MONTH_CLOSED"
     BAD_STATE = "BAD_STATE"
+    RATE_LIMITED = "RATE_LIMITED"
+    MAINTENANCE = "MAINTENANCE"
+    FEATURE_OFF = "FEATURE_OFF"
+    SIGNUP_CLOSED = "SIGNUP_CLOSED"
+    TOO_OLD = "TOO_OLD"
+    LOCKED = "LOCKED"
     NETWORK = "NETWORK"
 
 
@@ -39,10 +47,18 @@ DEFAULT_CODE_MESSAGES: dict[str, tuple[str, str]] = {
     ErrorCode.NOT_FOUND: ("العنصر المطلوب غير موجود", "Requested resource not found"),
     ErrorCode.OUT_OF_STOCK: ("المخزون المتوفر غير كافٍ", "Insufficient available stock"),
     ErrorCode.DEBT_LIMIT: ("تجاوز الطلب الحد الائتماني المسموح للعميل", "Customer debt limit exceeded"),
+    ErrorCode.MIN_ORDER: ("الطلب أقل من الحد الأدنى المسموح", "Order is below the minimum amount"),
+    ErrorCode.EDIT_CLOSED: ("انتهى وقت تعديل هذا الطلب", "The edit window for this order has closed"),
     ErrorCode.RETURN_TOO_MUCH: ("الكمية المرتجعة تتجاوز الكمية القابلة للإرجاع", "Return quantity exceeds remaining deliverable quantity"),
     ErrorCode.ALREADY_REVERSED: ("تم عكس هذه الدفعة مسبقاً", "This payment has already been reversed"),
     ErrorCode.MONTH_CLOSED: ("الشهر المالي مغلق ولا يمكن تعديله", "Commission month is closed"),
     ErrorCode.BAD_STATE: ("الحالة الحالية لا تسمح بهذا الإجراء", "Operation not allowed in the current state"),
+    ErrorCode.RATE_LIMITED: ("محاولات كثيرة، حاول لاحقاً", "Too many requests, please try again later"),
+    ErrorCode.MAINTENANCE: ("التطبيق في صيانة الآن", "The app is under maintenance"),
+    ErrorCode.FEATURE_OFF: ("هذه الميزة متوقفة الآن", "This feature is turned off"),
+    ErrorCode.SIGNUP_CLOSED: ("تسجيل الحسابات الجديدة متوقف حالياً", "New account registration is turned off"),
+    ErrorCode.TOO_OLD: ("مرت المدة المسموح فيها بهذا الإجراء", "The allowed window for this action has passed"),
+    ErrorCode.LOCKED: ("الحساب مقفل مؤقتاً بسبب محاولات دخول خاطئة", "Account temporarily locked due to failed logins"),
 }
 
 

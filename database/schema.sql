@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS accounts_system_setting (
     address                 VARCHAR(255) NOT NULL DEFAULT 'Baghdad, Iraq',
     expense_approval_above  BIGINT NULL CHECK (expense_approval_above IS NULL OR expense_approval_above >= 0),
     summary_hour            SMALLINT NOT NULL DEFAULT 21,
+    advanced                JSONB NOT NULL DEFAULT '{}'::jsonb,
     updated_at              TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -229,6 +230,27 @@ CREATE TABLE IF NOT EXISTS accounts_rule_run (
 );
 
 CREATE INDEX IF NOT EXISTS accounts_rule_run_created_idx ON accounts_rule_run (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS accounts_otp_challenge (
+    id                BIGSERIAL PRIMARY KEY,
+    request_id        VARCHAR(40) NOT NULL UNIQUE,
+    phone             VARCHAR(20) NOT NULL,
+    purpose           VARCHAR(16) NOT NULL CHECK (purpose IN ('register', 'reset', 'phone')),
+    user_id           BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
+    wevlix_message_id VARCHAR(128) NOT NULL DEFAULT '',
+    code_hash         VARCHAR(128) NOT NULL DEFAULT '',
+    real_sent         BOOLEAN NOT NULL DEFAULT TRUE,
+    attempts          SMALLINT NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+    expires_at        TIMESTAMPTZ NOT NULL,
+    resend_at         TIMESTAMPTZ NOT NULL,
+    otp_token         VARCHAR(64) NULL UNIQUE,
+    token_expires_at  TIMESTAMPTZ NULL,
+    used_at           TIMESTAMPTZ NULL,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS acc_otp_phone_purp_idx ON accounts_otp_challenge (phone, purpose, created_at);
+CREATE INDEX IF NOT EXISTS acc_otp_expires_idx ON accounts_otp_challenge (expires_at);
 
 -- -----------------------------------------------------------------------------
 -- 3. Customers & Shop Memberships (referenced by accounts_user_session)
@@ -620,6 +642,7 @@ CREATE TABLE IF NOT EXISTS orders_order (
     rule_note           TEXT NOT NULL DEFAULT '',
     counter             JSONB NULL,
     rating              JSONB NULL,
+    carrier_pick        JSONB NULL,
     short_lines         JSONB NOT NULL DEFAULT '[]'::jsonb,
     cancel_reason       TEXT NOT NULL DEFAULT '',
     cancelled_at        TIMESTAMPTZ NULL,
@@ -697,6 +720,7 @@ CREATE TABLE IF NOT EXISTS deliveries_delivery (
     loaded_at       TIMESTAMPTZ NULL,
     status          VARCHAR(20) NOT NULL DEFAULT 'ready' CHECK (status IN ('ready', 'out', 'delivered', 'problem', 'returned')),
     photo_path      VARCHAR(500) NOT NULL DEFAULT '',
+    payment         JSONB NULL,
     problem_reason  TEXT NOT NULL DEFAULT '',
     problem_note    TEXT NOT NULL DEFAULT '',
     problem_by_id   BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
@@ -1728,5 +1752,20 @@ CREATE TABLE IF NOT EXISTS catalog_scheduled_price (
     applied_at    TIMESTAMPTZ NULL,
     told          INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS accounts_settings_change (
+    id      BIGSERIAL PRIMARY KEY,
+    at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    by_id   BIGINT NULL REFERENCES accounts_user(id) ON DELETE SET NULL,
+    changes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    how     VARCHAR(16) NOT NULL DEFAULT ''
+);
+
+ALTER TABLE accounts_settings_change ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_settings_change_manager_only ON accounts_settings_change;
+CREATE POLICY p_settings_change_manager_only ON accounts_settings_change
+    FOR ALL
+    USING (erp_session_role() = 'manager')
+    WITH CHECK (erp_session_role() = 'manager');
 
 COMMIT;

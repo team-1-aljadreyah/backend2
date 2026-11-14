@@ -40,3 +40,6 @@ REST_FRAMEWORK = {
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+
+# Keep existing non-OTP tests isolated unless explicitly testing OTP via override_settings
+WEVLIX_MODE = "disabled"

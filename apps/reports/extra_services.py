@@ -7,6 +7,7 @@ from typing import Any
 from django.db.models import Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import Role, SystemSetting, User
 from apps.accounts.permissions import get_active_customer_id, sees_profit
 from apps.catalog.models import Item
@@ -22,6 +23,10 @@ from apps.payments.models import Payment
 def get_my_reorder_due(*, actor: User) -> list[dict[str, Any]]:
     if actor.role != Role.SHOP:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    rules = rules_of()
+    if not rules["features"]["reorder"]:
+        return []
+    early_days = int(rules.get("reorder_early_days", 1))
     cid = get_active_customer_id(actor)
     if not cid:
         return []
@@ -62,7 +67,7 @@ def get_my_reorder_due(*, actor: User) -> list[dict[str, Any]]:
         last_ln = item_lines[-1]
         last_day = last_ln.order.created_at.astimezone(BAGHDAD_TZ).date()
         days_since = (today - last_day).days
-        if days_since >= max(1, round(avg_gap * 0.8)):
+        if days_since >= max(1, avg_gap - early_days):
             out.append(
                 {
                     "item_id": iid,
@@ -85,6 +90,8 @@ def get_late_shops(*, actor: User) -> list[dict[str, Any]]:
         cust_qs = Customer.objects.filter(active=True, walk_in=False)
     else:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    if not rules_of()["features"]["reorder"]:
+        return []
 
     customers = {c.id: c for c in cust_qs}
     if not customers:

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
@@ -13,13 +14,14 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import get_active_customer_id
 from apps.accounts.profiles import may_profile_action
 from apps.accounts.rules_engine import run_automation_rules
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
-from apps.common.utils import baghdad_day_of
+from apps.common.utils import baghdad_day_of, baghdad_now
 from apps.customers.models import Customer
 from apps.customers.services import customer_balance_map, serialize_customer
 from apps.invoices.models import CreditNote, Invoice, ReturnDoc
@@ -378,12 +380,18 @@ def create_payment(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         from apps.customers.visits_services import record_auto_visit
 
         record_auto_visit(actor=actor, customer=customer, outcome="payment")
+        if method == PaymentMethod.CASH:
+            from apps.payments.custody_services import check_rep_custody_cap
+
+            check_rep_custody_cap(actor)
     return serialize_payment(pay)
 
 
 @transaction.atomic
 def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT):
+    rules = rules_of()
+    allowed_roles = rules.get("reverse_roles") or [Role.MANAGER, Role.ACCOUNTANT]
+    if actor.role not in allowed_roles:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
 
     clean_reason = (reason or "").strip()
@@ -404,6 +412,19 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
             code=ErrorCode.ALREADY_REVERSED,
             message=("هذا التسديد معكوس مسبقاً", "This payment is already reversed"),
         )
+
+    max_days = int(rules.get("reverse_days") or 0)
+    if max_days > 0 and actor.role != Role.MANAGER:
+        age_seconds = (baghdad_now() - orig.created_at).total_seconds()
+        if age_seconds > max_days * 86400:
+            raise ApiException(
+                code=ErrorCode.TOO_OLD,
+                message=(
+                    f"عكس التسديد للأكبر من {max_days} يوماً للمدير فقط",
+                    f"Reversing payments older than {max_days} days is manager-only",
+                ),
+                status_code=http_status.HTTP_403_FORBIDDEN,
+            )
 
     month_str = baghdad_day_of(orig.created_at)[:7]
     if apps.is_installed("apps.commissions"):
@@ -595,19 +616,20 @@ def get_customer_statement(
 
     for p in Payment.objects.filter(customer_id=customer_id).only("id", "number", "amount", "reversal_of_id", "created_at"):
         day = baghdad_day_of(p.created_at)
+        pay_link = None if actor.role == Role.SHOP else f"/payments/{p.id}"
         if p.reversal_of_id is not None or p.amount < 0:
             events.append((
                 p.created_at,
                 2,
                 p.id,
-                {"date": day, "at": p.created_at.isoformat(), "type": "reversal", "ref": p.number, "link": f"/payments/{p.id}", "debit": abs(p.amount), "credit": 0},
+                {"date": day, "at": p.created_at.isoformat(), "type": "reversal", "ref": p.number, "link": pay_link, "debit": abs(p.amount), "credit": 0},
             ))
         else:
             events.append((
                 p.created_at,
                 2,
                 p.id,
-                {"date": day, "at": p.created_at.isoformat(), "type": "payment", "ref": p.number, "link": f"/payments/{p.id}", "debit": 0, "credit": p.amount},
+                {"date": day, "at": p.created_at.isoformat(), "type": "payment", "ref": p.number, "link": pay_link, "debit": 0, "credit": p.amount},
             ))
 
     for ret in ReturnDoc.objects.filter(customer_id=customer_id).only("id", "number", "amount", "created_at"):
@@ -707,6 +729,19 @@ def get_customer_statement(
     }
 
 
+def _resolve_online_return_url(return_url: str, *, payment_key: str, via: str) -> str:
+    """Resolve relative UI path into an absolute return URL carrying `?payment=...`."""
+    raw = str(return_url or "/statement").strip()
+    if raw.startswith("http://") or raw.startswith("https://"):
+        base_return = raw
+    else:
+        origin = (os.getenv("FRONTEND_ORIGIN") or "https://aln.ama8.uk").rstrip("/")
+        path = "/" + raw.lstrip("/")
+        base_return = f"{origin}{path}"
+    delim = "&" if "?" in base_return else "?"
+    return f"{base_return}{delim}payment={payment_key}&via={via}"
+
+
 def start_online_payment(
     *,
     actor: User,
@@ -716,6 +751,12 @@ def start_online_payment(
 ) -> dict[str, Any]:
     if actor.role not in (Role.SHOP, Role.MANAGER, Role.ACCOUNTANT):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    if not rules_of()["features"]["online_pay"]:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            message=("الدفع الإلكتروني متوقف الآن", "Online payment is turned off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
 
     client_ref = (str(data.get("key") or data.get("client_ref") or "")).strip() or None
     if client_ref:
@@ -754,22 +795,11 @@ def start_online_payment(
     finish_url = str(data.get("return_url") or "/statement").strip()
 
     if provider == "zaincash":
-        import os
-
         from integrations.zaincash.client import get_zaincash_client
 
         payment_id = f"PAY-ZC-{uuid4().hex[:12].upper()}"
         request_id = f"ZC-{customer.id}-{uuid4().hex[:14]}"
-
-        if finish_url.startswith("http://") or finish_url.startswith("https://"):
-            base_return = finish_url
-        else:
-            origin = (os.getenv("FRONTEND_ORIGIN") or "https://aln.ama8.uk").rstrip("/")
-            path = "/" + finish_url.lstrip("/")
-            base_return = f"{origin}{path}"
-
-        delim = "&" if "?" in base_return else "?"
-        back_url = f"{base_return}{delim}payment={payment_id}&via=zaincash"
+        back_url = _resolve_online_return_url(finish_url, payment_key=payment_id, via="zaincash")
 
         zc = get_zaincash_client()
         try:
@@ -807,13 +837,17 @@ def start_online_payment(
 
     # Qi Card
     request_id = f"QI-{customer.id}-{uuid4().hex[:14]}"
-    notif_url = notification_url or "/api/v1/webhooks/qi-card"
+    back_url = _resolve_online_return_url(finish_url, payment_key=request_id, via="qi")
+    notif_url = notification_url or ""
+    if not notif_url or (not notif_url.startswith("https://") and "testserver" not in notif_url):
+        api_origin = (os.getenv("PUBLIC_API_ORIGIN") or "https://api.ama8.uk").rstrip("/")
+        notif_url = f"{api_origin}/api/v1/webhooks/qi-card"
 
     gw = gateway or QiCardGateway()
     res = gw.create_payment(
         request_id=request_id,
         amount=amount,
-        finish_url=finish_url,
+        finish_url=back_url,
         notification_url=notif_url,
         customer_name=customer.name,
         customer_phone=customer.phone,
@@ -828,7 +862,7 @@ def start_online_payment(
         amount=amount,
         status=res.status,
         form_url=res.form_url,
-        return_url=finish_url,
+        return_url=back_url,
         client_ref=client_ref,
         raw_payload=res.raw,
     )
@@ -907,6 +941,8 @@ def get_online_payment_for_actor(
     if not op:
         op = OnlinePayment.objects.select_related("initiated_by", "customer").filter(gateway_id=str(key)).first()
     if not op:
+        op = OnlinePayment.objects.select_related("initiated_by", "customer").filter(request_id=str(key)).first()
+    if not op:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
     if actor.role == Role.SHOP and get_active_customer_id(actor) != op.customer_id:
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
@@ -965,7 +1001,16 @@ def handle_qi_card_webhook(
     gateway: QiCardGateway | None = None,
 ) -> dict[str, Any]:
     gw = gateway or QiCardGateway()
-    gw.verify_webhook_signature(raw_body=raw_body, headers=headers)
+    parsed_for_sig: dict[str, Any] | None = None
+    if raw_body:
+        try:
+            cand = json.loads(raw_body.decode("utf-8"))
+            if isinstance(cand, dict):
+                parsed_for_sig = cand
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            parsed_for_sig = None
+
+    sig_verified = gw.verify_webhook_signature(raw_body=raw_body, headers=headers, payload=parsed_for_sig)
 
     try:
         payload = json.loads(raw_body.decode("utf-8")) if raw_body else {}
@@ -983,18 +1028,32 @@ def handle_qi_card_webhook(
     if not op:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
 
-    new_status = gw.map_status(payload.get("status"))
+    details = payload.get("details") if isinstance(payload.get("details"), dict) else {}
+    pm = payload.get("paymentMethod") if isinstance(payload.get("paymentMethod"), dict) else {}
     masked_card = str(
         payload.get("maskedPan")
-        or (payload.get("paymentMethod") or {}).get("maskedPan")
+        or details.get("maskedPan")
+        or pm.get("maskedPan")
         or payload.get("card")
         or ""
     ).strip()
 
+    if sig_verified:
+        new_status = gw.map_status(payload.get("status"))
+        if new_status == OnlinePaymentStatus.CREATED and payload.get("canceled") is True:
+            new_status = OnlinePaymentStatus.CANCELLED
+        raw_payload = payload
+    else:
+        # In sandbox without webhook_secret/public_key, confirm authoritatively from Qi Card status API.
+        status_res = gw.get_payment_status(op.payment_id)
+        new_status = status_res.status
+        masked_card = status_res.masked_card or masked_card
+        raw_payload = status_res.raw
+
     op = settle_online_payment(
         online_payment_id=op.id,
         new_status=new_status,
-        raw_payload=payload,
+        raw_payload=raw_payload,
         masked_card=masked_card,
     )
     return {"ok": True, "status": op.status, "payment_id": op.recorded_payment_id}

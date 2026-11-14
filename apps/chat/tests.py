@@ -233,7 +233,8 @@ def test_celery_operational_tasks(phase9_setup):
     assert res1 == {"near_expiry": 1, "expired": 1}
     assert sweep_expiry_alerts_task() == {"near_expiry": 0, "expired": 0}
 
-    # Shop creates an order (sets temporary reservation), then backdate reserved_until
+    # Over-limit shop order sets temporary reservation (needs_approval); backdate reserved_until to test expiry sweep
+    Customer.objects.filter(id=phase9_setup["cust1"].id).update(debt_limit=5000)
     shop = _client("07709000007")
     o_res = shop.post(
         "/api/v1/orders",
@@ -242,6 +243,7 @@ def test_celery_operational_tasks(phase9_setup):
     )
     assert o_res.status_code == 201
     oid = o_res.json()["data"]["id"]
+    assert o_res.json()["data"]["status"] == OrderStatus.NEEDS_APPROVAL
     Order.objects.filter(id=oid).update(reserved_until=timezone.now() - timedelta(hours=1))
     assert sweep_expired_reservations_task() == 1
     assert Order.objects.get(id=oid).status == OrderStatus.EXPIRED
@@ -314,3 +316,70 @@ def test_support_chat_rbac_threads_and_read_cursors(phase9_setup):
     assert mgr.post(f"/api/v1/chat/{cust_id}/read", {}, format="json").status_code == 200
     assert mgr.get("/api/v1/chat").json()["data"][0]["unread"] == 0
     assert staff.get("/api/v1/chat").json()["data"][0]["unread"] == 0
+
+
+@pytest.mark.django_db
+def test_notifications_links_respect_role_rep_kinds_and_profile_denied(phase9_setup):
+    """Every notification link must point only to routes permitted for the recipient's role and profile."""
+    from apps.accounts.models import RepKind, SiteConfig
+    from apps.notifications.services import derive_notification_link
+
+    shop_u = phase9_setup["shop_user"]
+    mgr_u = phase9_setup["mgr1"]
+    staff_u = phase9_setup["staff"]
+    keeper_u = phase9_setup["keeper"]
+
+    shop_c = _client("07709000007")
+    keeper_c = _client("07709000004")
+
+    # Shop notifications must NEVER point to /payments/*, /customers/*, /items/*, or /support
+    n_pay = notify_user(user_id=shop_u.id, kind="payment", title_ar="تسديد", title_en="Pay", ref_type="payment", ref_id=171)
+    n_ref = notify_user(user_id=shop_u.id, kind="refund", title_ar="إرجاع", title_en="Refund", ref_type="refund", ref_id=5)
+    n_cust = notify_user(user_id=shop_u.id, kind="shop_approved", title_ar="تفعيل", title_en="Approved", ref_type="customer", ref_id=314)
+    n_item = notify_user(user_id=shop_u.id, kind="clearance", title_ar="عرض", title_en="Offer", ref_type="item", ref_id=579)
+    n_cat = notify_user(user_id=shop_u.id, kind="price_change", title_ar="أسعار", title_en="Prices", ref_type="catalog", ref_id=12)
+    n_chat = notify_user(user_id=shop_u.id, kind="support_reply", title_ar="دعم", title_en="Reply", ref_type="chat", ref_id=314)
+    n_inv = notify_user(user_id=shop_u.id, kind="delivered", title_ar="فاتورة", title_en="Invoice", ref_type="invoice", ref_id=269)
+    n_ord = notify_user(user_id=shop_u.id, kind="order_accepted", title_ar="طلب", title_en="Order", ref_type="order", ref_id=346)
+
+    shop_notifs = {n["id"]: n["link"] for n in shop_c.get("/api/v1/notifications").json()["data"]}
+    assert shop_notifs[n_pay.id] == "/statement"
+    assert shop_notifs[n_ref.id] == "/statement"
+    assert shop_notifs[n_cust.id] == "/account"
+    assert shop_notifs[n_item.id] == "/showcase"
+    assert shop_notifs[n_cat.id] == "/showcase"
+    assert shop_notifs[n_chat.id] == "/shop"
+    assert shop_notifs[n_inv.id] == "/invoices/269"
+    assert shop_notifs[n_ord.id] == "/orders/346"
+
+    # Warehouse keeper must never receive /batches (404) or /payments links
+    n_batch = notify_role(role=Role.WAREHOUSE, kind="batch_held", title_ar="إيقاف", title_en="Hold", ref_type="batch", ref_id=15)
+    n_wh = notify_user(user_id=keeper_u.id, kind="warehouse_cover", title_ar="تكليف", title_en="Cover", ref_type="warehouse", ref_id=1)
+    n_sup = notify_role(role=Role.WAREHOUSE, kind="supply_order", title_ar="توريد", title_en="Supply", ref_type="supply_order", ref_id=58)
+    wh_notifs = {n["id"]: n["link"] for n in keeper_c.get("/api/v1/notifications").json()["data"]}
+    assert wh_notifs[n_batch.id] == "/stock"
+    assert wh_notifs[n_wh.id] == "/hall"
+    assert wh_notifs[n_sup.id] == "/supply?open=58"
+
+    # Rep kinds isolation: delivery-only rep cannot open /customers/* or /commissions; item falls back to /items
+    dlv_rep = User.objects.create_user(phone="07709000099", password="x", name="DeliveryOnly", role=Role.REP, rep_kinds=[RepKind.DELIVERY])
+    assert derive_notification_link("customer", 5, actor=dlv_rep) is None
+    assert derive_notification_link("commission", "", actor=dlv_rep) is None
+    assert derive_notification_link("delivery", 346, actor=dlv_rep) == "/deliveries"
+    assert derive_notification_link("item", 579, actor=dlv_rep) == "/items"
+
+    # Staff support message links to /support?shop=..., invoice/payment links are hidden from staff
+    assert derive_notification_link("chat", 261, actor=staff_u) == "/support?shop=261"
+    assert derive_notification_link("invoice", 269, actor=staff_u) is None
+    assert derive_notification_link("payment", 171, actor=staff_u) is None
+    assert derive_notification_link("warehouse", 1, actor=mgr_u) == "/stock"
+
+    # Profile denied paths suppress links for that profile
+    cfg, _ = SiteConfig.objects.get_or_create(pk=1)
+    cfg.profiles = [{"id": "no_orders", "name": "No Orders", "name_en": "No Orders", "role": "shop", "denied": ["/orders"]}]
+    cfg.save(update_fields=["profiles"])
+    shop_u.profile_id = "no_orders"
+    shop_u.save(update_fields=["profile_id"])
+    if hasattr(shop_u, "_cached_profile"):
+        delattr(shop_u, "_cached_profile")
+    assert derive_notification_link("order", 346, actor=shop_u) is None

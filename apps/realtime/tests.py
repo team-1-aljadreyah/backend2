@@ -193,12 +193,23 @@ async def test_ws_ticket_security_replay_expiry_revocation_origin_cap_and_limits
     # Re-login fresh session for cap / origin / limits checks
     mgr_cli2, _ = await sync_to_async(_auth_client_and_sid)("07730000001")
 
-    # 6. Disallowed Origin rejected with 4003
-    with override_settings(DEBUG=False, CORS_ALLOW_ALL_ORIGINS=False, CORS_ALLOWED_ORIGINS=["https://app.example.com"]):
+    # 6. Disallowed Origin rejected with 4003; regex-matched CORS_ALLOWED_ORIGIN_REGEXES accepted
+    with override_settings(
+        DEBUG=False,
+        CORS_ALLOW_ALL_ORIGINS=False,
+        CORS_ALLOWED_ORIGINS=["https://app.example.com"],
+        CSRF_TRUSTED_ORIGINS=[],
+        CORS_ALLOWED_ORIGIN_REGEXES=[r"^https://.*\.ama8\.uk$"],
+    ):
         t_orig = await sync_to_async(_mint_ticket)(mgr_cli2)
         evil = WebsocketCommunicator(application, f"/ws?ticket={t_orig}", headers=[(b"origin", b"https://evil.example")])
         ok_o, code_o = await evil.connect()
         assert not ok_o and code_o == 4003
+
+        good_rx = WebsocketCommunicator(application, f"/ws?ticket={t_orig}", headers=[(b"origin", b"https://aln.ama8.uk")])
+        ok_rx, _ = await good_rx.connect()
+        assert ok_rx
+        await good_rx.disconnect()
 
     # 7. Max connections per user cap (close 4008) & slot release on disconnect
     await sync_to_async(cache.clear)()

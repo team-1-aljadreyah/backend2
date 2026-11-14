@@ -93,11 +93,13 @@ def serialize_tier(tier: PriceTier) -> dict[str, Any]:
 
 
 def serialize_settings(s: SystemSetting) -> dict[str, Any]:
+    from apps.accounts.business_rules import changed_rules, rules_of
+
     usd = s.usd_rate
     usd_out: int | float = int(usd) if usd == int(usd) else float(usd)
     pct = s.commission_pct
     pct_out: int | float = int(pct) if pct == int(pct) else float(pct)
-    return {
+    out = {
         "reservation_hours": s.reservation_hours,
         "near_expiry_days": s.near_expiry_days,
         "slow_moving_days": s.slow_moving_days,
@@ -111,6 +113,10 @@ def serialize_settings(s: SystemSetting) -> dict[str, Any]:
         ),
         "summary_hour": int(getattr(s, "summary_hour", 21) if getattr(s, "summary_hour", None) is not None else 21),
     }
+    adv = changed_rules(rules_of(s))
+    if adv:
+        out["advanced"] = adv
+    return out
 
 
 def validate_rep_kinds(raw: Any) -> list[str]:
@@ -190,6 +196,9 @@ class SettingsSerializer(serializers.Serializer):
     phone = serializers.CharField(allow_blank=True)
     address = serializers.CharField(allow_blank=True)
     expense_approval_above = serializers.IntegerField()
+    summary_hour = serializers.IntegerField(required=False)
+    advanced = serializers.DictField(required=False)
+    how = serializers.ChoiceField(choices=["import", "reset"], required=False)
 
 
 class BrandSerializer(serializers.Serializer):

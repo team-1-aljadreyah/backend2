@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Max, Q, Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import rules_of
 from apps.accounts.models import PriceTier, Role, User, UserSession
 from apps.accounts.permissions import get_active_customer_id, sees_debt
 from apps.accounts.profiles import (
@@ -608,8 +609,10 @@ def switch_active_shop(
 
 @transaction.atomic
 def create_additional_shop(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
-    if ShopMembership.objects.filter(user=actor).count() >= 10:
-        msg = ("حتى 10 محلات لكل حساب", "Up to 10 shops per account")
+    rules = rules_of()
+    max_shops = int(rules.get("max_shops_per_account") or 10)
+    if ShopMembership.objects.filter(user=actor).count() >= max_shops:
+        msg = (f"حتى {max_shops} محلات لكل حساب", f"Up to {max_shops} shops per account")
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"shop_name": msg})
 
     shop_name = str(data.get("shop_name") or data.get("name") or "").strip()
@@ -622,7 +625,10 @@ def create_additional_shop(*, actor: User, data: dict[str, Any]) -> dict[str, An
         partial=False,
     )
     primary = ShopMembership.objects.filter(user=actor).select_related("customer").order_by("-is_primary", "id").first()
-    tier = primary.customer.tier if primary else PriceTier.objects.order_by("sort_order", "id").first()
+    want_tier_id = rules.get("signup_tier_id")
+    tier = PriceTier.objects.filter(id=int(want_tier_id)).first() if want_tier_id is not None else None
+    if tier is None:
+        tier = primary.customer.tier if primary else PriceTier.objects.order_by("sort_order", "id").last()
     if not tier:
         tier = PriceTier.objects.create(name="جملة", name_en="Wholesale", sort_order=1)
 
@@ -634,6 +640,9 @@ def create_additional_shop(*, actor: User, data: dict[str, Any]) -> dict[str, An
             User.objects.filter(role=Role.REP, active=True, assigned_customers__area=cleaned["area"]).first()
             or User.objects.filter(role=Role.REP, active=True).order_by("id").first()
         )
+
+    auto_approve = bool(rules.get("signup_auto_approve", False))
+    signup_debt_limit = int(rules.get("signup_debt_limit") or 0)
 
     branch = Customer.objects.create(
         name=cleaned["name"],
@@ -649,9 +658,9 @@ def create_additional_shop(*, actor: User, data: dict[str, Any]) -> dict[str, An
         lng=cleaned.get("lng"),
         tier=tier,
         rep=assigned_rep,
-        debt_limit=0,
-        active=False,
-        status=CustomerStatus.PENDING,
+        debt_limit=signup_debt_limit,
+        active=auto_approve,
+        status=CustomerStatus.ACTIVE if auto_approve else CustomerStatus.PENDING,
     )
     ShopMembership.objects.create(user=actor, customer=branch, is_primary=False, is_active_shop=False)
     notify_role(
@@ -675,8 +684,8 @@ def create_additional_shop(*, actor: User, data: dict[str, Any]) -> dict[str, An
         "name": branch.name,
         "area": branch.area,
         "city": branch.city,
-        "pending": True,
-        "active": False,
+        "pending": branch.status == CustomerStatus.PENDING,
+        "active": bool(branch.active),
         "is_primary": False,
         "balance": 0,
     }

@@ -226,3 +226,216 @@ def test_single_active_warehouse_keeper_and_rbac(seed_base_infra):
     assert lk_mgr.status_code == 200
     assert "reps" in lk_mgr.json()["data"]
     assert len(lk_mgr.json()["data"]["warehouses"]) == 2
+
+
+@pytest.mark.django_db
+def test_wevlix_otp_lifecycle_register_reset_and_phone_change(seed_base_infra, monkeypatch):
+    from datetime import UTC, datetime, timedelta
+    import httpx
+    from django.test import override_settings
+    from apps.accounts.models import OtpChallenge
+
+    wevlix_calls: list[dict] = []
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        assert request.headers.get("X-API-Key") == "wlx_dev_test_key"
+        body = json.loads(request.content.decode("utf-8"))
+        wevlix_calls.append({"path": request.url.path, "body": body})
+        if request.url.path.endswith("/v1/otp/send"):
+            assert body["to"].startswith("+9647")
+            assert body["otpMode"] == "generated"
+            assert body["locale"] == "ar"
+            assert body["clientMessageId"]
+            return httpx.Response(200, json={"messageId": f"msg-{body['clientMessageId']}"})
+        if request.url.path.endswith("/v1/otp/verify"):
+            ok = body["code"] == "654321"
+            return httpx.Response(200, json={"verified": ok})
+        return httpx.Response(404)
+
+    transport = httpx.MockTransport(_handler)
+    monkeypatch.setattr(
+        "integrations.wevlix.client.WevlixClient._client",
+        lambda self: httpx.Client(transport=transport, timeout=self.timeout),
+    )
+
+    with override_settings(
+        WEVLIX_MODE="sandbox",
+        WEVLIX_BASE_URL="https://api.wevlix.com",
+        WEVLIX_API_KEY="wlx_dev_test_key",
+    ):
+        anon = APIClient()
+
+        # 1. Reset on non-existent phone returns same shape WITHOUT calling Wevlix
+        calls_before = len(wevlix_calls)
+        r_ghost = anon.post("/api/v1/otp/send", {"phone": "07809998877", "purpose": "reset"}, format="json")
+        assert r_ghost.status_code == 200
+        assert set(r_ghost.json()["data"].keys()) == {"request_id", "expires_at", "resend_at"}
+        assert len(wevlix_calls) == calls_before
+
+        # 2. Register flow: send -> wrong attempts (422 -> 429) -> cooldown (429)
+        s1 = anon.post("/api/v1/otp/send", {"phone": "07805554433", "purpose": "register"}, format="json")
+        assert s1.status_code == 200, s1.json()
+        req1 = s1.json()["data"]["request_id"]
+        assert "code" not in s1.json()["data"]
+
+        # Resend within 60s blocked with 429 RATE_LIMITED
+        s_cool = anon.post("/api/v1/otp/send", {"phone": "07805554433", "purpose": "register"}, format="json")
+        assert s_cool.status_code == 429
+        assert s_cool.json()["code"] == "RATE_LIMITED"
+
+        # 4 wrong tries return 422 on code; 5th returns 429 RATE_LIMITED
+        for n in range(4):
+            bad = anon.post("/api/v1/otp/verify", {"request_id": req1, "code": "111111"}, format="json")
+            assert bad.status_code == 422
+            assert "code" in bad.json()["errors"]
+        bad5 = anon.post("/api/v1/otp/verify", {"request_id": req1, "code": "111111"}, format="json")
+        assert bad5.status_code == 429
+        assert bad5.json()["code"] == "RATE_LIMITED"
+
+        # Expire challenge -> 410
+        OtpChallenge.objects.filter(request_id=req1).update(
+            created_at=datetime.now(tz=UTC) - timedelta(seconds=400),
+            expires_at=datetime.now(tz=UTC) - timedelta(seconds=10),
+        )
+        exp_res = anon.post("/api/v1/otp/verify", {"request_id": req1, "code": "654321"}, format="json")
+        assert exp_res.status_code == 410
+
+        # 3. Fresh OTP send & valid verify -> register requires otp_token and rejects reuse
+        s2 = anon.post("/api/v1/otp/send", {"phone": "07805554433", "purpose": "register"}, format="json")
+        assert s2.status_code == 200
+        req2 = s2.json()["data"]["request_id"]
+        v2 = anon.post("/api/v1/otp/verify", {"request_id": req2, "code": "654321"}, format="json")
+        assert v2.status_code == 200
+        otp_tok = v2.json()["data"]["otp_token"]
+
+        # Register without token -> 422
+        reg_missing = anon.post(
+            "/api/v1/auth/register",
+            {
+                "owner_name": "سعد علي",
+                "phone": "07805554433",
+                "password": "Password123",
+                "shop_name": "أسواق النور",
+                "area": "الكرادة",
+            },
+            format="json",
+        )
+        assert reg_missing.status_code == 422
+        assert "otp_token" in reg_missing.json()["errors"]
+
+        reg_ok = anon.post(
+            "/api/v1/auth/register",
+            {
+                "owner_name": "سعد علي",
+                "phone": "07805554433",
+                "password": "Password123",
+                "shop_name": "أسواق النور",
+                "area": "الكرادة",
+                "otp_token": otp_tok,
+            },
+            format="json",
+        )
+        assert reg_ok.status_code == 201, reg_ok.json()
+        shop_tok = reg_ok.json()["data"]["token"]
+
+        # 4. Change login phone (/me/phone) requires auth & otp_token
+        assert anon.post("/api/v1/otp/send", {"phone": "07806667788", "purpose": "phone"}, format="json").status_code == 401
+        shop_cli = APIClient()
+        shop_cli.credentials(HTTP_AUTHORIZATION=f"Bearer {shop_tok}")
+        s_ph = shop_cli.post("/api/v1/otp/send", {"phone": "07806667788", "purpose": "phone"}, format="json")
+        assert s_ph.status_code == 200
+        v_ph = anon.post("/api/v1/otp/verify", {"request_id": s_ph.json()["data"]["request_id"], "code": "654321"}, format="json")
+        assert v_ph.status_code == 200
+        chg = shop_cli.post(
+            "/api/v1/me/phone",
+            {"phone": "07806667788", "otp_token": v_ph.json()["data"]["otp_token"]},
+            format="json",
+        )
+        assert chg.status_code == 200
+        assert chg.json()["data"]["phone"] == "07806667788"
+
+        # 5. Forgot password reset revokes existing session tokens & allows login with new password
+        s_rst = anon.post("/api/v1/otp/send", {"phone": "07806667788", "purpose": "reset"}, format="json")
+        assert s_rst.status_code == 200
+        v_rst = anon.post("/api/v1/otp/verify", {"request_id": s_rst.json()["data"]["request_id"], "code": "654321"}, format="json")
+        assert v_rst.status_code == 200
+        rst = anon.post(
+            "/api/v1/auth/reset-password",
+            {
+                "phone": "07806667788",
+                "otp_token": v_rst.json()["data"]["otp_token"],
+                "password": "NewPassword99",
+            },
+            format="json",
+        )
+        assert rst.status_code == 200
+        # Old JWT invalidated immediately
+        assert shop_cli.get("/api/v1/me").status_code == 401
+        # Login with new phone & new password succeeds
+        relogin = anon.post("/api/v1/auth/login", {"phone": "07806667788", "password": "NewPassword99"}, format="json")
+        assert relogin.status_code == 200
+
+        # 6. Hourly send cap: 5 per hour per number -> 6th returns 429 RATE_LIMITED
+        OtpChallenge.objects.all().delete()
+        now_t = datetime.now(tz=UTC)
+        for idx in range(5):
+            OtpChallenge.objects.create(
+                request_id=f"hist-{idx}",
+                phone="07801112233",
+                purpose="register",
+                expires_at=now_t + timedelta(minutes=5),
+                resend_at=now_t - timedelta(seconds=10),
+                created_at=now_t - timedelta(minutes=10 + idx),
+            )
+        OtpChallenge.objects.filter(phone="07801112233").update(created_at=now_t - timedelta(minutes=2))
+        cap_res = anon.post("/api/v1/otp/send", {"phone": "07801112233", "purpose": "register"}, format="json")
+        assert cap_res.status_code == 429
+        assert cap_res.json()["code"] == "RATE_LIMITED"
+
+
+@pytest.mark.django_db
+def test_otp_demo_mode_sandbox_code_flow_and_production_guard(seed_base_infra):
+    import re
+    from django.test import override_settings
+
+    anon = APIClient()
+
+    # Demo mode: returns 6-digit sandbox_code and verifies locally without Wevlix key
+    with override_settings(WEVLIX_MODE="demo", DJANGO_ENV="development", ALLOW_DEMO_SEED=True):
+        s_reg = anon.post("/api/v1/otp/send", {"phone": "07801000876", "purpose": "register"}, format="json")
+        assert s_reg.status_code == 200
+        d_reg = s_reg.json()["data"]
+        assert re.match(r"^\d{6}$", d_reg["sandbox_code"])
+
+        # Non-existent account reset omits sandbox_code while keeping same shape
+        s_ghost = anon.post("/api/v1/otp/send", {"phone": "07801000999", "purpose": "reset"}, format="json")
+        assert s_ghost.status_code == 200
+        assert "sandbox_code" not in s_ghost.json()["data"]
+
+        # Verify demo code -> mints otp_token -> registers shop
+        v_reg = anon.post(
+            "/api/v1/otp/verify",
+            {"request_id": d_reg["request_id"], "code": d_reg["sandbox_code"]},
+            format="json",
+        )
+        assert v_reg.status_code == 200
+        reg = anon.post(
+            "/api/v1/auth/register",
+            {
+                "owner_name": "سامي كريم",
+                "phone": "07801000876",
+                "password": "Password123",
+                "shop_name": "أسواق السلام",
+                "area": "الكرادة",
+                "otp_token": v_reg.json()["data"]["otp_token"],
+            },
+            format="json",
+        )
+        assert reg.status_code == 201
+
+    # Production without ALLOW_DEMO_SEED refuses demo mode
+    with override_settings(WEVLIX_MODE="demo", DJANGO_ENV="production", ALLOW_DEMO_SEED=False):
+        blocked = anon.post("/api/v1/otp/send", {"phone": "07801000877", "purpose": "register"}, format="json")
+        assert blocked.status_code == 404

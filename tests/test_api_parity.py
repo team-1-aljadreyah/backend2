@@ -134,7 +134,15 @@ def test_realtime_websocket_and_ticket_paths_match_frontend():
 def test_protected_endpoints_enforce_unauthenticated_401_and_trailing_slash_off():
     entries = _parse_http_ts_endpoints()
     anon = APIClient()
-    public_paths = {"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/site", "/api/v1/catalog"}
+    public_paths = {
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/reset-password",
+        "/api/v1/otp/send",
+        "/api/v1/otp/verify",
+        "/api/v1/site",
+        "/api/v1/catalog",
+    }
 
     for fn_name, method, tmpl in entries:
         url_path = _materialize_path(tmpl)

@@ -65,6 +65,7 @@ class Order(models.Model):
     rule_note = models.TextField(blank=True, default="")
     counter = models.JSONField(null=True, blank=True)
     rating = models.JSONField(null=True, blank=True)
+    carrier_pick = models.JSONField(null=True, blank=True)
     short_lines = models.JSONField(default=list, blank=True)
     cancel_reason = models.TextField(blank=True, default="")
     cancelled_at = models.DateTimeField(null=True, blank=True)

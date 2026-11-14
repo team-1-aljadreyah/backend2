@@ -14,6 +14,7 @@ from django.db.models import Min, Q
 from django.utils import timezone
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import round_amount_by_rule, rules_of
 from apps.accounts.models import Role, SystemSetting, User
 from apps.accounts.permissions import (
     covering_warehouse_ids,
@@ -32,7 +33,7 @@ from apps.accounts.rules_engine import run_automation_rules
 from apps.audit.services import record_audit
 from apps.catalog.models import Item, ItemPrice, PriceChange
 from apps.common.exceptions import ApiException, ErrorCode
-from apps.common.utils import calc_percent_round, decrypt_secret, encrypt_secret, round_250
+from apps.common.utils import calc_percent_round, decrypt_secret, encrypt_secret
 from apps.customers.models import Customer, CustomerStatus, SpecialPrice
 from apps.customers.services import customer_balance_map
 from apps.deliveries.models import Delivery, DeliveryStatus, Vehicle
@@ -152,6 +153,7 @@ def serialize_delivery(delivery: Delivery, *, actor: User, order: Order) -> dict
             if delivery.loaded_by
             else {}
         ),
+        **({"payment": delivery.payment} if getattr(delivery, "payment", None) is not None else {}),
     }
 
 
@@ -185,13 +187,20 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
         for p in order.prep_parts.select_related("prepared_by").order_by("id")
     ]
 
+    eff_rep_id = (
+        order.rep_id
+        or (dlv.rep_id if dlv and dlv.rep_id else None)
+        or (order.carrier_pick.get("rep_id") if isinstance(order.carrier_pick, dict) else None)
+        or 0
+    )
+
     return {
         "id": order.id,
         "number": order.number,
         "client_ref": order.client_ref or "",
         "customer_id": order.customer_id,
         "warehouse_id": order.warehouse_id,
-        "rep_id": order.rep_id or 0,
+        "rep_id": eff_rep_id,
         "source": order.source,
         "status": order.status,
         "waiting_stock": bool(order.waiting_stock),
@@ -211,7 +220,11 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
         "rest_order_id": order.rest_order_id,
         "cancel_reason": order.cancel_reason,
         "cancelled_at": order.cancelled_at.isoformat() if order.cancelled_at else None,
-        "accepted_by": {"id": order.accepted_by_id, "name": order.accepted_by.name} if order.accepted_by else None,
+        "accepted_by": (
+            {"id": order.accepted_by_id, "name": order.accepted_by.name}
+            if order.accepted_by
+            else ({"id": 0, "name": "اعتماد تلقائي"} if order.accepted_at else None)
+        ),
         "accepted_at": order.accepted_at.isoformat() if order.accepted_at else None,
         "approved_by": {"id": order.approved_by_id, "name": order.approved_by.name} if order.approved_by else None,
         "approved_at": order.approved_at.isoformat() if order.approved_at else None,
@@ -252,6 +265,7 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
         **({"rule_note": order.rule_note} if order.rule_note else {}),
         **({"counter": order.counter} if order.counter else {}),
         **({"rating": order.rating} if order.rating else {}),
+        **({"carrier_pick": order.carrier_pick} if order.carrier_pick else {}),
         **({"custom": custom_values} if custom_values else {}),
     }
 
@@ -331,7 +345,8 @@ def _resolve_unit_price(item: Item, customer: Customer, unit: str, price_at: dat
 
         cl = active_clearance_map([item.id]).get(item.id)
         if cl:
-            return max(250, round_250(int((Decimal(base) * Decimal(100 - cl["percent"]) / Decimal(100)).quantize(Decimal("1")))))
+            min_step = max(1, int(rules_of().get("round_to") or 1))
+            return max(min_step, round_amount_by_rule(int((Decimal(base) * Decimal(100 - cl["percent"]) / Decimal(100)).quantize(Decimal("1")))))
     return base
 
 
@@ -354,25 +369,26 @@ def _compute_totals(lines_specs: list[dict[str, Any]], discount_pct: Decimal) ->
     subtotal = sum(ln["total"] for ln in lines_specs)
     disc_amt = calc_percent_round(subtotal, discount_pct)
     after = max(0, subtotal - disc_amt)
-    total = round_250(after)
+    total = round_amount_by_rule(after)
     rounding = total - after
     return subtotal, disc_amt, rounding, total
 
 
-def _parse_discount_percent(raw: Any, actor_role: str) -> Decimal:
+def _parse_discount_percent(raw: Any, actor_role: str, rules: dict[str, Any] | None = None) -> Decimal:
     if actor_role in (Role.SHOP, Role.WAREHOUSE, Role.STAFF):
         return Decimal("0")
     if raw in (None, ""):
         return Decimal("0")
+    max_pct = int((rules or rules_of()).get("discount_max", int(DISCOUNT_MAX)))
     try:
         d = Decimal(str(raw))
-        if d < 0 or d > DISCOUNT_MAX:
+        if d < 0 or d > Decimal(max_pct):
             raise ValueError
         return d
     except (InvalidOperation, ValueError) as exc:
         raise ApiException(
             code=ErrorCode.VALIDATION,
-            message=("نسبة الخصم يجب أن تكون بين 0% و 30%", "Discount percent must be between 0% and 30%"),
+            message=(f"نسبة الخصم يجب أن تكون بين 0% و {max_pct}%", f"Discount percent must be between 0% and {max_pct}%"),
         ) from exc
 
 
@@ -386,6 +402,18 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         existing = _order_qs().filter(client_ref=client_ref).first()
         if existing:
             return serialize_order(existing, actor=actor)
+
+    rules = rules_of()
+    if actor.role == Role.SHOP and rules["maintenance"]["on"]:
+        maint = rules["maintenance"]
+        raise ApiException(
+            code=ErrorCode.MAINTENANCE,
+            message=(
+                maint.get("message") or "التطبيق في صيانة الآن",
+                maint.get("message_en") or "The app is under maintenance",
+            ),
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     sweep_expired_reservations()
 
@@ -427,6 +455,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     is_offline = bool(data.get("offline", False))
     recorded_at: datetime | None = None
     price_at: datetime | None = None
+    offline_days = int(rules.get("offline_max_days", 3))
     if data.get("recorded_at"):
         try:
             recorded_at = datetime.fromisoformat(str(data["recorded_at"]).replace("Z", "+00:00"))
@@ -434,7 +463,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
                 recorded_at = recorded_at.replace(tzinfo=UTC)
         except ValueError as exc:
             raise ApiException(code=ErrorCode.VALIDATION, message=("تاريخ تسجيل الطلب غير صالح", "Invalid recorded_at timestamp")) from exc
-        if (now - timedelta(days=3)) <= recorded_at <= now:
+        if (now - timedelta(days=offline_days)) <= recorded_at <= now:
             price_at = recorded_at
 
     total_qty_input = 0
@@ -535,7 +564,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             up_w = _resolve_unit_price(it, customer, u_w, price_at)
             waiting_specs.append({"item": it, "unit": u_w, "qty": q_w, "pieces": short, "unit_price": up_w, "total": q_w * up_w})
 
-    discount_pct = _parse_discount_percent(data.get("discount_percent"), actor.role)
+    discount_pct = _parse_discount_percent(data.get("discount_percent"), actor.role, rules)
     if discount_pct > 0:
         may_profile_action(actor, "discount")
     settings_obj = SystemSetting.get_solo()
@@ -559,6 +588,11 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             if status_val in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL)
             else None
         )
+        is_auto_rep = (
+            status_val == OrderStatus.APPROVED
+            and source == OrderSource.REP
+            and bool(rules.get("auto_confirm_rep_orders", False))
+        )
         o = Order.objects.create(
             number=f"TMP-{uuid4().hex[:10]}",
             customer=customer,
@@ -575,7 +609,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             discount_amount=disc_amt,
             discount_by=actor if eff_disc > 0 else None,
             discount_at=now if eff_disc > 0 else None,
-            accepted_by=actor if status_val == OrderStatus.APPROVED else None,
+            accepted_by=None if is_auto_rep else (actor if status_val == OrderStatus.APPROVED else None),
             accepted_at=now if status_val == OrderStatus.APPROVED else None,
             rounding=rnd,
             total=tot,
@@ -623,23 +657,44 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         return get_order_for_actor(actor=actor, order_id=waiting_order.id)
 
     _, _, _, active_total = _compute_totals(active_specs, discount_pct)
+    min_shop_order = int(rules.get("min_shop_order") or 0)
+    if actor.role == Role.SHOP and min_shop_order > 0 and active_total < min_shop_order:
+        raise ApiException(
+            code=ErrorCode.MIN_ORDER,
+            message=(
+                f"أقل طلب {min_shop_order:,} د.ع",
+                f"The smallest order is {min_shop_order:,} IQD",
+            ),
+            status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            errors={
+                "lines": (
+                    f"أضف ما يصل بالطلب إلى {min_shop_order:,} د.ع",
+                    f"Add up to {min_shop_order:,} IQD",
+                )
+            },
+        )
+
     bal = customer_balance_map([customer.id]).get(customer.id, 0)
     committed = _committed_order_debt(customer.id)
     over_limit = (bal + committed + active_total) > customer.debt_limit
+    over_limit_mode = str(rules.get("over_limit") or "approval")
+    if over_limit and actor.role != Role.MANAGER and over_limit_mode == "block":
+        raise ApiException(
+            code=ErrorCode.DEBT_LIMIT,
+            message=("الطلب يتجاوز سقف دين الزبون", "The order passes the customer's debt limit"),
+            status_code=http_status.HTTP_409_CONFLICT,
+        )
 
+    staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
     approval_for: list[str] = []
     if actor.role != Role.MANAGER:
-        if over_limit:
+        if over_limit and over_limit_mode == "approval":
             approval_for.append("debt")
-        if discount_pct > STAFF_DISCOUNT_MAX:
+        if discount_pct > staff_disc_max:
             approval_for.append("discount")
 
     if approval_for:
         initial_status = OrderStatus.NEEDS_APPROVAL
-    elif actor.role == Role.SHOP:
-        initial_status = OrderStatus.PENDING
-    elif actor.role == Role.REP and not settings_obj.auto_confirm_rep_orders:
-        initial_status = OrderStatus.PENDING
     else:
         initial_status = OrderStatus.APPROVED
 
@@ -711,23 +766,44 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             ref_type="order",
             ref_id=primary_order.id,
         )
-    elif initial_status == OrderStatus.PENDING:
-        notify_role(
-            role=Role.ACCOUNTANT,
-            kind="order_review",
-            title_ar=f"طلب بانتظار الاعتماد: {customer.name}",
-            title_en=f"Order to approve: {customer.name}",
-            ref_type="order",
-            ref_id=primary_order.id,
-        )
-        notify_role(
-            role=Role.WAREHOUSE,
-            kind="order_pending",
-            title_ar=f"طلب جديد {primary_order.number}",
-            title_en=f"New order {primary_order.number}",
-            ref_type="order",
-            ref_id=primary_order.id,
-        )
+    else:
+        if over_limit and actor.role != Role.MANAGER and over_limit_mode == "allow":
+            notify_role(
+                role=Role.MANAGER,
+                kind="needs_approval",
+                title_ar=f"طلب تجاوز سقف الدين (سُمح به): {customer.name}",
+                title_en=f"Over-limit order allowed: {customer.name}",
+                body_ar=f"{primary_order.number} · {active_total:,} د.ع",
+                body_en=f"{primary_order.number} · {active_total:,} IQD",
+                ref_type="order",
+                ref_id=primary_order.id,
+            )
+        if initial_status == OrderStatus.PENDING:
+            notify_role(
+                role=Role.ACCOUNTANT,
+                kind="order_review",
+                title_ar=f"طلب بانتظار الاعتماد: {customer.name}",
+                title_en=f"Order to approve: {customer.name}",
+                ref_type="order",
+                ref_id=primary_order.id,
+            )
+            notify_role(
+                role=Role.WAREHOUSE,
+                kind="order_pending",
+                title_ar=f"طلب جديد {primary_order.number}",
+                title_en=f"New order {primary_order.number}",
+                ref_type="order",
+                ref_id=primary_order.id,
+            )
+        elif initial_status == OrderStatus.APPROVED:
+            notify_role(
+                role=Role.WAREHOUSE,
+                kind="order_accepted",
+                title_ar=f"طلب جاهز للتجهيز {primary_order.number}",
+                title_en=f"Order ready to prepare {primary_order.number}",
+                ref_type="order",
+                ref_id=primary_order.id,
+            )
 
     record_audit(
         actor=actor,
@@ -885,8 +961,73 @@ def get_order_prep_plan(*, actor: User, order_id: int) -> list[dict[str, Any]]:
     return plan_lines
 
 
+def _resolve_carrier_pick(
+    *,
+    rep_id: Any = None,
+    vehicle_id: Any = None,
+    require_rep: bool = False,
+) -> tuple[User | None, Vehicle | None]:
+    """Validate optional rep_id and vehicle_id; vehicle brings its own driver when rep_id omitted."""
+    vehicle: Vehicle | None = None
+    if vehicle_id not in (None, "", 0, "0"):
+        try:
+            vid = int(vehicle_id)
+        except (TypeError, ValueError) as exc:
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("سيارة غير موجودة أو موقوفة", "Unknown or stopped vehicle"),
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                errors={"vehicle_id": ("اختر سيارة أخرى", "Pick another vehicle")},
+            ) from exc
+        vehicle = Vehicle.objects.select_related("driver").filter(id=vid, active=True).first()
+        if vehicle is None:
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("سيارة غير موجودة أو موقوفة", "Unknown or stopped vehicle"),
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                errors={"vehicle_id": ("اختر سيارة أخرى", "Pick another vehicle")},
+            )
+
+    if require_rep and rep_id in (None, "", 0, "0"):
+        raise ApiException(
+            code=ErrorCode.VALIDATION,
+            message=("اختر مندوب التوصيل", "Pick the delivery rep"),
+            status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            errors={"rep_id": ("مطلوب", "Required")},
+        )
+
+    rep: User | None = None
+    if rep_id not in (None, "", 0, "0"):
+        try:
+            rid = int(rep_id)
+        except (TypeError, ValueError):
+            rid = -1
+        candidate = User.objects.filter(id=rid, role=Role.REP, active=True, deleted=False).first()
+        if candidate is None or not candidate.has_rep_kind("delivery"):
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("اختر مندوب توصيل", "Pick a delivery rep"),
+                status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+                errors={"rep_id": ("هذا ليس مندوب توصيل فعّالاً", "Not an active delivery rep")},
+            )
+        rep = candidate
+    elif vehicle is not None and vehicle.driver is not None:
+        cand = vehicle.driver
+        if cand.role == Role.REP and cand.active and not cand.deleted and cand.has_rep_kind("delivery"):
+            rep = cand
+
+    return rep, vehicle
+
+
 @transaction.atomic
-def prepare_order(*, actor: User, order_id: int, warehouses_map: dict[str, Any]) -> dict[str, Any]:
+def prepare_order(
+    *,
+    actor: User,
+    order_id: int,
+    warehouses_map: dict[str, Any],
+    rep_id: Any = None,
+    vehicle_id: Any = None,
+) -> dict[str, Any]:
     order = (
         Order.objects.select_for_update()
         .select_related("customer")
@@ -951,6 +1092,16 @@ def prepare_order(*, actor: User, order_id: int, warehouses_map: dict[str, Any])
         for wh_i in sorted(assigned_whs):
             existing_parts[wh_i] = PrepPart.objects.create(order=order, warehouse_id=wh_i)
 
+    has_incoming_pick = rep_id not in (None, "", 0, "0") or vehicle_id not in (None, "", 0, "0")
+    incoming_pick: dict[str, int] | None = None
+    if has_incoming_pick:
+        picked_rep, picked_vehicle = _resolve_carrier_pick(rep_id=rep_id, vehicle_id=vehicle_id)
+        incoming_pick = {}
+        if rep_id not in (None, "", 0, "0") and picked_rep is not None:
+            incoming_pick["rep_id"] = picked_rep.id
+        if picked_vehicle is not None:
+            incoming_pick["vehicle_id"] = picked_vehicle.id
+
     now = datetime.now(tz=UTC)
     if actor.role in (Role.WAREHOUSE, Role.STAFF):
         allowed_parts = [p for wid, p in existing_parts.items() if works_in_warehouse(actor, wid)]
@@ -971,6 +1122,9 @@ def prepare_order(*, actor: User, order_id: int, warehouses_map: dict[str, Any])
 
     unprepared = [p for p in existing_parts.values() if p.prepared_by_id is None]
     if unprepared:
+        if incoming_pick is not None:
+            order.carrier_pick = incoming_pick
+            order.save(update_fields=["carrier_pick", "updated_at"])
         notify_role(
             role=Role.WAREHOUSE,
             kind="order_partial_prep",
@@ -980,10 +1134,27 @@ def prepare_order(*, actor: User, order_id: int, warehouses_map: dict[str, Any])
             ref_id=order.id,
         )
     else:
-        # Auto-assign delivery rep: assigned customer rep if eligible for delivery, else unassigned
+        effective_pick = incoming_pick if incoming_pick is not None else order.carrier_pick
+        if order.carrier_pick is not None:
+            order.carrier_pick = None
+            order.save(update_fields=["carrier_pick", "updated_at"])
+
+        chosen_rep: User | None = None
+        chosen_vehicle: Vehicle | None = None
+        if effective_pick:
+            chosen_rep, chosen_vehicle = _resolve_carrier_pick(
+                rep_id=effective_pick.get("rep_id"),
+                vehicle_id=effective_pick.get("vehicle_id"),
+            )
+
         cust_rep = order.customer.rep
-        del_rep = cust_rep if (cust_rep and cust_rep.active and cust_rep.has_rep_kind("delivery")) else None
-        vehicle = Vehicle.objects.filter(driver=del_rep, active=True).order_by("id").first() if del_rep else None
+        fallback_rep = cust_rep if (cust_rep and cust_rep.active and cust_rep.has_rep_kind("delivery")) else None
+        del_rep = chosen_rep or fallback_rep
+        vehicle = (
+            chosen_vehicle
+            if chosen_vehicle is not None
+            else (Vehicle.objects.filter(driver=del_rep, active=True).order_by("id").first() if del_rep else None)
+        )
         pin = _generate_delivery_pin()
         Delivery.objects.create(
             order=order,
@@ -1009,16 +1180,111 @@ def prepare_order(*, actor: User, order_id: int, warehouses_map: dict[str, Any])
                     ref_type="order",
                     ref_id=order.id,
                 )
-        notify_role(
-            role=Role.REP,
-            kind="delivery_ready",
-            title_ar=f"طلب جاهز للتوصيل {order.number}",
-            title_en=f"Order ready for delivery {order.number}",
+        if effective_pick and del_rep is not None:
+            notify_user(
+                user_id=del_rep.id,
+                kind="order_accepted",
+                title_ar=f"شحنة لك: {order.number}",
+                title_en=f"A shipment for you: {order.number}",
+                body_ar=f"على {vehicle.name}، جاهزة في المخزن" if vehicle else "جاهزة في المخزن",
+                body_en="Ready at the warehouse",
+                ref_type="order",
+                ref_id=order.id,
+            )
+        else:
+            notify_role(
+                role=Role.REP,
+                kind="delivery_ready",
+                title_ar=f"طلب جاهز للتوصيل {order.number}",
+                title_en=f"Order ready for delivery {order.number}",
+                ref_type="order",
+                ref_id=order.id,
+            )
+
+    record_audit(
+        actor=actor,
+        action="order.prepare",
+        entity_type="order",
+        entity_id=order.id,
+        summary=(
+            f"Prepared {order.number}"
+            + (f" (driver={del_rep.name})" if not unprepared and effective_pick and del_rep else "")
+        ),
+    )
+    publish_order_changed(order.id)
+    return get_order_for_actor(actor=actor, order_id=order.id)
+
+
+@transaction.atomic
+def set_order_carrier(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[str, Any]:
+    """Update delivery rep and optional vehicle (or null for no vehicle) before a shipment is loaded."""
+    if actor.role not in (Role.MANAGER, Role.WAREHOUSE, Role.STAFF):
+        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+
+    order = (
+        Order.objects.select_for_update()
+        .select_related("customer", "delivery", "delivery__rep", "delivery__vehicle")
+        .prefetch_related("prep_parts", "shipment_children")
+        .filter(id=order_id)
+        .first()
+    )
+    if not order:
+        raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
+
+    if actor.role in (Role.WAREHOUSE, Role.STAFF) and not works_in_warehouse(actor, order.warehouse_id):
+        if not any(works_in_warehouse(actor, p.warehouse_id) for p in order.prep_parts.all()):
+            raise ApiException(
+                code=ErrorCode.FORBIDDEN,
+                message=("هذا الطلب من مخزن آخر", "This order is from another warehouse"),
+                status_code=http_status.HTTP_403_FORBIDDEN,
+            )
+
+    dlv = getattr(order, "delivery", None)
+    if not dlv or dlv.status != DeliveryStatus.READY or order.shipment_children.exists():
+        raise ApiException(
+            code=ErrorCode.BAD_STATE,
+            message=("يُغيَّر السائق بعد التجهيز وقبل خروج الشحنة", "The driver changes after preparing and before it leaves"),
+            status_code=http_status.HTTP_409_CONFLICT,
+        )
+    if dlv.loaded_at is not None:
+        raise ApiException(
+            code=ErrorCode.BAD_STATE,
+            message=("حُمّلت الشحنة: لا يمكن تغيير سائقها الآن", "The shipment is loaded: its driver can't change now"),
+            status_code=http_status.HTTP_409_CONFLICT,
+        )
+
+    rep, vehicle = _resolve_carrier_pick(
+        rep_id=data.get("rep_id"),
+        vehicle_id=data.get("vehicle_id"),
+        require_rep=True,
+    )
+    assert rep is not None
+
+    before_rep_id = dlv.rep_id
+    dlv.rep = rep
+    dlv.vehicle = vehicle
+    dlv.save(update_fields=["rep", "vehicle"])
+
+    record_audit(
+        actor=actor,
+        action="update",
+        entity_type="order",
+        entity_id=order.id,
+        summary=f"{order.number}: {rep.name} delivers it" + (f" on {vehicle.name}" if vehicle else ""),
+        summary_ar=f"{order.number}: يوصله {rep.name}{f' على {vehicle.name}' if vehicle else ' بلا سيارة محددة'}",
+    )
+    if before_rep_id != rep.id:
+        notify_user(
+            user_id=rep.id,
+            kind="order_accepted",
+            title_ar=f"شحنة لك: {order.number}",
+            title_en=f"A shipment for you: {order.number}",
+            body_ar=f"على {vehicle.name}، جاهزة في المخزن" if vehicle else "جاهزة في المخزن",
+            body_en="Ready at the warehouse",
             ref_type="order",
             ref_id=order.id,
         )
 
-    record_audit(actor=actor, action="order.prepare", entity_type="order", entity_id=order.id)
     publish_order_changed(order.id)
     return get_order_for_actor(actor=actor, order_id=order.id)
 
@@ -1033,8 +1299,21 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
     if order.status not in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL, OrderStatus.APPROVED) or hasattr(order, "delivery"):
         raise ApiException(code=ErrorCode.BAD_STATE, message=("لا يمكن تعديل الطلب بعد التجهيز", "Order cannot be edited after preparation"))
 
-    if actor.role == Role.SHOP and order.status != OrderStatus.PENDING:
+    if actor.role == Role.SHOP and (
+        order.status not in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL, OrderStatus.APPROVED)
+        or order.prep_parts.exists()
+    ):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+
+    rules = rules_of()
+    if actor.role == Role.SHOP:
+        edit_mins = int(rules.get("shop_edit_minutes") or 0)
+        if edit_mins > 0 and (datetime.now(tz=UTC) - order.created_at).total_seconds() > edit_mins * 60:
+            raise ApiException(
+                code=ErrorCode.EDIT_CLOSED,
+                message=(f"انتهى وقت التعديل ({edit_mins} د من الطلب)", f"Edit window closed ({edit_mins} min)"),
+                status_code=http_status.HTTP_409_CONFLICT,
+            )
 
     if "note" in data or "notes" in data:
         raw_note = data.get("note") if "note" in data else data.get("notes")
@@ -1092,7 +1371,7 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
     else:
         specs = [{"total": ln.total} for ln in order.lines.all()]
 
-    disc = _parse_discount_percent(data.get("discount_percent", order.discount_percent), actor.role)
+    disc = _parse_discount_percent(data.get("discount_percent", order.discount_percent), actor.role, rules)
     sub, disc_amt, rnd, tot = _compute_totals(specs, disc)
     order.discount_percent = disc
     order.subtotal = sub
@@ -1100,6 +1379,38 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
     order.rounding = rnd
     order.total = tot
     order.edited_at = datetime.now(tz=UTC)
+
+    # Re-evaluate debt limit when non-manager edits order lines or totals.
+    if actor.role != Role.MANAGER:
+        bal = customer_balance_map([order.customer_id]).get(order.customer_id, 0)
+        committed = _committed_order_debt(order.customer_id, exclude_order_id=order.id)
+        over_limit = (bal + committed + tot) > order.customer.debt_limit
+        over_limit_mode = str(rules.get("over_limit") or "approval")
+        if over_limit and over_limit_mode == "block":
+            raise ApiException(
+                code=ErrorCode.DEBT_LIMIT,
+                message=("الطلب يتجاوز سقف دين الزبون", "The order passes the customer's debt limit"),
+                status_code=http_status.HTTP_409_CONFLICT,
+            )
+        reasons = [r for r in (order.approval_for or []) if r != "debt"]
+        if over_limit and over_limit_mode == "approval":
+            reasons.append("debt")
+        staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
+        if disc > staff_disc_max and "discount" not in reasons:
+            reasons.append("discount")
+        order.approval_for = reasons
+        if reasons:
+            order.status = OrderStatus.NEEDS_APPROVAL
+            if order.reserved_until is None:
+                order.reserved_until = datetime.now(tz=UTC) + timedelta(hours=SystemSetting.get_solo().reservation_hours)
+            order.accepted_by = None
+            order.accepted_at = None
+        elif order.status == OrderStatus.NEEDS_APPROVAL:
+            order.status = OrderStatus.APPROVED
+            order.reserved_until = None
+            order.accepted_by = actor
+            order.accepted_at = datetime.now(tz=UTC)
+
     order.save()
 
     record_audit(actor=actor, action="order.update", entity_type="order", entity_id=order.id)
@@ -1118,7 +1429,8 @@ def apply_order_discount(*, actor: User, order_id: int, percent: Any) -> dict[st
     if order.status not in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL, OrderStatus.APPROVED) or hasattr(order, "delivery"):
         raise ApiException(code=ErrorCode.BAD_STATE, message=("لا يمكن تعديل الخصم في هذه المرحلة", "Cannot apply discount at this stage"))
 
-    disc = _parse_discount_percent(percent, actor.role)
+    rules = rules_of()
+    disc = _parse_discount_percent(percent, actor.role, rules)
     specs = [{"total": ln.total} for ln in order.lines.all()]
     sub, disc_amt, rnd, tot = _compute_totals(specs, disc)
     now = datetime.now(tz=UTC)
@@ -1130,7 +1442,8 @@ def apply_order_discount(*, actor: User, order_id: int, percent: Any) -> dict[st
     order.rounding = rnd
     order.total = tot
 
-    if disc > STAFF_DISCOUNT_MAX and actor.role != Role.MANAGER:
+    staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
+    if disc > staff_disc_max and actor.role != Role.MANAGER:
         reasons = list(order.approval_for or [])
         if "discount" not in reasons:
             reasons.append("discount")
@@ -1245,7 +1558,8 @@ def plan_shipments(*, actor: User, order_id: int, loads: Any) -> dict[str, Any]:
             if qty > 0:
                 valid_lines.append({"item_id": iid, "unit": unit, "qty": qty})
         if valid_lines:
-            clean_loads.append({"vehicle_id": vid, "lines": valid_lines})
+            raw_driver_id = raw_load.get("driver_id")
+            clean_loads.append({"vehicle_id": vid, "driver_id": raw_driver_id, "lines": valid_lines})
 
     if not clean_loads:
         raise ApiException(
@@ -1327,14 +1641,31 @@ def plan_shipments(*, actor: User, order_id: int, loads: Any) -> dict[str, Any]:
                 status_code=http_status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
         ld["_kg"] = load_kg
+        explicit_driver, _ = _resolve_carrier_pick(rep_id=ld.get("driver_id"), vehicle_id=None)
+        ld["_explicit_driver"] = explicit_driver
 
     if len(clean_loads) == 1:
         v = vehicles_map[clean_loads[0]["vehicle_id"]]
         dlv.vehicle = v
-        driver = v.driver if (v.driver and v.driver.active and not v.driver.deleted) else None
+        explicit_driver = clean_loads[0]["_explicit_driver"]
+        driver = explicit_driver or (
+            v.driver if (v.driver and v.driver.active and not v.driver.deleted and v.driver.has_rep_kind("delivery")) else None
+        )
+        prev_rep_id = dlv.rep_id
         if driver:
             dlv.rep = driver
         dlv.save(update_fields=["vehicle", "rep"])
+        if driver and prev_rep_id != driver.id:
+            notify_user(
+                user_id=driver.id,
+                kind="order_accepted",
+                title_ar=f"شحنة لك: {order.number}",
+                title_en=f"A shipment for you: {order.number}",
+                body_ar=f"على {v.name}، جاهزة في المخزن",
+                body_en="Ready at the warehouse",
+                ref_type="order",
+                ref_id=order.id,
+            )
         record_audit(
             actor=actor,
             action="update",
@@ -1351,7 +1682,10 @@ def plan_shipments(*, actor: User, order_id: int, loads: Any) -> dict[str, Any]:
     prep_parts = list(order.prep_parts.all())
     for k, ld in enumerate(clean_loads):
         v = vehicles_map[ld["vehicle_id"]]
-        driver = v.driver if (v.driver and v.driver.active and not v.driver.deleted) else None
+        explicit_driver = ld["_explicit_driver"]
+        driver = explicit_driver or (
+            v.driver if (v.driver and v.driver.active and not v.driver.deleted and v.driver.has_rep_kind("delivery")) else None
+        )
         part_rep = driver or dlv.rep
 
         child_specs: list[dict[str, Any]] = []
@@ -1375,7 +1709,7 @@ def plan_shipments(*, actor: User, order_id: int, loads: Any) -> dict[str, Any]:
         disc_pct = order.discount_percent or Decimal("0")
         disc_amt = calc_percent_round(sub, disc_pct) if disc_pct > 0 else 0
         after_disc = sub - disc_amt
-        tot = round_250(after_disc)
+        tot = round_amount_by_rule(after_disc)
         rnd = tot - after_disc
 
         part_cref = f"{order.client_ref}-s{k + 1}" if order.client_ref else None
@@ -1487,6 +1821,13 @@ def rate_order_delivery(*, actor: User, order_id: int, data: dict[str, Any]) -> 
             status_code=http_status.HTTP_403_FORBIDDEN,
             message=("أصحاب المتاجر فقط", "Shop owners only"),
         )
+    rules = rules_of()
+    if not rules["features"]["ratings"]:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            message=("تقييم التوصيل متوقف", "Delivery ratings are turned off"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     cid = get_active_customer_id(actor)
     order = Order.objects.select_for_update().filter(id=order_id).first()
     if not order or (cid and order.customer_id != cid):
@@ -1550,7 +1891,8 @@ def rate_order_delivery(*, actor: User, order_id: int, data: dict[str, Any]) -> 
         summary=f"Delivery rating for {order.number}: {stars}/5" + (f" ({note})" if note else ""),
     )
 
-    if stars <= 2:
+    low_stars = int(rules.get("low_rating_stars", 2))
+    if low_stars > 0 and stars <= low_stars:
         notify_role(
             role=Role.MANAGER,
             kind="needs_approval",

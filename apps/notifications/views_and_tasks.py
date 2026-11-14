@@ -18,6 +18,7 @@ from apps.notifications.serializers import (
     PushSubscriptionDeleteInputSerializer,
     PushSubscriptionInputSerializer,
 )
+from apps.notifications.services import derive_notification_link
 
 from .models import Notification, NotificationRead
 from .tasks import (
@@ -42,35 +43,12 @@ __all__ = [
 ]
 
 
-def _derive_link(ref_type: str, ref_id: str) -> str | None:
-    if not ref_type:
-        return None
-    if ref_type == "order" and ref_id:
-        return f"/orders/{ref_id}"
-    if ref_type == "invoice" and ref_id:
-        return f"/invoices/{ref_id}"
-    if ref_type == "payment" and ref_id:
-        return f"/payments/{ref_id}"
-    if ref_type == "return" and ref_id:
-        return f"/returns/{ref_id}"
-    if ref_type == "customer" and ref_id:
-        return f"/customers/{ref_id}"
-    if ref_type in ("item", "batch") and ref_id:
-        return f"/items/{ref_id}" if ref_type == "item" else "/batches"
-    if ref_type == "commission":
-        return "/commissions"
-    if ref_type == "settings":
-        return "/settings"
-    if ref_type == "chat":
-        return "/support"
-    return None
-
-
 def _visible_notifications_qs(actor: User):
     return Notification.objects.filter(Q(user_id=actor.id) | (Q(user__isnull=True) & Q(target_role=actor.role))).order_by("-id")
 
 
-def serialize_notification(n: Notification, *, is_read: bool) -> dict[str, Any]:
+def serialize_notification(n: Notification, *, is_read: bool, actor: User | None = None) -> dict[str, Any]:
+    link_actor = actor if actor is not None else getattr(n, "user", None)
     out: dict[str, Any] = {
         "id": n.id,
         "type": n.kind,
@@ -78,7 +56,12 @@ def serialize_notification(n: Notification, *, is_read: bool) -> dict[str, Any]:
         "title_en": n.title_en,
         "body": n.body_ar,
         "body_en": n.body_en,
-        "link": _derive_link(n.ref_type, n.ref_id),
+        "link": derive_notification_link(
+            n.ref_type,
+            n.ref_id,
+            actor=link_actor,
+            fallback_role=n.target_role,
+        ),
         "created_at": n.created_at.isoformat(),
         "read": is_read,
         "roles": [n.target_role] if n.target_role else [],
@@ -89,11 +72,11 @@ def serialize_notification(n: Notification, *, is_read: bool) -> dict[str, Any]:
 
 
 def list_notifications_for_actor(*, actor: User) -> list[dict[str, Any]]:
-    items = list(_visible_notifications_qs(actor)[:100])
+    items = list(_visible_notifications_qs(actor).select_related("user")[:100])
     read_ids = set(
         NotificationRead.objects.filter(user=actor, notification_id__in=[n.id for n in items]).values_list("notification_id", flat=True)
     )
-    return [serialize_notification(n, is_read=(n.id in read_ids)) for n in items]
+    return [serialize_notification(n, is_read=(n.id in read_ids), actor=actor) for n in items]
 
 
 def mark_notification_read(*, actor: User, notification_id: int) -> dict[str, bool]:

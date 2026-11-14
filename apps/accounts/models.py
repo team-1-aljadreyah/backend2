@@ -133,6 +133,7 @@ class SystemSetting(models.Model):
     address = models.CharField(max_length=255, default="بغداد - جميلة التجارية")
     expense_approval_above = models.BigIntegerField(null=True, blank=True)
     summary_hour = models.PositiveSmallIntegerField(default=21)
+    advanced = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -270,4 +271,53 @@ class RuleRun(models.Model):
 
     class Meta:
         db_table = "accounts_rule_run"
+        ordering = ["-id"]
+
+
+class OtpPurpose(models.TextChoices):
+    REGISTER = "register", "Register"
+    RESET = "reset", "Reset Password"
+    PHONE = "phone", "Change Phone"
+
+
+class OtpChallenge(models.Model):
+    """Wevlix-backed OTP verification challenges and short-lived single-use verification tokens."""
+
+    request_id = models.CharField(max_length=40, unique=True, db_index=True)
+    phone = models.CharField(max_length=20, db_index=True)
+    purpose = models.CharField(max_length=16, choices=OtpPurpose.choices, db_index=True)
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="otp_challenges"
+    )
+    wevlix_message_id = models.CharField(max_length=128, blank=True, default="")
+    code_hash = models.CharField(max_length=128, blank=True, default="")
+    real_sent = models.BooleanField(default=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField(db_index=True)
+    resend_at = models.DateTimeField()
+    otp_token = models.CharField(max_length=64, unique=True, null=True, blank=True, db_index=True)
+    token_expires_at = models.DateTimeField(null=True, blank=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "accounts_otp_challenge"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["phone", "purpose", "created_at"], name="acc_otp_phone_purp_idx"),
+        ]
+
+
+class SettingsChange(models.Model):
+    """Audit trail for manager setting changes («سجل الإعدادات المتقدمة»)."""
+
+    at = models.DateTimeField(auto_now_add=True, db_index=True)
+    by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="settings_changes"
+    )
+    changes = models.JSONField(default=list)
+    how = models.CharField(max_length=16, blank=True, default="")
+
+    class Meta:
+        db_table = "accounts_settings_change"
         ordering = ["-id"]

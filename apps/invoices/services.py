@@ -10,6 +10,7 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import round_amount_by_rule
 from apps.accounts.models import Role, SystemSetting, User
 from apps.accounts.permissions import (
     get_active_customer_id,
@@ -23,7 +24,7 @@ from apps.accounts.rules_engine import run_automation_rules
 from apps.audit.services import record_audit
 from apps.catalog.models import Item
 from apps.common.exceptions import ApiException, ErrorCode
-from apps.common.utils import calc_percent_round, round_250
+from apps.common.utils import calc_percent_round
 from apps.inventory.models import Batch, DamagedInventory, DamageSource, InventoryMovement, MovementKind
 from apps.inventory.services import lock_and_deduct_fefo
 from apps.invoices.models import (
@@ -232,7 +233,7 @@ def create_invoice_for_order(
     discount_pct = order.discount_percent or Decimal("0")
     discount = calc_percent_round(subtotal, discount_pct)
     after = max(0, subtotal - discount)
-    total = round_250(after)
+    total = round_amount_by_rule(after)
     rounding = total - after
 
     inv = Invoice.objects.create(
@@ -819,7 +820,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
-    total = round_250(subtotal)
+    total = round_amount_by_rule(subtotal)
     rounding = total - subtotal
     received = None
     if method == "cash":

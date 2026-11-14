@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.accounts.authentication import issue_tokens_for_user, revoke_access_jti
 from apps.accounts.health import build_health_report
 from apps.accounts.models import Role, UserSession
+from apps.accounts.otp import send_otp_challenge, verify_otp_challenge
 from apps.accounts.permissions import role_permission
 from apps.accounts.profiles import get_site_payload, save_custom_values, save_site_config
 from apps.accounts.rules_engine import list_recent_rule_runs
@@ -32,15 +33,18 @@ from apps.accounts.serializers import (
 from apps.accounts.services import (
     build_lookups,
     change_my_password,
+    change_my_phone_with_otp,
     create_price_tier,
     create_user_by_manager,
     delete_my_account,
     delete_user_by_manager,
     list_all_users,
+    list_settings_history,
     login_with_phone,
     register_shop_account,
     remove_my_shop,
     remove_user_photo,
+    reset_password_with_otp,
     set_my_photo,
     set_user_profile,
     update_price_tier,
@@ -313,6 +317,17 @@ class SettingsUpdateView(APIView):
         return ok_response(update_settings_by_manager(actor=request.user, data=request.data))
 
 
+class SettingsHistoryView(APIView):
+    permission_classes = [role_permission(Role.MANAGER)]
+
+    @extend_schema(
+        summary="List manager settings change history",
+        responses={200: list},
+    )
+    def get(self, request):
+        return ok_response(list_settings_history())
+
+
 class SitePublicView(APIView):
     permission_classes = [AllowAny]
 
@@ -397,3 +412,76 @@ class PriceTierUpdateView(APIView):
     )
     def patch(self, request, tier_id: int):
         return ok_response(update_price_tier(actor=request.user, tier_id=tier_id, data=request.data))
+
+
+class OtpSendView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="Send a 6-digit OTP verification code via Wevlix",
+        responses={200: dict},
+    )
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        return ok_response(
+            send_otp_challenge(
+                raw_phone=body.get("phone"),
+                purpose=body.get("purpose"),
+                actor=request.user if getattr(request, "user", None) and request.user.is_authenticated else None,
+            )
+        )
+
+
+class OtpVerifyView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        summary="Verify a 6-digit OTP code and obtain a short-lived otp_token",
+        responses={200: dict},
+    )
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        return ok_response(
+            verify_otp_challenge(
+                request_id=body.get("request_id"),
+                raw_code=body.get("code"),
+            )
+        )
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        summary="Reset forgotten password with a verified OTP token",
+        responses={200: dict},
+    )
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        reset_password_with_otp(
+            raw_phone=body.get("phone"),
+            otp_token=body.get("otp_token"),
+            password=body.get("password"),
+        )
+        return ok_response(None)
+
+
+class MePhoneView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Change current user login phone with a verified OTP token",
+        responses={200: UserSerializer},
+    )
+    def post(self, request):
+        body = request.data if isinstance(request.data, dict) else {}
+        return ok_response(
+            change_my_phone_with_otp(
+                actor=request.user,
+                raw_phone=body.get("phone"),
+                otp_token=body.get("otp_token"),
+                request=request,
+            )
+        )

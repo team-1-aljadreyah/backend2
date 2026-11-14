@@ -73,14 +73,22 @@ def baghdad_day_of(dt: datetime | date | str) -> str:
     return dt.astimezone(BAGHDAD_TZ).date().isoformat()
 
 
-def round_250(amount: int | Decimal) -> int:
-    """Round non-negative IQD amount to nearest 250 IQD (half-up, matching commercial rules)."""
+def round_by(amount: int | Decimal, step: int = 250) -> int:
+    """Round non-negative IQD amount to nearest `step` IQD (0 = nearest integer, half-up)."""
     dec = Decimal(amount)
     if dec <= 0:
         return 0
-    step = Decimal(250)
-    units = (dec / step).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
-    return int(units * step)
+    step_int = int(step)
+    if step_int <= 0:
+        return int(dec.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    step_dec = Decimal(step_int)
+    units = (dec / step_dec).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return int(units * step_dec)
+
+
+def round_250(amount: int | Decimal) -> int:
+    """Round non-negative IQD amount to nearest 250 IQD (half-up, matching commercial rules)."""
+    return round_by(amount, 250)
 
 
 def calc_percent_round(amount: int | Decimal, percent: Decimal | int | str) -> int:
