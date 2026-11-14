@@ -1,389 +1,794 @@
-# Al-Nahrain Wholesale ERP — Backend (`Project-2`)
+<div align="center">
 
-Production-grade **Python 3.14 + Django 5.2 LTS + Django REST Framework + Django Channels (Daphne ASGI)** modular monolith powering the Al-Nahrain Wholesale Foods Distribution, Warehouse, Accounting, Delivery, and B2B Ordering platform (`/api/v1/*` and `/ws`).
+# AL-NAHRAIN
 
-> Designed as a single-codebase modular monolith with dual-engine persistence (**SQLite** for frictionless local development, **PostgreSQL 16+ / Supabase with Row-Level Security** for staging and production), deterministic financial & inventory invariants, and real-time WebSocket fanout backed by a durable transactional outbox.
+### Wholesale ERP · Backend API
+
+**Powering the Flow of Wholesale Commerce.**
+
+A modular enterprise backend for wholesale distribution, multi-warehouse operations, order fulfillment, delivery, and financial control — built around reliable business workflows and real-time coordination.
+
+<p>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white" alt="Python 3.14"></a>
+  <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-5.2%20LTS-092E20?logo=django&logoColor=white" alt="Django 5.2 LTS"></a>
+  <a href="https://www.django-rest-framework.org/"><img src="https://img.shields.io/badge/DRF-3.18.3-A30000" alt="Django REST Framework 3.18.3"></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-15%2B-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL 15+"></a>
+  <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7-red?logo=redis&logoColor=white" alt="Redis 7"></a>
+  <a href="https://docs.celeryq.dev/"><img src="https://img.shields.io/badge/Celery-5.7.0-37814A?logo=celery&logoColor=white" alt="Celery 5.7.0"></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-56D6C2" alt="MIT License"></a>
+</p>
+
+<p>
+  <strong>Inventory</strong>&nbsp; · &nbsp;<strong>Operations</strong>&nbsp; · &nbsp;<strong>Finance</strong>&nbsp; · &nbsp;<strong>Realtime</strong>
+</p>
+
+</div>
 
 ---
 
 ## Table of Contents
 
-1. [Technology Stack](#1-technology-stack)
-2. [System Architecture](#2-system-architecture)
-3. [Modular Monolith & Bounded Contexts](#3-modular-monolith--bounded-contexts)
-4. [Core Operational Workflows](#4-core-operational-workflows)
-5. [Engineering Invariants & Security Guarantees](#5-engineering-invariants--security-guarantees)
-6. [Local Development Quick Start](#6-local-development-quick-start)
-7. [Environment & Configuration Matrix](#7-environment--configuration-matrix)
-8. [Testing, Linting, OpenAPI & Capacity Profile](#8-testing-linting-openapi--capacity-profile)
-9. [Production Deployment & Operations Runbook](#9-production-deployment--operations-runbook)
-10. [Documentation Index](#10-documentation-index)
+- [1. Project Overview](#1-project-overview)
+- [2. Core Capabilities](#2-core-capabilities)
+- [3. Technology Stack](#3-technology-stack)
+- [4. System Architecture](#4-system-architecture)
+- [5. Modular Architecture](#5-modular-architecture)
+- [6. Security and Engineering Principles](#6-security-and-engineering-principles)
+- [7. REST API](#7-rest-api)
+- [8. Realtime Architecture](#8-realtime-architecture)
+- [9. Getting Started](#9-getting-started)
+- [10. Environment Configuration](#10-environment-configuration)
+- [11. Testing and Quality Assurance](#11-testing-and-quality-assurance)
+- [12. Deployment and Operations](#12-deployment-and-operations)
+- [13. Documentation Hub](#13-documentation-hub)
+- [14. License](#14-license)
 
 ---
 
-## 1. Technology Stack
+## 1. Project Overview
 
-| Layer | Technology | Notes |
-| :--- | :--- | :--- |
-| **Runtime** | Python `3.14` (`>=3.14,<3.15`) | Strict type hints, `Decimal` financial arithmetic |
-| **Web / API Framework** | Django `5.2.19` LTS + DRF `3.18.3` | Envelope responses `{success, data, message}`, `APPEND_SLASH = False` |
-| **ASGI & Realtime** | Daphne `4.2.3` + Django Channels `4.3.2` | `ProtocolTypeRouter` routing HTTP REST + WebSocket `/ws` |
-| **API Schema** | `drf-spectacular` `0.30.0` | OpenAPI 3.0 schema & Swagger UI (`/api/v1/schema/`, `/api/v1/docs/`) |
-| **Authentication** | SimpleJWT `5.5.1` + Argon2id (`argon2-cffi`) | Phone-normalized (`07XXXXXXXXX`) login, rotating refresh tokens, `sid` session isolation |
-| **Primary Databases** | SQLite (dev) / PostgreSQL 16+ via `psycopg` `3.3.8` (prod) | Unified ORM + [`database/schema.sql`](database/schema.sql) with triggers & RLS |
-| **Cache, Pub/Sub & Queue** | Redis `8.1.0` + `channels-redis` `4.3.0` + Celery `5.7.0` | Distributed cache, DRF throttles, WebSocket channel layer, Celery Beat jobs |
-| **Media & External APIs** | Pillow `13.0.0`, `httpx` `0.28.1`, `cryptography` `50.0.2`, `pywebpush` | Local/Supabase buckets, Fernet field encryption, Qi Card, ZainCash, Wevlix OTP, VAPID |
-| **Tooling** | `uv`, `pytest`, `pytest-cov`, `pytest-asyncio`, `ruff` | Pin-locked dependencies via [`pyproject.toml`](pyproject.toml) & [`uv.lock`](uv.lock) |
+**Al-Nahrain Wholesale ERP** is a business operations platform for wholesale food distribution. Its backend coordinates the complete operational lifecycle — from supplier purchasing and warehouse inventory to customer orders, delivery confirmation, invoicing, payment allocation, and management reporting.
+
+The system is designed for the people and processes involved in wholesale distribution:
+
+- **Managers** overseeing business rules, approvals, warehouses, and performance.
+- **Accountants** managing financial records, payments, expenses, and reconciliation.
+- **Warehouse teams** receiving, moving, counting, and preparing stock.
+- **Sales and delivery representatives** managing customer activity, orders, collections, and deliveries.
+- **Shop customers** placing orders, tracking fulfillment, and reviewing their accounts.
+
+The backend is implemented as a **Django Modular Monolith**: domain responsibilities are separated into focused applications while important business operations remain within consistent database transactions.
+
+### Project at a glance
+
+| Area | Implementation |
+| --- | --- |
+| Architecture | Django Modular Monolith |
+| API | REST API under `/api/v1` |
+| Realtime | Django Channels WebSocket endpoint at `/ws` |
+| Local database | SQLite |
+| Production database | PostgreSQL 15+; Docker Compose uses PostgreSQL 16 |
+| Async processing | Celery Worker and Celery Beat |
+| Realtime broker / channel layer | Redis in distributed deployments |
+| Storage | Local storage or Supabase Storage adapter |
+| Domain applications | 22 Django apps |
+| External adapters | Storage, Qi Card, ZainCash, Wevlix OTP |
+
+> **Repository scope:** this repository contains the backend. Browser, shop, administration, and representative applications are external clients of its API; the frontend source is not part of this repository.
 
 ---
 
-## 2. System Architecture
+## 2. Core Capabilities
 
-The ASGI entrypoint ([`config/asgi.py`](config/asgi.py)) dispatches HTTP traffic to Django REST Framework and WebSocket upgrades (`/ws`) to Django Channels (`apps.realtime`). All domain mutations execute inside atomic transactions with row-level locks (`select_for_update().order_by("id")`), append immutable ledger/audit records, and emit real-time notifications only **after commit** (`transaction.on_commit` + durable `OutboxEvent` fallback).
+### Business and administration
+
+- Phone-based authentication and session-aware user accounts.
+- Role-based access and configurable permission profiles.
+- Business settings, advanced operational rules, and change history.
+- Custom fields and configurable site settings.
+- Append-only audit history for important operations.
+
+### Inventory and supply chain
+
+- Multi-warehouse operations and warehouse-level access scope.
+- Product catalog, categories, price tiers, and price history.
+- Batch-based inventory with **FEFO** (First Expired, First Out) allocation.
+- Supplier purchase orders and inbound goods receipts.
+- Weighted-average purchase-cost updates.
+- Inter-warehouse transfers with partial receiving and discrepancy review.
+- Stocktakes, inventory adjustments, damaged-stock records, and batch traceability.
+- Near-expiry and slow-moving stock reporting.
+
+### Sales and customer operations
+
+- Customer onboarding, approval, and shop memberships.
+- Multiple shops associated with one account, with active-shop session isolation.
+- Customer-specific pricing and account statements.
+- Order creation, approval, reservation, and offline-order reconciliation.
+- Multi-warehouse order preparation and shipment splitting.
+- Vehicle and carrier assignment.
+- QR-based delivery dispatch and delivery confirmation.
+- Representative GPS updates, customer visits, and reorder workflows.
+- Back-in-stock alerts, clearance pricing, and scheduled price changes.
+
+### Financial management
+
+- Delivery-based invoice creation and invoice-line batch traceability.
+- Payments with **FIFO** invoice allocation.
+- Payment reversals, refunds, credit notes, and returns.
+- Qi Card and ZainCash payment-provider adapters.
+- Representative collection commissions and monthly close snapshots.
+- Expense records and approval workflows.
+- IQD / USD exchange-rate history.
+
+### Communication and business intelligence
+
+- Role- and user-scoped notifications.
+- WebSocket events for orders, notifications, chat, and location.
+- Customer support conversations.
+- Durable transactional outbox processing.
+- Operational dashboards and sales, debt, inventory, and delivery reports.
+- Web Push subscription support.
+
+---
+
+## 3. Technology Stack
+
+| Layer | Technology | Role |
+| --- | --- | --- |
+| Runtime | Python `3.14` (`>=3.14,<3.15`) | Application runtime |
+| Backend framework | Django `5.2.19` LTS | Core application and domain model |
+| API | Django REST Framework `3.18.3` | REST endpoints, serializers, and permissions |
+| API schema | drf-spectacular `0.30.0` | OpenAPI schema and Swagger UI |
+| Authentication | SimpleJWT `5.5.1` + Argon2 | JWT sessions and password hashing |
+| ASGI / realtime | Daphne `4.2.3` + Channels `4.3.2` | HTTP ASGI and WebSocket connections |
+| Database driver | psycopg `3.3.8` | PostgreSQL connectivity |
+| Local database | SQLite | Local development and test workflows |
+| Production database | PostgreSQL `15+` | Transactional production persistence |
+| Cache / channel layer | Redis server; `redis` client `8.1.0` | Distributed cache, Channels, and broker support |
+| Background jobs | Celery `5.7.0` | Asynchronous and scheduled tasks |
+| Object storage | Local adapter / Supabase Storage | Product media and private delivery proofs |
+| HTTP integrations | HTTPX `0.28.1` | External service communication |
+| Image processing | Pillow `13.0.0` | Image validation and processing |
+| Cryptography | cryptography `50.0.2` | Fernet field encryption |
+| Push notifications | pywebpush `2.5.0` | VAPID-based Web Push |
+| Tooling | uv, pytest, pytest-cov, Ruff | Dependency management, testing, coverage, and linting |
+| Containers | Docker and Docker Compose | Containerized deployment topology |
+
+Dependency versions are defined in [`pyproject.toml`](pyproject.toml) and locked in [`uv.lock`](uv.lock). The Compose stack uses `postgres:16-alpine` and `redis:7-alpine`; production database and Redis versions should be selected and operated according to the deployment environment.
+
+---
+
+## 4. System Architecture
+
+### 4.1 High-level architecture
+
+The backend exposes HTTP and WebSocket traffic through an ASGI application. REST requests are handled by Django REST Framework, while realtime connections are routed through Django Channels.
+
+Domain applications own business rules and coordinate transactional writes. PostgreSQL is the production database target; SQLite provides a simpler local development and testing path.
 
 ```mermaid
 flowchart TB
-    subgraph Clients["Clients (Next.js Static Export / PWA / Driver & Rep Apps)"]
-        WEB["Web App & Admin Portal"]
-        MOBILE["Sales Rep / Delivery Driver / Shop"]
+    CLIENTS["External Client Applications<br/>Web · Shop · Admin · Sales · Delivery"]
+    ASGI["Daphne ASGI Gateway<br/>config/asgi.py"]
+
+    REST["HTTP / REST API<br/>Django REST Framework · /api/v1"]
+    WS["WebSocket Consumer<br/>Django Channels · /ws"]
+
+    subgraph DOMAIN["Django Modular Monolith"]
+        ACC["Accounts & Business Rules"]
+        SUPPLY["Catalog · Warehouses · Supply"]
+        OPS["Inventory · Orders · Deliveries"]
+        FIN["Invoices · Payments · Expenses"]
+        ENGAGE["Reports · Chat · Notifications · Audit"]
     end
 
-    subgraph Edge["ASGI Gateway (Daphne / Uvicorn)"]
-        PTR["ProtocolTypeRouter (config/asgi.py)"]
-        HTTP["Django ASGI + DRF (/api/v1/*, /health/*, /metrics)"]
-        WSC["Channels Consumer (/ws)"]
-    end
+    DB[("SQLite · Local<br/>PostgreSQL · Production")]
+    REDIS[("Redis<br/>Cache · Channels · Celery Broker")]
+    CELERY["Celery Worker & Beat"]
 
-    subgraph Core["Modular Monolith (backend/apps/*)"]
-        AUTH["Accounts, Sessions, Profiles & Business Rules Engine"]
-        INV["Catalog, Warehouses, FEFO Inventory & Supply Orders"]
-        ORD["Orders, Multi-WH Prep, Deliveries & GPS"]
-        FIN["Invoices, Payments, FIFO Allocations, Expenses & Commissions"]
-        OBS["Reports, Chat, AuditLog, Notifications & Outbox"]
-    end
+    STORAGE["Storage Adapter<br/>Local / Supabase"]
+    PAYMENTS["Payment Providers<br/>Qi Card · ZainCash"]
+    OTP["OTP Provider<br/>Wevlix"]
+    PUSH["Web Push<br/>VAPID"]
 
-    subgraph Data["State & Async Backbone"]
-        DB[("SQLite (Dev) / PostgreSQL + RLS (Prod)")]
-        REDIS[("Redis (Cache / Throttles / Channels / Broker)")]
-        CELERY["Celery Worker & Beat Schedules"]
-    end
+    CLIENTS --> ASGI
+    ASGI --> REST
+    ASGI --> WS
 
-    subgraph Ext["External Providers (backend/integrations/*)"]
-        STOR["Storage (Local FS / Supabase Buckets)"]
-        PAY["Qi Card & ZainCash API v2"]
-        OTP["Wevlix OTP (WhatsApp -> Telegram -> SMS)"]
-        PUSH["Web Push (VAPID)"]
-    end
+    REST --> ACC
+    REST --> SUPPLY
+    REST --> OPS
+    REST --> FIN
+    REST --> ENGAGE
 
-    WEB --> PTR
-    MOBILE --> PTR
-    PTR --> HTTP
-    PTR --> WSC
-
-    HTTP --> AUTH
-    HTTP --> INV
-    HTTP --> ORD
-    HTTP --> FIN
-    HTTP --> OBS
-
-    AUTH --> DB
-    INV --> DB
-    ORD --> DB
+    ACC --> DB
+    SUPPLY --> DB
+    OPS --> DB
     FIN --> DB
-    OBS --> DB
+    ENGAGE --> DB
 
-    HTTP --> REDIS
-    WSC --> REDIS
-    OBS -->|"on_commit / OutboxEvent"| REDIS
+    WS <--> REDIS
+    ENGAGE -->|"Transactional Outbox"| CELERY
+    CELERY <--> REDIS
     CELERY --> DB
-    CELERY --> REDIS
 
-    ORD --> STOR
-    INV --> STOR
-    FIN --> PAY
-    AUTH --> OTP
-    OBS --> PUSH
+    OPS --> STORAGE
+    SUPPLY --> STORAGE
+    FIN --> PAYMENTS
+    ACC --> OTP
+    ENGAGE --> PUSH
 ```
 
-### Key Architectural Boundaries
+**Deployment boundary:** client applications are consumers of this backend, not modules inside this repository. The diagram shows logical integration boundaries; optional providers are only active when configured.
 
-- **Service-Layer Ownership**: Views and serializers remain thin transport adapters; business invariants, lock acquisition ordering, rounding, and audit emission live in each app's `services.py`.
-- **Single Authoritative Schema (`database/schema.sql`)**: Django migrations and PostgreSQL views, immutability triggers, and Row-Level Security (RLS) policies stay synchronized and verified by [`tests/test_schema_sync.py`](tests/test_schema_sync.py).
-- **Scoped PostgreSQL RLS Context**: [`apps/common/rls.py`](apps/common/rls.py) sets session GUCs (`app.user_id`, `app.role`, `app.active_customer_id`) so PostgreSQL RLS reinforces application-layer RBAC.
-- **No Base64 in Database**: Image/video payloads (item photos, receipts, warehouse layouts, private delivery proofs) are validated/decoded via Pillow and persisted to `integrations.storage` (`product-images` public bucket; `delivery-proofs` private bucket served via time-limited signed URLs).
+### 4.2 Core business workflow
+
+The platform connects procurement, stock control, fulfillment, delivery, and financial settlement.
+
+```mermaid
+flowchart LR
+    SUP["Supplier"] --> PO["Purchase Order"]
+    PO --> REC["Goods Receipt"]
+    REC --> STOCK["Warehouse Inventory<br/>FEFO Batches"]
+    STOCK --> ORDER["Customer Order"]
+    ORDER --> PREP["Reservation &<br/>Warehouse Preparation"]
+    PREP --> DELIVERY["Dispatch & Delivery"]
+    DELIVERY --> INVOICE["Invoice"]
+    INVOICE --> PAYMENT["Payment & FIFO Allocation"]
+    PAYMENT --> REPORTS["Commissions & Reports"]
+```
+
+### 4.3 Architectural characteristics
+
+- **Modular monolith:** domain applications have clear responsibilities without introducing distributed transactions between microservices.
+- **Service-layer business logic:** views and serializers act as transport adapters; domain services own important business operations.
+- **Transactional workflows:** stock deduction, order transitions, payment allocation, and related records are coordinated using database transactions.
+- **Database parity:** the ORM and unified PostgreSQL schema are checked by schema synchronization tests.
+- **Post-commit events:** realtime and notification events are dispatched after successful database commits, with a durable outbox for retryable delivery.
 
 ---
 
-## 3. Modular Monolith & Bounded Contexts
+## 5. Modular Architecture
+
+The `apps/` directory contains 22 Django applications grouped by business responsibility.
+
+### Platform, identity, and governance
+
+| Application | Responsibility |
+| --- | --- |
+| `apps.common` | Shared response envelopes, error codes, phone and date helpers, rounding, idempotency, encryption helpers, health checks, metrics, and demo-data commands |
+| `apps.accounts` | Users, JWT authentication, sessions, shop-session isolation, settings, permission profiles, custom fields, OTP flows, and business rules |
+| `apps.audit` | Append-only audit records for important business actions |
+
+### Warehousing and procurement
+
+| Application | Responsibility |
+| --- | --- |
+| `apps.warehouses` | Warehouse records, capacity, coordinates, layout, and warehouse scope |
+| `apps.catalog` | Categories, products, price tiers, price changes, and catalog media |
+| `apps.supply_orders` | Supplier purchase orders and receipt reconciliation |
+| `apps.receipts` | Inbound receipts, receipt lines, weighted-average cost, and batch creation |
+| `apps.inventory` | FEFO batches, inventory movements, holds, batch trace, and damaged inventory |
+| `apps.transfers` | Inter-warehouse stock transfers, receiving, and discrepancy review |
+| `apps.stocktakes` | Stock counts, warehouse locking, and atomic inventory adjustments |
+
+### Customers, orders, and fulfillment
+
+| Application | Responsibility |
+| --- | --- |
+| `apps.customers` | Customer records, shop memberships, special pricing, statements, and account workflows |
+| `apps.orders` | Order lifecycle, pricing rules, approvals, reservations, and multi-warehouse preparation |
+| `apps.deliveries` | Dispatch, QR workflows, vehicles, delivery confirmation, proof media, and representative GPS locations |
+
+### Finance and analytics
+
+| Application | Responsibility |
+| --- | --- |
+| `apps.invoices` | Delivery invoices, invoice-line batch allocations, returns, and credit notes |
+| `apps.payments` | Payments, FIFO allocations, reversals, refunds, online-payment records, and webhook processing |
+| `apps.commissions` | Representative commission calculations and monthly close snapshots |
+| `apps.exchange_rates` | IQD / USD exchange-rate history |
+| `apps.expenses` | Expense records and approval workflows |
+| `apps.reports` | Dashboards and operational / financial reports |
+
+### Realtime and communication
+
+| Application | Responsibility |
+| --- | --- |
+| `apps.notifications` | User and role notifications, read tracking, and durable outbox tasks |
+| `apps.chat` | Customer support conversations and read cursors |
+| `apps.realtime` | WebSocket tickets, connection handling, topic authorization, and event broadcasting |
+
+### Supporting project directories
 
 ```text
-backend/
-├── config/                 # Split settings (base, development, testing, production), URLs, ASGI/WSGI, Celery
-├── apps/                   # 22 domain modules
-├── integrations/           # storage, qi_card, zaincash, wevlix adapters
-├── database/               # schema.sql (authoritative PostgreSQL DDL, views, triggers, RLS)
-├── scripts/                # port80_gateway.mjs (local Node proxy routing Next.js + Daphne)
-├── docs/                   # API contract, schema, architecture decisions, readiness & demo reports
-├── tests/                  # Cross-app parity, schema sync, security, concurrency & full demo seed suites
-├── requirements/           # Exported pip requirements (prod/dev)
-├── Dockerfile              # Python 3.14 slim non-root image running Daphne ASGI
-└── docker-compose.yml      # PostgreSQL 16 + Redis 7 + Daphne Web + Celery Worker + Celery Beat
+.
+├── apps/                 # 22 Django domain applications
+├── config/               # Settings, URLs, ASGI/WSGI, and Celery configuration
+├── database/
+│   └── schema.sql        # Unified PostgreSQL schema
+├── integrations/         # External provider and storage adapters
+│   ├── qi_card/
+│   ├── storage/
+│   ├── wevlix/
+│   └── zaincash/
+├── docs/                 # API, architecture, database, and operations documentation
+├── tests/                # Cross-app, contract, schema, and integration tests
+├── requirements/         # Production and development requirements exports
+├── scripts/              # Operational helper scripts
+├── seed_assets/          # Synthetic demo media assets
+├── manage.py
+├── pyproject.toml
+├── uv.lock
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-### App & Integration Map
+### External integrations
 
-| Domain Group | Modules | Responsibilities |
-| :--- | :--- | :--- |
-| **Platform, Auth & Rules** | `apps.common`, `apps.accounts`, `apps.audit` | Envelopes & typed `ErrorCode`s, Iraqi phone normalization, `Asia/Baghdad` timezone helpers, commercial `round_250()`, `IdempotencyKey`, Fernet crypto, `UserSession` (`sid`), Wevlix OTP challenges, permission profiles, custom fields, automation rules, dynamic `settings.advanced` business rules (`SettingsChange` history), append-only `AuditLog`. |
-| **Catalog & Warehousing** | `apps.warehouses`, `apps.catalog`, `apps.supply_orders`, `apps.receipts`, `apps.inventory`, `apps.transfers`, `apps.stocktakes` | Warehouses (capacity, GPS, layout, temporary cover staff), multi-tier pricing, 3-day offline `PriceChange` lookup, dated price schedules, clearance pricing, purchase `SupplyOrder` reconciliation (`sent -> partial -> received`), weighted-average-cost `Receipt`s, FEFO `Batch` tracking, lot hold sync, `InventoryMovement` ledger, inter-warehouse `Transfer`s with discrepancy review, category/full `Stocktake`s (`countLocked`). |
-| **Customers, Orders & Fleet** | `apps.customers`, `apps.orders`, `apps.deliveries` | Multi-shop `ShopMembership` (`<= 10` shops/account, active shop per device `UserSession`), pending/rejected onboarding, `SpecialPrice`, customer statements, offline order sync (`waiting_stock` split), discount/debt/rule approvals, multi-warehouse `PrepPart` fulfillment, `Vehicle` fleet & shipment splitting, `NAHRAIN:DLV:*` QR dispatch, Fernet+SHA-256 4-digit delivery PIN (5-attempt lockout), private delivery proof photos, `RepLocation` live GPS, shop visits & reorder tracking. |
-| **Finance & Reporting** | `apps.invoices`, `apps.payments`, `apps.exchange_rates`, `apps.commissions`, `apps.expenses`, `apps.reports` | Immutable `Invoice` & `InvoiceBatchAllocation` (FEFO COGS trace), `CreditNote`, `ReturnDoc` (`good` restock vs `damaged` + commission clawback), cash/transfer/online `Payment`s, FIFO `PaymentAllocation`, immutable `PaymentReversal`, `Refund`, rep `CashCustody` & handovers, daily `UsdRate`, monthly rep `ClosedCommissionMonth` locks, `Expense` approval workflow, role-redacted KPIs & day summaries. |
-| **Realtime & Engagement** | `apps.realtime`, `apps.notifications`, `apps.chat` | Single-use SHA-256 WS tickets (`POST /api/v1/realtime/ticket`), `/ws` consumer with origin regex guard & topic ACLs (`notifications`, `chat`, `orders`, `location`), durable `OutboxEvent` dispatcher, per-user notification read cursors, back-in-stock alerts, support `ChatMessage` threads, VAPID web push subscriptions. |
-| **External Integrations** | `integrations.storage`, `integrations.qi_card`, `integrations.zaincash`, `integrations.wevlix` | Local FS / Supabase Storage buckets; Qi Card gateway + HMAC-SHA256 webhook verification; ZainCash API v2 UAT/live JWT init & inquiry; Wevlix OTP multi-channel delivery (`demo` / `sandbox` / `live`). |
+The `integrations/` package isolates provider-specific code from domain applications:
+
+- **Storage:** local media storage and Supabase Storage integration.
+- **Qi Card:** online payment adapter and signed webhook verification.
+- **ZainCash:** API v2 payment initialization and inquiry.
+- **Wevlix:** server-side OTP delivery and verification.
+
+This separation keeps provider details out of core business workflows and allows integrations to be configured independently.
 
 ---
 
-## 4. Core Operational Workflows
+## 6. Security and Engineering Principles
 
-### 4.1 Order-to-Cash, Multi-Warehouse Split & Delivery Verification
+Security and data integrity are enforced across the API, domain services, and database layer.
 
-Orders enforce configurable dynamic rules (`settings.advanced`: discount limits, debt ceiling behavior, minimum shop order, offline max age, auto-confirm for reps) and reserve FEFO batches until `reserved_until` expires. Financial **Invoices** are only emitted upon actual delivery (`partial` or `full`), never speculatively at checkout.
+### Identity and access control
 
-```mermaid
-flowchart LR
-    C["Shop / Rep Places Order (POST /orders)"] -->|"Offline > 0d? Check 3d price_changes; Check rules (min_order, debt_limit, discount)"| V{"Needs Manager Approval?"}
-    V -->|"Over debt or discount > 3%"| APP["Pending Approval -> Manager Approve"]
-    V -->|"Within policy / Auto-confirm rep"| RES["Reserve FEFO Batches (select_for_update + reserved_until)"]
-    APP --> RES
+- JWT-based authentication with session-aware user context.
+- Argon2 password hashing.
+- Role-based authorization and warehouse/customer scoping.
+- Server-side redaction of sensitive financial and operational fields.
+- Active-shop context isolated per user session.
 
-    RES --> ACC["Keeper / Staff Accepts Order -> Prep Plan (Single or Multi-WH Split)"]
-    ACC --> PREP["Prepare Parts + Pick Carrier/Vehicle (carrier_pick)"]
-    PREP --> SHIP["Create Shipments (optional driver_id per load) & Generate QR (NAHRAIN:DLV:*)"]
-    SHIP --> DISP["Driver Scans QR -> En Route (GPS stream via WS/REST)"]
+### Realtime connection security
 
-    DISP --> PIN["Verify Shop 4-Digit PIN (max 5 tries -> persistent lockout) + Optional Photo + Door Payment"]
-    PIN -->|"Full or Partial (rest: keep or cancel)"| INV["Emit Immutable Invoice + InvoiceBatchAllocation (FEFO COGS)"]
-    INV --> PAY["Cash / Transfer / Qi Card / ZainCash -> FIFO PaymentAllocation -> Rep Commission"]
+- The production WebSocket flow uses a short-lived, single-use ticket issued by `POST /api/v1/realtime/ticket`.
+- The raw ticket is stored as a SHA-256 hash and atomically consumed during connection establishment.
+- The ticket has a configurable lifetime (60 seconds by default).
+- WebSocket origin checks, topic-level authorization, connection limits, message-size limits, and rate limits are enforced.
+- Long-lived JWT access tokens are not used as WebSocket query-string credentials.
+
+### Financial and inventory integrity
+
+- IQD monetary amounts use exact integer values; percentages and exchange rates use decimal arithmetic.
+- Commercial amount rounding follows the project's 250-IQD rounding rule.
+- Inventory allocation follows FEFO batch ordering.
+- Payment allocation follows FIFO invoice ordering.
+- Critical mutations use atomic transactions and deterministic row-lock ordering.
+- Database constraints protect stock quantities from becoming negative.
+- Idempotency keys and client references help prevent duplicate mutations.
+- Inventory movement and audit records are append-only; financial corrections use explicit reversal, return, refund, or credit-note workflows.
+
+### Data protection
+
+- Delivery PIN values are protected using encryption and a separate hash, with persistent failed-attempt lockout.
+- Delivery PIN visibility is restricted to the owning shop context.
+- Delivery proof images are stored in private storage and served through authorized, short-lived URLs.
+- Product images use a separate public-media path.
+- PostgreSQL Row-Level Security (RLS) provides an additional data-isolation layer where configured.
+- Secrets and provider credentials must remain server-side and must never be committed to the repository.
+
+For implementation details, see [Architecture Decisions](docs/ARCHITECTURE_DECISIONS.md), [Database Schema](docs/DATABASE_SCHEMA.md), and [Realtime Architecture](docs/REALTIME_ARCHITECTURE.md).
+
+---
+
+## 7. REST API
+
+### 7.1 Protocol conventions
+
+| Convention | Details |
+| --- | --- |
+| Base path | `/api/v1` |
+| Trailing slashes | Not required; `APPEND_SLASH = False` |
+| Authentication | `Authorization: Bearer <access_token>` for protected endpoints |
+| Language | `Accept-Language: ar` or `Accept-Language: en` |
+| Mutation deduplication | `Idempotency-Key: <value>` on supported operations |
+| Success envelope | `{ "success": true, "data": ..., "message": "..." }` |
+| Error envelope | `{ "success": false, "message": "...", "code": "...", "errors": {...} }` |
+
+### 7.2 Example request
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -H "Accept-Language: en" \
+  -d '{
+    "phone": "<PHONE_NUMBER>",
+    "password": "<PASSWORD>"
+  }'
 ```
 
-### 4.2 Procurement, FEFO Stock & Inter-Warehouse Transfers
+Example success response:
 
-Inventory quantities are derived from non-expired, unheld FEFO `Batch` rows guarded by both service-layer row locks and database `CHECK (qty_left >= 0)` constraints.
-
-```mermaid
-flowchart LR
-    PO["SupplyOrder (sent)"] -->|"POST /receipts (optional supply_order_id)"| REC["Inbound Receipt -> Weighted Avg Cost Update -> New FEFO Batch"]
-    REC -->|"Reconciles qty"| PO2["SupplyOrder -> partial / received"]
-    REC --> TRF["Inter-Warehouse Transfer Dispatch (preserves origin_batch_id & expiry)"]
-    TRF -->|"Receiving WH confirms"| RCV{"Quantities Match?"}
-    RCV -->|"Yes"| DONE["Target Batch Credited + InventoryMovement Logged"]
-    RCV -->|"Shortage / Damage"| REV["Discrepancy Held -> Manager Review & Adjustment"]
-    DONE --> STK["Stocktake (countLocked blocks shelf mutations) -> Close Adjustment & DamagedInventory"]
+```json
+{
+  "success": true,
+  "data": {
+    "token": "<ACCESS_TOKEN>",
+    "refresh": "<REFRESH_TOKEN>",
+    "user": {
+      "id": 1,
+      "name": "Example User",
+      "role": "manager"
+    }
+  },
+  "message": "Login successful"
+}
 ```
 
-### 4.3 Authentication, Wevlix OTP & Real-Time WebSocket Fanout
+Example error response:
 
-Multi-shop owners can operate different active shops concurrently across devices because each login issues a `UserSession` (`sid` UUID claim inside the JWT), isolating `active_customer_id` per session rather than overwriting global user state.
+```json
+{
+  "success": false,
+  "message": "The requested resource was not found.",
+  "code": "NOT_FOUND",
+  "errors": {}
+}
+```
+
+The examples are illustrative. Actual fields and localized messages depend on the endpoint and request context.
+
+### 7.3 Endpoint groups
+
+The API contract is organized around these domain areas:
+
+| Domain | Representative routes |
+| --- | --- |
+| Authentication and sessions | `/auth/*`, `/me`, `/users`, `/settings` |
+| Catalog and inventory | `/items`, `/categories`, `/stock`, `/batches`, `/damaged` |
+| Procurement and warehouses | `/supply-orders`, `/receipts`, `/transfers`, `/stocktakes` |
+| Customers and orders | `/customers`, `/orders`, `/shop-lists`, `/visits` |
+| Delivery and fleet | `/deliveries/*`, `/vehicles`, `/orders/{id}/shipments` |
+| Finance | `/invoices`, `/payments`, `/returns`, `/commissions`, `/expenses` |
+| Reporting | `/dashboard`, `/reports/*` |
+| Communication | `/notifications`, `/chat`, `/realtime/ticket` |
+| Operations | `/health/live`, `/health/ready`, `/metrics` |
+
+Collection endpoints return arrays inside `data` unless an endpoint explicitly enables pagination. IQD amounts are represented as whole-number values; percentage and exchange-rate values use decimal arithmetic.
+
+### 7.4 Interactive API documentation
+
+When API documentation is enabled:
+
+- **OpenAPI schema:** `/api/v1/schema/`
+- **Swagger UI:** `/api/v1/docs/`
+
+The full endpoint inventory, permissions, request fields, response shapes, and error rules are documented in [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md).
+
+---
+
+## 8. Realtime Architecture
+
+Realtime communication is provided by Django Channels through the ASGI application.
+
+- **WebSocket endpoint:** `/ws`
+- **Ticket endpoint:** `POST /api/v1/realtime/ticket`
+- **Channel layer:** in-memory for local fallback; Redis for distributed deployments.
+- **Authorized topics:** notifications, chat, orders, and location.
+- **Event delivery:** transactional outbox records are dispatched after the originating database transaction commits.
+
+### Secure connection lifecycle
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Client
-    participant API as DRF API (/api/v1)
-    participant OTP as Wevlix Gateway
-    participant DB as PostgreSQL / SQLite
-    participant Outbox as Outbox / Channels
-    participant WS as Daphne WS (/ws)
+    participant Client as Client Application
+    participant API as Django REST API
+    participant DB as Database
+    participant WS as Channels Consumer
+    participant Redis as Redis Channel Layer
 
-    Note over Client,OTP: Registration, Password Reset & Phone Change
-    Client->>API: POST /otp/send {phone, purpose}
-    API->>OTP: Send 6-digit code (60s cooldown, 5/hr, 5 wrong tries)
-    Client->>API: POST /otp/verify {request_id, code}
-    API-->>Client: {otp_token (15m, single-use)}
-
-    Note over Client,WS: Session-Scoped Auth & Secure Realtime Handshake
-    Client->>API: POST /auth/login {phone, password}
-    API->>DB: Verify Argon2id + create UserSession(sid)
-    API-->>Client: JWT access (with sid) + refresh
-    Client->>API: POST /realtime/ticket
-    API->>DB: Store SHA-256(ticket), TTL 60s
-    API-->>Client: {ticket}
-    Client->>WS: Connect WS /ws?ticket=... (Origin checked against CORS regex)
-    WS->>DB: Atomic single-use ticket consumption & topic ACL check
-    WS-->>Client: Subscribed (notifications, chat, orders, location)
-
-    Note over API,WS: Reliable Domain Broadcast
-    Client->>API: Mutating Request (e.g. POST /orders)
-    API->>DB: Atomic commit + AuditLog + OutboxEvent
-    DB-->>Outbox: transaction.on_commit -> Immediate group_send (or 1m Celery Outbox retry)
-    Outbox-->>WS: Push JSON event to authorized role/wh/shop/user groups
+    Client->>API: POST /api/v1/realtime/ticket<br/>Authorization: Bearer JWT
+    API->>DB: Store SHA-256 ticket hash<br/>and session context
+    API-->>Client: Short-lived single-use ticket
+    Client->>WS: Connect to /ws?ticket=<ticket>
+    WS->>WS: Validate request origin
+    WS->>DB: Atomically consume ticket
+    WS->>DB: Verify active user and session
+    WS->>Redis: Apply connection limits<br/>and join authorized groups
+    WS-->>Client: Connection accepted
+    Client->>WS: Subscribe / ping actions
+    WS-->>Client: Authorized realtime events
 ```
 
----
+The ticket is not a reusable JWT. It is short-lived, single-use, and validated by the backend before the WebSocket session is accepted.
 
-## 5. Engineering Invariants & Security Guarantees
+The realtime layer also applies configurable connection, message-size, and inbound-rate limits. Event payloads are designed to avoid exposing protected business fields.
 
-1. **Exact Money & Commercial 250 IQD Rounding**:
-   - All IQD values use integer / `Decimal` math (never floating-point).
-   - [`round_250()`](apps/common/utils.py) implements `Decimal` `ROUND_HALF_UP` to the nearest configurable rounding unit (default `250` IQD, customizable via `settings.advanced.round_to`), matching frontend `Math.round(raw / 250) * 250`.
-2. **Zero Negative Stock & Deadlock-Free Locking**:
-   - Batch allocations query `.select_for_update().order_by("id")` deterministically inside `@transaction.atomic` and enforce DB `CheckConstraint(qty_left__gte=0)`. Expired (`expiry_date < local_today` in `Asia/Baghdad`) and held lots are excluded from sellable supply.
-3. **Strict Server-Side Field Redaction & Profile Limits**:
-   - **Costs** (`avg_cost`, `purchase_price`, `total_cost`): omitted outside `{manager, accountant, warehouse}`.
-   - **Profits** (`cost`, `profit`, `month_profit`): omitted outside `{manager, accountant}` or when permission profile specifies `limits.no_profit`.
-   - **Debt & Payment Details** (`debt_limit`, `balance`, invoice `paid`/`remaining`): redacted for `{warehouse, staff}` or `limits.no_debt`.
-   - **Delivery PIN**: encrypted at rest with Fernet (`pin_encrypted`) + `pin_hash` (SHA-256); plaintext PIN is returned **only** to the owning `shop` user. Wrong PIN attempts persist across failures (`403`/lockout at `pin_tries`, default `5`).
-4. **Dynamic Business Rules Engine (`apps/accounts/business_rules.py`)**:
-   - Runtime settings (`PATCH /api/v1/settings` with `advanced` diffing and immutable `GET /api/v1/settings/history` audit log) control discount bounds (`3%` staff / `30%` max), `min_shop_order`, `over_limit` (`approval` / `block` / `allow`), `shop_edit_minutes`, `offline_max_days`, `auto_confirm_rep_orders`, `custody_cap`, reversal age/role locks (`TOO_OLD`), login lockout (`423 LOCKED`), feature toggles (`403 FEATURE_OFF`), maintenance mode (`503 MAINTENANCE`), and `notify_matrix` role routing.
-   - Public `GET /api/v1/site` exposes non-sensitive live bootstrap config (`self_signup`, `features`, `maintenance`, `announcement`, `password_min`, `names`, `users_page`) without authentication.
-5. **Idempotency & Fail-Closed Integrations**:
-   - Sensitive mutations (`orders`, `payments`, `online-payments`, `transfers`, `returns`) deduplicate via both `Idempotency-Key` header (`IdempotencyKey`) and `client_ref`.
-   - Payment webhooks (`integrations/qi_card`) enforce HMAC-SHA256 verification and fail closed (`QI_CARD_MODE=disabled` rejects live mutations cleanly).
+See [`docs/REALTIME_ARCHITECTURE.md`](docs/REALTIME_ARCHITECTURE.md) for ticket handling, topic ACLs, close codes, and outbox retry behavior.
 
 ---
 
-## 6. Local Development Quick Start
+## 9. Getting Started
 
-Run inside `backend/` using the project virtual environment (`Python 3.14` managed by `uv` or `.venv`):
+### 9.1 Prerequisites
+
+- Python `3.14`
+- [uv](https://docs.astral.sh/uv/)
+- Git
+- Docker Engine and Docker Compose (optional; required for the containerized stack)
+
+### 9.2 Clone and install
+
+```bash
+git clone https://github.com/team-1-aljadreyah/backend2.git
+cd backend2
+uv sync --extra dev
+```
+
+Create a local environment file:
+
+**macOS / Linux**
+
+```bash
+cp .env.example .env
+```
+
+**Windows PowerShell**
 
 ```powershell
-# 1. Inspect environment & apply migrations (SQLite default: db.sqlite3)
+Copy-Item .env.example .env
+```
+
+Update `.env` before starting the application:
+
+- Replace the placeholder `DJANGO_SECRET_KEY` with a private development secret.
+- Keep `DB_ENGINE=sqlite` for the default local database.
+- Keep `STORAGE_BACKEND=local` unless you have configured Supabase Storage.
+- Leave payment and OTP providers disabled until their credentials and callback configuration are ready.
+- Generate a dedicated `FIELD_ENCRYPTION_KEY` when testing encrypted fields.
+
+Never commit `.env` or real provider credentials.
+
+### 9.3 Initialize the database
+
+```bash
 uv run python manage.py check
 uv run python manage.py migrate
-
-# 2. Seed demo data (choose mini OR full synthetic ERP dataset)
-uv run python manage.py seed_demo                        # mini default (~few records, password: Demo12345!)
-uv run python manage.py seed_demo --profile full --with-media   # 70 users, 96 items, 52 shops + 243 WebP assets
-uv run python manage.py validate_demo_data --strict-full        # verify referential integrity & assets
-
-# Useful seeder flags:
-#   --dry-run
-#   --clear-demo-data --confirm-delete-demo-data
-
-# 3. Start ASGI server (required for both REST + WebSockets /ws)
-.\.venv\Scripts\daphne.exe -b 0.0.0.0 -p 8000 config.asgi:application
-# Or standard HTTP-only dev server:
-uv run python manage.py runserver 0.0.0.0:8000
 ```
 
-> **Note:** `seed_demo` explicitly refuses to run whenever `DJANGO_ENV=production` or production settings are active.
+### 9.4 Optional: create synthetic demo data
 
-### Demo Credentials
+For a full synthetic dataset, including demo media:
 
-#### `--profile full` Credentials ([`people_data.py`](apps/common/demo_seed/people_data.py))
+```bash
+uv run python manage.py seed_demo --profile full --with-media
+uv run python manage.py validate_demo_data --strict-full
+```
 
-| Role | Example Phone(s) | Password |
-| :--- | :--- | :--- |
-| **Manager** | `07701000001` | `AlNahrain!Mgr#2026` |
-| **Accountant** | `07701000011` (`prof_senior_acc`), `07701000012` | `AlNahrain!Acc#2026` |
-| **Warehouse Keeper** | `07701000021`, `07701000022`, `07701000023` | `AlNahrain!Wh#2026` |
-| **Warehouse Staff** | `07701000031`+ | `AlNahrain!Stf#2026` |
-| **Sales / Delivery Rep** | `07701000041`+ | `AlNahrain!Rep#2026` |
-| **Shop Owner** | `07701000061`+ | `AlNahrain!Shop#2026` |
+The seeder also supports a dry-run mode. Use demo data only in an isolated development or test environment. Do not publish generated account credentials or use demo accounts in production.
 
-#### `--profile mini` (Default)
+To inspect available seeder options:
 
-Assigns `--password` / `DEMO_SEED_PASSWORD` (default `Demo12345!`) to `07701000001` (`manager`), `07701000002` (`accountant`), `07701000003`/`004` (`warehouse`), `07701000005` (`staff`), `07701000006`/`007` (`rep`), and `07701000008` (`shop`).
+```bash
+uv run python manage.py seed_demo --help
+```
+
+### 9.5 Start the ASGI server
+
+Daphne serves both REST and WebSocket traffic:
+
+```bash
+uv run daphne -b 0.0.0.0 -p 8000 config.asgi:application
+```
+
+The API is then available at:
+
+- API base: `http://127.0.0.1:8000/api/v1`
+- Swagger UI: `http://127.0.0.1:8000/api/v1/docs/`
+- OpenAPI schema: `http://127.0.0.1:8000/api/v1/schema/`
+- WebSocket: `ws://127.0.0.1:8000/ws`
+
+For HTTP-only development, Django's development server can also be used:
+
+```bash
+uv run python manage.py runserver 127.0.0.1:8000
+```
+
+Use Daphne when testing the ASGI WebSocket path. A multi-process realtime deployment requires a shared Redis-backed Channels layer.
 
 ---
 
-## 7. Environment & Configuration Matrix
+## 10. Environment Configuration
 
-Copy [`.env.example`](.env.example) to `.env`. Never commit `.env` or real gateway secrets.
+The complete environment template is [`.env.example`](.env.example). Copy it to `.env` and provide environment-specific values. The following table groups the main settings; not every optional provider is required for local development.
 
-| Category | Variable(s) | Dev Default | Production Requirement |
-| :--- | :--- | :--- | :--- |
-| **Core Django** | `DJANGO_ENV`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS` | `development` / `false` | `production`, `>= 32`-char secret, `DEBUG=False`, explicit hosts |
-| **CORS / CSRF** | `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` | `localhost:3000`, `127.0.0.1:3000` | Production frontend origins (`*.ama8.uk` regex also enabled in [`base.py`](config/settings/base.py)) |
-| **Encryption** | `FIELD_ENCRYPTION_KEY` | Derived dev fallback | Dedicated Fernet key (`Fernet.generate_key()`) |
-| **Database** | `DB_ENGINE`, `SQLITE_PATH`, `DATABASE_URL`, `DB_CONN_MAX_AGE`, `DB_SSL_REQUIRE` | `sqlite` (`db.sqlite3`) | `postgres` (startup-enforced in [`production.py`](config/settings/production.py)), URI with `sslmode=require` |
-| **Storage** | `STORAGE_BACKEND`, `MEDIA_ROOT`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_*`, `SIGNED_URL_TTL_SECONDS` | `local` (`media/`) | `supabase` + public `product-images` & private `delivery-proofs` buckets (`900s` signed URLs) |
-| **Redis & Celery** | `REDIS_URL`, `CHANNELS_REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, `CELERY_TASK_ALWAYS_EAGER` | `LocMemCache`, `InMemoryChannelLayer`, `memory://`, `true` | Live Redis URLs for distributed cache/throttles, Channels pub-sub & Celery (`eager=false`) |
-| **Realtime WS** | `REALTIME_TICKET_TTL_SECONDS`, `REALTIME_MAX_CONNECTIONS_PER_USER`, `REALTIME_MAX_MESSAGE_BYTES`, `REALTIME_RATE_LIMIT_PER_10S` | `60`, `5`, `16384`, `30` | Tuned per fleet size (multi-worker WS requires `CHANNELS_REDIS_URL`) |
-| **Qi Card** | `QI_CARD_MODE`, `QI_CARD_BASE_URL`, `QI_CARD_MERCHANT_ID`, `QI_CARD_TERMINAL_ID`, `QI_CARD_API_KEY`, `QI_CARD_WEBHOOK_SECRET`, `QI_CARD_PUBLIC_KEY` | `disabled` | Sandbox/live creds + webhook secret (`sandbox` / `live`) |
-| **ZainCash v2** | `ZAINCASH_ENV`, `ZAINCASH_MSISDN`, `ZAINCASH_MERCHANT_ID`, `ZAINCASH_SECRET`, `ZAINCASH_CLIENT_ID`, `ZAINCASH_CLIENT_SECRET` | `test` | Live merchant/OAuth creds (`https://pg-api-uat.zaincash.iq` for UAT) |
-| **Wevlix OTP** | `WEVLIX_MODE`, `WEVLIX_BASE_URL`, `WEVLIX_API_KEY` | `disabled` | `demo` (dev/QA only: surfaces `sandbox_code`), `sandbox`, or `live` |
-| **Web Push & Ops** | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CLAIMS_EMAIL`, `METRICS_TOKEN`, `API_ENABLE_DOCS`, `LOG_LEVEL` | `API_ENABLE_DOCS=true` | Set strong `METRICS_TOKEN` (`Authorization: Bearer ...`), disable docs if private |
+| Category | Variables | Purpose |
+| --- | --- | --- |
+| Django core | `DJANGO_ENV`, `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS` | Runtime mode, signing secret, debug mode, and allowed hosts |
+| CORS / CSRF | `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` | Browser origins and trusted CSRF origins |
+| Database | `DB_ENGINE`, `SQLITE_PATH`, `DATABASE_URL`, `DB_CONN_MAX_AGE`, `DB_SSL_REQUIRE` | SQLite or PostgreSQL selection and connection settings |
+| Encryption / sessions | `FIELD_ENCRYPTION_KEY`, `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS` | Sensitive-field encryption and JWT lifetime |
+| Storage | `STORAGE_BACKEND`, `MEDIA_ROOT`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET_PRODUCT_IMAGES`, `SUPABASE_BUCKET_DELIVERY_PROOFS`, `SIGNED_URL_TTL_SECONDS` | Local or Supabase media storage |
+| Redis / Celery | `REDIS_URL`, `CHANNELS_REDIS_URL`, `CELERY_BROKER_URL`, `CELERY_RESULT_BACKEND`, `CELERY_TASK_ALWAYS_EAGER` | Cache, channel layer, broker, and task execution |
+| WebSocket controls | `REALTIME_TICKET_TTL_SECONDS`, `REALTIME_MAX_CONNECTIONS_PER_USER`, `REALTIME_MAX_MESSAGE_BYTES`, `REALTIME_RATE_LIMIT_PER_10S` | Ticket lifetime and connection/message limits |
+| Qi Card | `QI_CARD_MODE`, `QI_CARD_BASE_URL`, `QI_CARD_MERCHANT_ID`, `QI_CARD_TERMINAL_ID`, `QI_CARD_API_KEY`, `QI_CARD_WEBHOOK_SECRET`, `QI_CARD_PUBLIC_KEY` | Qi Card payment gateway configuration |
+| ZainCash | `ZAINCASH_ENV`, `ZAINCASH_MSISDN`, `ZAINCASH_MERCHANT_ID`, `ZAINCASH_SECRET`, `ZAINCASH_CLIENT_ID`, `ZAINCASH_CLIENT_SECRET` | ZainCash API v2 configuration |
+| Wevlix OTP | `WEVLIX_MODE`, `WEVLIX_BASE_URL`, `WEVLIX_API_KEY` | OTP provider mode and server-side API access |
+| Web Push | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CLAIMS_EMAIL` | VAPID subscription and notification signing |
+| Operations | `METRICS_TOKEN`, `API_ENABLE_DOCS`, `LOG_LEVEL`, `ALLOW_DEMO_SEED` | Metrics access, API docs visibility, logging, and demo-data guard |
+
+### Production configuration essentials
+
+Production mode requires PostgreSQL and a properly configured Django secret. Before deployment:
+
+1. Set `DJANGO_ENV=production` and `DJANGO_DEBUG=false`.
+2. Use a strong, private `DJANGO_SECRET_KEY`.
+3. Set `DB_ENGINE=postgres` and a secured PostgreSQL `DATABASE_URL`.
+4. Configure exact allowed hosts, CORS origins, and CSRF trusted origins.
+5. Configure `FIELD_ENCRYPTION_KEY` and keep it outside source control.
+6. Use private server-side Supabase service credentials when Supabase Storage is enabled.
+7. Configure Redis URLs for distributed Channels and Celery operation.
+8. Configure payment, OTP, and Web Push providers only when their server-side credentials and callback settings are available.
+9. Set a strong `METRICS_TOKEN`; disable or restrict public API documentation where appropriate.
+
+The current `.env.example` contains the core, database, storage, Redis, realtime, payment, Web Push, and operations variables. Wevlix settings are read by the application as `WEVLIX_*` values and should be supplied through the deployment secret manager when that integration is enabled.
 
 ---
 
-## 8. Testing, Linting, OpenAPI & Capacity Profile
+## 11. Testing and Quality Assurance
 
-### Verification Commands
+The project uses pytest for automated tests and Ruff for static linting.
 
-```powershell
-# Static analysis & Django checks
+### Common verification commands
+
+```bash
+# Lint
 uv run ruff check .
+
+# Django configuration checks
 uv run python manage.py check
+
+# Detect model changes that are not represented by migrations
 uv run python manage.py makemigrations --check --dry-run
 
-# Full automated test suite (SQLite + Channels ASGI tests) & coverage
+# Full test suite with coverage
 uv run pytest -v --cov=apps --cov=integrations --cov-report=term-missing
 
-# Schema parity check (Django ORM == database/schema.sql)
+# ORM / schema synchronization checks
 uv run pytest tests/test_schema_sync.py -v
 
-# Live PostgreSQL 20-thread concurrency & locking suite (requires live PostgreSQL)
-$env:TEST_POSTGRES_URL="postgresql://postgres:postgres@localhost:5432/alnahrian_test"
-uv run pytest -m postgres -v
-
-# OpenAPI 3.0 contract generation & validation
+# Validate the generated OpenAPI schema
 uv run python manage.py spectacular --file openapi.yml --validate
 ```
 
-Latest verified local baseline on SQLite + ASGI (`config.settings.testing`, without `TEST_POSTGRES_URL`): **`95 passed, 7 skipped`** (all 7 skipped tests are `@pytest.mark.postgres` concurrency probes gated on `TEST_POSTGRES_URL`).
+### PostgreSQL concurrency tests
 
-### Observed Stress Test & Scaling Profile
+The PostgreSQL-specific tests exercise locking and concurrency behavior and require a dedicated test database.
 
-Benchmarked on a 4-vCPU (`AMD EPYC 7763`, `8.0 GiB` RAM) host against an isolated clone of the seeded database:
+**macOS / Linux**
 
-| Configuration | Read Ceiling | Write (`POST /orders`) Ceiling | WebSocket (`/ws`) | Primary Bottleneck |
-| :--- | :--- | :--- | :--- | :--- |
-| **Default Dev Stack** *(1-worker Daphne + SQLite `DELETE`)* | `/health`: **260.2 RPS**<br>`/site`: **125.1 RPS**<br>`/items`: **17.1 RPS**<br>`/dashboard`: **8.4 RPS**<br>`/orders`: **2.0 RPS** *(fails at `c=50`)* | **3.7 RPS** sequential (`c=1`)<br>**6.4 RPS** (`WAL`, `c=1`)<br>Contends at **`c >= 2`** (`database is locked`) | **500 concurrent sockets** (`0` failures; drops between `500–750`) | 1) SQLite global write lock on concurrent mutations<br>2) `GET /orders` N+1 (`852` SQL queries/req)<br>3) Single Daphne process |
-| **Multi-Worker (`uvicorn --workers 4` + `WAL`)** | `/health`: **715.1 RPS** *(2.75x)*<br>`/items`: **52.5 RPS** *(3.07x)* | Requires PostgreSQL for true multi-writer row locking (`select_for_update`) | Requires `CHANNELS_REDIS_URL` across workers | File-level SQLite write lock eliminated once `DB_ENGINE=postgres` |
-| **Default DRF Rate Limits** ([`base.py`](config/settings/base.py)) | `120/min` (`2 RPS`) anon/IP<br>`600/min` (`10 RPS`) per user | `10/min` on `login` / `register` | `5` conns/user (`30` msgs/`10s`) | Intentional abuse protection (verified via `429` burst tests) |
+```bash
+export TEST_POSTGRES_URL="postgresql://<user>:<password>@localhost:5432/<test_database>"
+uv run pytest -m postgres -v
+```
+
+**Windows PowerShell**
+
+```powershell
+$env:TEST_POSTGRES_URL = "postgresql://<user>:<password>@localhost:5432/<test_database>"
+uv run pytest -m postgres -v
+```
+
+### Verification boundaries
+
+- SQLite and ASGI tests can run locally without a live PostgreSQL service.
+- Tests marked `postgres` require `TEST_POSTGRES_URL`; without it, PostgreSQL concurrency tests are skipped.
+- Live Redis, multi-worker Channels, Docker runtime, Supabase Storage, and payment-provider callbacks require their corresponding services and credentials.
+- A local unit-test result must not be interpreted as proof that every external production integration has been exercised.
+
+Test counts and coverage percentages are intentionally not hard-coded here. Run the commands above against the current checkout to obtain the authoritative result for your environment.
 
 ---
 
-## 9. Production Deployment & Operations Runbook
+## 12. Deployment and Operations
 
-### Docker Compose Stack ([`docker-compose.yml`](docker-compose.yml))
+### 12.1 Docker Compose services
 
-Spins up `db` (`postgres:16-alpine`), `redis` (`redis:7-alpine`), `web` (`migrate --noinput` + `daphne -b 0.0.0.0 -p 8000 config.asgi:application`), `worker` (`celery -A config worker -l INFO`), and `beat` (`celery -A config beat -l INFO`):
+The repository's [`docker-compose.yml`](docker-compose.yml) defines the following services:
+
+| Service | Responsibility |
+| --- | --- |
+| `db` | PostgreSQL 16 database |
+| `redis` | Redis service for cache, Channels, and Celery |
+| `web` | Daphne ASGI server for REST and WebSocket traffic |
+| `worker` | Celery background task worker |
+| `beat` | Celery periodic task scheduler |
+
+After creating and configuring `.env`, start the stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-For Windows/bare-metal staging where Next.js static/Node (`127.0.0.1:3100`) and Daphne (`0.0.0.0:8000`) run side-by-side behind a single public port, [`scripts/port80_gateway.mjs`](scripts/port80_gateway.mjs) proxies `/api/*`, `/ws`, `/media/*`, and `/health*` to Daphne while serving the frontend everywhere else.
+Inspect service status and logs:
 
-### Celery Beat Scheduled Jobs ([`config/celery.py`](config/celery.py))
+```bash
+docker compose ps
+docker compose logs -f web
+```
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+The Compose configuration is a deployment starting point. Review passwords, host exposure, storage persistence, TLS termination, backups, and provider credentials before using it in a public environment.
+
+### 12.2 Scheduled background work
+
+Celery Beat configures periodic tasks including:
 
 | Task | Schedule | Purpose |
-| :--- | :--- | :--- |
-| `notifications.process_outbox_events` | Every 1 min (`* * * * *`) | Retries unacknowledged durable WS/push outbox events (60s lease, max 5 attempts) |
-| `notifications.sweep_expired_reservations` | Every 5 min (`*/5 * * * *`) | Releases expired `reserved_until` inventory locks on unfulfilled orders |
-| `payments.reconcile_online_payments` | Every 5 min (`*/5 * * * *`) | Reconciles pending Qi Card / ZainCash online payment intents |
-| `realtime.cleanup_expired_tickets` | Every 15 min (`*/15 * * * *`) | Purges expired single-use `RealtimeTicket` rows |
-| `notifications.sweep_expiry_alerts` | Daily 05:00 UTC | Emits near-expiry batch notifications across warehouses |
+| --- | --- | --- |
+| `notifications.process_outbox_events` | Every minute | Dispatch and retry durable outbox events |
+| `notifications.sweep_expired_reservations` | Every 5 minutes | Release expired order reservations |
+| `payments.reconcile_online_payments` | Every 5 minutes | Reconcile pending online payments |
+| `realtime.cleanup_expired_tickets` | Every 15 minutes | Remove expired or consumed realtime tickets |
+| `notifications.sweep_expiry_alerts` | Daily at 05:00 UTC | Generate near-expiry inventory alerts |
 
-### Observability & Production Checklist
+### 12.3 Health and monitoring endpoints
 
-- **Probes**: `GET /health/live` (process alive), `GET /health/ready` (verifies database + cache connectivity), `GET /metrics` (requires manager JWT or `Authorization: Bearer $METRICS_TOKEN`).
-- **Hardening**: Keep `DJANGO_ENV=production` (`DEBUG=False`, HSTS preload, `X-Frame-Options: DENY`, secure cookies enforced automatically by [`config/settings/production.py`](config/settings/production.py)).
-- **Backups**: Snapshot PostgreSQL (`pg_dump` / Supabase PITR) before every schema migration; rotate `DJANGO_SECRET_KEY`, `FIELD_ENCRYPTION_KEY`, `METRICS_TOKEN`, and gateway secrets out-of-band.
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health/live` | Process liveness probe |
+| `GET /health/ready` | Database readiness probe |
+| `GET /metrics` | Restricted operational metrics |
+
+Access to `/metrics` is protected by authorized roles or the configured metrics bearer token. Do not expose operational metrics publicly without an access-control policy.
+
+For deployment prerequisites, security settings, database pooling, storage, and infrastructure verification boundaries, see [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md).
 
 ---
 
-## 10. Documentation Index
+## 13. Documentation Hub
 
-| Document | Contents |
-| :--- | :--- |
-| [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) | High-level system architecture, module inventory & security guarantees |
-| [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) | Endpoint contracts, request/response envelopes & error codes |
-| [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md) | Ledger design, constraints & [`database/schema.sql`](database/schema.sql) overview |
-| [`docs/REALTIME_ARCHITECTURE.md`](docs/REALTIME_ARCHITECTURE.md) | WebSocket authentication, topic ACLs, rate limiting & outbox lifecycle |
-| [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md) | ADRs explaining key design trade-offs |
-| [`docs/IMPLEMENTATION_STATUS.md`](docs/IMPLEMENTATION_STATUS.md) | Phase-by-phase build log & local vs blocked verification boundaries |
-| [`docs/PRODUCTION_READINESS.md`](docs/PRODUCTION_READINESS.md) | Pre-launch checklist & operational readiness gates |
-| [`docs/DEMO_DATA_REPORT.md`](docs/DEMO_DATA_REPORT.md) | Synthetic demo seeder specification & asset manifest audit |
+The README is the entry point. Detailed contracts and operational explanations remain in the `docs/` directory.
+
+| Document | What it covers |
+| --- | --- |
+| [Project Context](docs/PROJECT_CONTEXT.md) | System context, module responsibilities, and key guarantees |
+| [API Contract](docs/API_CONTRACT.md) | Endpoint inventory, roles, request and response contracts, and error codes |
+| [API Parity Audit](docs/API_PARITY_AUDIT.md) | API compatibility and parity verification |
+| [Database Schema](docs/DATABASE_SCHEMA.md) | Data model, ledger design, constraints, and schema structure |
+| [Realtime Architecture](docs/REALTIME_ARCHITECTURE.md) | WebSocket authentication, topic ACLs, limits, and outbox delivery |
+| [Architecture Decisions](docs/ARCHITECTURE_DECISIONS.md) | Architectural decision records and trade-offs |
+| [Implementation Status](docs/IMPLEMENTATION_STATUS.md) | Implementation history and verification status |
+| [Production Readiness](docs/PRODUCTION_READINESS.md) | Deployment topology, environment requirements, and readiness boundaries |
+| [Demo Data Report](docs/DEMO_DATA_REPORT.md) | Synthetic demo dataset and asset validation |
+| [Demo Data Gaps](docs/DEMO_DATA_GAPS.md) | Known demo-data gaps and limitations |
+| [Final Engineering Report](docs/FINAL_ENGINEERING_REPORT.md) | Consolidated engineering report |
+| [Engineering Rules](AGENTS.md) | Repository architecture and non-negotiable engineering rules |
+
+---
+
+## 14. License
+
+This project is distributed under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+### Connecting Warehouses. Empowering Businesses. Simplifying Wholesale Commerce.
+
+**AL-NAHRAIN · Wholesale ERP Backend**
+
+Maintained by [team-1-aljadreyah](https://github.com/team-1-aljadreyah).
+
+[Repository](https://github.com/team-1-aljadreyah/backend2) · [API Contract](docs/API_CONTRACT.md) · [Architecture](docs/PROJECT_CONTEXT.md)
+
+</div>
