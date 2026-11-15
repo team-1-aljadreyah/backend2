@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import action_permission
 from apps.commissions.services import (
     close_commission_month,
     list_closed_months,
@@ -22,7 +23,7 @@ class CommissionListView(APIView):
 
 
 class CommissionCloseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [action_permission("close_month")]
 
     def post(self, request: Request):
         return ok_response(data=close_commission_month(actor=request.user, month_raw=request.data.get("month")))

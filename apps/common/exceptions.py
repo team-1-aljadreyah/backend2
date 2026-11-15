@@ -37,6 +37,7 @@ class ErrorCode:
     SIGNUP_CLOSED = "SIGNUP_CLOSED"
     TOO_OLD = "TOO_OLD"
     LOCKED = "LOCKED"
+    CLOSED_DAY = "CLOSED_DAY"
     NETWORK = "NETWORK"
 
 
@@ -59,6 +60,7 @@ DEFAULT_CODE_MESSAGES: dict[str, tuple[str, str]] = {
     ErrorCode.SIGNUP_CLOSED: ("تسجيل الحسابات الجديدة متوقف حالياً", "New account registration is turned off"),
     ErrorCode.TOO_OLD: ("مرت المدة المسموح فيها بهذا الإجراء", "The allowed window for this action has passed"),
     ErrorCode.LOCKED: ("الحساب مقفل مؤقتاً بسبب محاولات دخول خاطئة", "Account temporarily locked due to failed logins"),
+    ErrorCode.CLOSED_DAY: ("اليوم عطلة في الشركة: لا تخرج شحنات", "Today is a day off: no shipments go out"),
 }
 
 
@@ -91,12 +93,19 @@ class ApiException(Exception):
         self,
         code: str = ErrorCode.VALIDATION,
         message: str | tuple[str, str] | None = None,
-        status_code: int = http_status.HTTP_400_BAD_REQUEST,
+        status_code: int | None = None,
         errors: dict[str, str | tuple[str, str]] | None = None,
     ) -> None:
         self.code = code
         self.message = message or DEFAULT_CODE_MESSAGES.get(code, DEFAULT_CODE_MESSAGES[ErrorCode.VALIDATION])
-        self.status_code = status_code
+        if status_code is None:
+            self.status_code = (
+                http_status.HTTP_409_CONFLICT
+                if code == ErrorCode.BAD_STATE
+                else http_status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            self.status_code = status_code
         self.errors = errors or {}
         super().__init__(localize(self.message, "en"))
 

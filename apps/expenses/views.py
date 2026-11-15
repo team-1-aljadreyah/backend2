@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.responses import created_response, ok_response
 from apps.expenses.services import (
     cancel_expense,
@@ -44,7 +44,7 @@ class ExpenseDetailView(APIView):
 
 
 class ExpenseDecideView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("approve_expense")]
 
     def post(self, request, expense_id: int):
         data = request.data if isinstance(request.data, dict) else {}

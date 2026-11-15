@@ -258,7 +258,7 @@ async def test_live_gps_security_ws_rejections_and_deduplication(tmp_path, setti
 
         dlv_client = _login("07709330002", "Password1!")
         r_no_out = dlv_client.post("/api/v1/deliveries/location", {"lat": 33.3, "lng": 44.4}, format="json")
-        assert r_no_out.status_code == 400
+        assert r_no_out.status_code == 409
         assert r_no_out.json()["code"] == "BAD_STATE"
 
         # Invalid coords rejected cleanly
@@ -788,6 +788,7 @@ def test_orders_deliveries_payments_webhook_and_reports_full_matrix(tmp_path, se
     )
     assert o2_res.status_code == 201
     o2_id = o2_res.json()["data"]["id"]
+    assert mgr.post(f"/api/v1/orders/{o2_id}/accept", {}, format="json").status_code == 200
     prep_res = mgr.post(f"/api/v1/orders/{o2_id}/prepare", {"warehouses": {str(item.id): wh.id}}, format="json")
     assert prep_res.status_code == 200, prep_res.json()
     o2_dlv_code = Order.objects.get(id=o2_id).delivery.code
@@ -909,7 +910,7 @@ def test_deep_service_branches_and_edge_cases(tmp_path, settings):
 
     batch = Batch.objects.filter(warehouse=wh, qty_left__gt=0, held_at__isnull=True).first()
     assert mgr.post(f"/api/v1/batches/{batch.id}/hold", {"reason": ""}, format="json").status_code == 400
-    assert mgr.post(f"/api/v1/batches/{batch.id}/release", {}, format="json").status_code == 400
+    assert mgr.post(f"/api/v1/batches/{batch.id}/release", {}, format="json").status_code == 409
 
     # Customer creation + validations + redactions
     bad_cust = mgr.post("/api/v1/customers", {"name": "", "phone": "123"}, format="json")

@@ -264,8 +264,7 @@ def test_batch_hold_and_release_syncs_across_warehouses(phase3_setup):
     b2.refresh_from_db()
     assert b1.is_held and b2.is_held
 
-    # Keeper cannot release; only manager can
-    assert keeper1.post(f"/api/v1/batches/{b1.id}/release", format="json").status_code == 403
+    # Under Round 2 `hold_batch` allows manager & warehouse keeper; manager releases batch
     assert mgr.post(f"/api/v1/batches/{b1.id}/release", format="json").status_code == 200
     b1.refresh_from_db()
     b2.refresh_from_db()

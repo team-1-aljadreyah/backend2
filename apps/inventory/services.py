@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from rest_framework import status as http_status
 
 from apps.accounts.models import Role, SystemSetting, User
-from apps.accounts.permissions import own_warehouse_id
+from apps.accounts.permissions import own_warehouse_id, require_action
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
 from apps.common.utils import baghdad_today
@@ -271,6 +271,7 @@ def _sibling_batches(batch: Batch) -> list[Batch]:
 
 @transaction.atomic
 def hold_batch(*, actor: User, batch_id: int, reason: str) -> dict[str, Any]:
+    require_action(actor, "hold_batch")
     reason_clean = (reason or "").strip()
     if not reason_clean:
         msg = ("سبب إيقاف الدفعة مطلوب", "Hold reason is required")
@@ -326,6 +327,7 @@ def hold_batch(*, actor: User, batch_id: int, reason: str) -> dict[str, Any]:
 
 @transaction.atomic
 def release_batch(*, actor: User, batch_id: int) -> dict[str, Any]:
+    require_action(actor, "hold_batch")
     batch = Batch.objects.select_related("item", "held_by").filter(id=batch_id).first()
     if not batch:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)

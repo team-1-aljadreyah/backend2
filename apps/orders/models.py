@@ -52,6 +52,8 @@ class Order(models.Model):
     total = models.BigIntegerField(default=0)
 
     reserved_until = models.DateTimeField(null=True, blank=True, db_index=True)
+    after_hours = models.DateTimeField(null=True, blank=True)
+    expected_on = models.DateField(null=True, blank=True)
     client_ref = models.CharField(max_length=120, unique=True, null=True, blank=True)
     offline = models.BooleanField(default=False)
     recorded_at = models.DateTimeField(null=True, blank=True)

@@ -53,6 +53,8 @@ class OrderSerializer(serializers.Serializer):
     subtotal = serializers.IntegerField(required=False)
     rounding = serializers.IntegerField(required=False)
     rating = DeliveryRatingSerializer(required=False)
+    after_hours = serializers.CharField(required=False, allow_null=True)
+    expected_on = serializers.CharField(required=False, allow_null=True)
     counter = serializers.DictField(required=False)
     custom = serializers.DictField(required=False)
 

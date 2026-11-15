@@ -6,7 +6,7 @@ from typing import Any
 from django.db import transaction
 from rest_framework import status as http_status
 
-from apps.accounts.business_rules import rules_of
+from apps.accounts.business_rules import custody_cap_of, prefix_of, rules_of
 from apps.accounts.models import Role, User
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
@@ -111,7 +111,7 @@ def check_rep_custody_cap(rep: User) -> None:
     """Notify accountant & manager once per Baghdad day if rep's cash holding exceeds `custody_cap`."""
     if rep is None or rep.role != Role.REP:
         return
-    cap = int(rules_of().get("custody_cap") or 0)
+    cap = custody_cap_of(rules_of(), rep.id)
     if cap <= 0:
         return
     holding = _compute_custody_row(rep)["holding"]
@@ -239,7 +239,7 @@ def create_cash_handover(*, actor: User, data: dict[str, Any]) -> dict[str, Any]
         confirmed_at=now if is_direct else None,
         confirmed_by=actor if is_direct else None,
     )
-    h.number = f"HND-{h.id:06d}"
+    h.number = f"{prefix_of('handover')}-{h.id:06d}"
     h.save(update_fields=["number"])
 
     if is_direct:

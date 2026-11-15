@@ -189,7 +189,7 @@ def test_rep_live_gps_endpoints_and_active_delivery_shop_visibility(multishop_se
     assert rep1.post("/api/v1/deliveries/location", {"lat": 99.0, "lng": 44.3}, format="json").status_code == 400
     # Reps without an active OUT delivery cannot publish GPS location (BAD_STATE)
     no_dlv = rep1.post("/api/v1/deliveries/location", {"lat": 32.615, "lng": 44.025}, format="json")
-    assert no_dlv.status_code == 400 and no_dlv.json()["code"] == "BAD_STATE"
+    assert no_dlv.status_code == 409 and no_dlv.json()["code"] == "BAD_STATE"
 
     # Create item, stock, two orders (cust_a & cust_b), prepare & dispatch via rep1 and rep2
     exp = (baghdad_today() + timedelta(days=90)).isoformat()
@@ -213,6 +213,8 @@ def test_rep_live_gps_endpoints_and_active_delivery_shop_visibility(multishop_se
         {"customer_id": multishop_setup["cust_b"].id, "warehouse_id": wh.id, "lines": [{"item_id": it, "unit": "carton", "qty": 1}]},
         format="json",
     ).json()["data"]
+    assert mgr.post(f"/api/v1/orders/{ord_res['id']}/accept").status_code == 200
+    assert mgr.post(f"/api/v1/orders/{ord_b['id']}/accept").status_code == 200
     mgr.post(f"/api/v1/orders/{ord_res['id']}/prepare", {"warehouses": {}}, format="json")
     mgr.post(f"/api/v1/orders/{ord_b['id']}/prepare", {"warehouses": {}}, format="json")
     dlv = Delivery.objects.get(order_id=ord_res["id"])

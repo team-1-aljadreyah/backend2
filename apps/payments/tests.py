@@ -452,21 +452,21 @@ def test_advance_payment_auto_allocates_on_new_invoice_without_double_spending_r
     assert mgr.post("/api/v1/customers/{}/refunds".format(cust.id), {"amount": 50000, "method": "cash", "reason": "Partial refund"}, format="json").status_code == 200
     assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == -400000
 
-    # Deliver inv1 for 99,000 -> automatically paid in full from unrefunded credit
+    # Deliver inv1 for 99,000 -> remains OPEN (advance credit stays unallocated; never auto-pays new invoices)
     inv1 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=99, unit_price=1000, suffix="ADV1")
     inv1_data = mgr.get(f"/api/v1/invoices/{inv1.id}").json()["data"]
-    assert inv1_data["paid"] == 99000 and inv1_data["remaining"] == 0 and inv1_data["status"] == "paid"
+    assert inv1_data["paid"] == 0 and inv1_data["remaining"] == 99000 and inv1_data["status"] == "open"
     pay_after_1 = Payment.objects.get(id=pay["id"])
-    assert pay_after_1.unallocated_amount == 351000
+    assert pay_after_1.unallocated_amount == 450000
     assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == -301000
     assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == -301000
 
-    # Deliver inv2 for 400,000 -> consumes only remaining 301,000 unrefunded credit (never re-spending 50,000 refund)
+    # Deliver inv2 for 400,000 -> also remains OPEN, while customer balance/statement reflects net +99,000
     inv2 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=400, unit_price=1000, suffix="ADV2")
     inv2_data = mgr.get(f"/api/v1/invoices/{inv2.id}").json()["data"]
-    assert inv2_data["paid"] == 301000 and inv2_data["remaining"] == 99000 and inv2_data["status"] == "partial"
+    assert inv2_data["paid"] == 0 and inv2_data["remaining"] == 400000 and inv2_data["status"] == "open"
     pay_after_2 = Payment.objects.get(id=pay["id"])
-    assert pay_after_2.unallocated_amount == 50000
+    assert pay_after_2.unallocated_amount == 450000
     assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 99000
     assert mgr.get(f"/api/v1/customers/{cust.id}/statement").json()["data"]["balance"] == 99000
 
@@ -598,3 +598,71 @@ def test_qi_card_v2_basic_auth_status_endpoint_and_rsa_webhook(phase6_setup):
         assert anon.post("/api/v1/webhooks/qi-card", data=raw_wh, content_type="application/json", HTTP_X_SIGNATURE="invalid").status_code == 403
         ok_wh = anon.post("/api/v1/webhooks/qi-card", data=raw_wh, content_type="application/json", HTTP_X_SIGNATURE=rsa_sig)
         assert ok_wh.status_code == 200 and ok_wh.json()["data"]["status"] == "success"
+
+
+@pytest.mark.django_db
+def test_partial_payment_reversal_across_invoices_and_reports_sync(phase6_setup):
+    """Partial reversal deducts newest invoice first, tracks reversed_amount across multiple steps, and syncs reports."""
+    mgr = _c("07706000001")
+    acct = _c("07706000002")
+    keeper = _c("07706000003")
+    wh = phase6_setup["wh"]
+    tier = phase6_setup["tier"]
+    cust = phase6_setup["cust"]
+    exp = (baghdad_today() + timedelta(days=90)).isoformat()
+
+    item_id = mgr.post(
+        "/api/v1/items",
+        {"name": "شاي أسود", "name_en": "Black Tea", "category": "مشروبات", "pieces_per_carton": 10, "prices": [{"tier_id": tier.id, "carton_price": 5000, "piece_price": 500}]},
+        format="json",
+    ).json()["data"]["id"]
+    keeper.post(
+        "/api/v1/receipts",
+        {"warehouse_id": wh.id, "lines": [{"item_id": item_id, "unit": "piece", "qty": 200, "expiry_date": exp, "purchase_price": 300}]},
+        format="json",
+    )
+
+    inv1 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=40, unit_price=500, suffix="PREV1")  # 20,000
+    inv2 = _create_delivered_invoice(phase6_setup, item_id=item_id, qty=47, unit_price=500, suffix="PREV2")  # 23,500
+    pay = mgr.post("/api/v1/payments", {"customer_id": cust.id, "amount": 43500, "method": "cash"}, format="json").json()["data"]
+    assert pay["reversed"] is False and pay["reversed_amount"] == 0
+
+    # 1. Partial reverse 1,000 -> newest invoice (inv2) drops from 23,500 to 22,500; inv1 remains fully paid
+    r1 = acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"amount": 1000, "reason": "تصحيح جزئي"}, format="json")
+    assert r1.status_code == 200, r1.json()
+    d1 = r1.json()["data"]
+    assert d1["reversed"] is False
+    assert d1["reversed_amount"] == 1000
+    rev1_id = d1["reversed_by_id"]
+    assert rev1_id is not None
+
+    inv1_d = mgr.get(f"/api/v1/invoices/{inv1.id}").json()["data"]
+    inv2_d = mgr.get(f"/api/v1/invoices/{inv2.id}").json()["data"]
+    assert inv1_d["paid"] == 20000 and inv1_d["status"] == "paid"
+    assert inv2_d["paid"] == 22500 and inv2_d["remaining"] == 1000 and inv2_d["status"] == "partial"
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 1000
+    assert mgr.get("/api/v1/dashboard").json()["data"]["today_collected"] == 42500
+
+    # Validation & BAD_STATE checks on reversal amounts and reversal counter-entries
+    assert acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"amount": 50000, "reason": "excess"}, format="json").status_code == 400
+    assert acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"amount": 0, "reason": "zero"}, format="json").status_code == 400
+    rev_on_rev = acct.post(f"/api/v1/payments/{rev1_id}/reverse", {"reason": "rev of rev"}, format="json")
+    assert rev_on_rev.status_code == 409 and rev_on_rev.json()["code"] == "BAD_STATE"
+
+    # 2. Second partial reverse 25,000 -> clears remaining 22,500 on inv2 and takes 2,500 from inv1
+    r2 = acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"amount": 25000, "reason": "تصحيح ثاني"}, format="json")
+    assert r2.status_code == 200, r2.json()
+    d2 = r2.json()["data"]
+    assert d2["reversed"] is False and d2["reversed_amount"] == 26000 and d2["reversed_by_id"] != rev1_id
+    assert mgr.get(f"/api/v1/invoices/{inv2.id}").json()["data"]["paid"] == 0
+    assert mgr.get(f"/api/v1/invoices/{inv1.id}").json()["data"]["paid"] == 17500
+
+    # 3. Third reverse omitting amount -> reverses remaining 17,500 and marks payment fully reversed
+    r3 = acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"reason": "إغلاق الباقي"}, format="json")
+    assert r3.status_code == 200, r3.json()
+    d3 = r3.json()["data"]
+    assert d3["reversed"] is True and d3["reversed_amount"] == 43500
+    assert mgr.get(f"/api/v1/invoices/{inv1.id}").json()["data"]["paid"] == 0
+    assert mgr.get(f"/api/v1/customers/{cust.id}").json()["data"]["balance"] == 43500
+    assert acct.post(f"/api/v1/payments/{pay['id']}/reverse", {"reason": "after full"}, format="json").json()["code"] == "ALREADY_REVERSED"
+

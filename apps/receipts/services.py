@@ -10,8 +10,9 @@ from django.db import transaction
 from django.db.models import Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import prefix_of
 from apps.accounts.models import User
-from apps.accounts.permissions import own_warehouse_id, sees_cost
+from apps.accounts.permissions import own_warehouse_id, require_action, sees_cost
 from apps.audit.services import record_audit
 from apps.catalog.models import Item
 from apps.common.exceptions import ApiException, ErrorCode
@@ -77,6 +78,7 @@ def get_receipt_for_actor(*, actor: User, receipt_id: int) -> dict[str, Any]:
 
 @transaction.atomic
 def create_receipt(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
+    require_action(actor, "receive_goods")
     client_ref = (str(data.get("client_ref") or "")).strip() or None
     if client_ref:
         existing = (
@@ -214,7 +216,7 @@ def create_receipt(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         client_ref=client_ref,
         created_by=actor,
     )
-    receipt.number = f"RCV-{receipt.id:04d}"
+    receipt.number = f"{prefix_of('receipt')}-{receipt.id:04d}"
     receipt.save(update_fields=["number"])
 
     if so_id is not None:

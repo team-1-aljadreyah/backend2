@@ -5,12 +5,12 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from django.db import transaction
-from rest_framework import status as http_status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role, SystemSetting, User
+from apps.accounts.permissions import require_action
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
 from apps.common.responses import ok_response
@@ -38,8 +38,7 @@ def list_usd_rates() -> list[dict[str, Any]]:
 
 @transaction.atomic
 def set_today_usd_rate(*, actor: User, raw_rate: Any) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT):
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "set_usd_rate")
     try:
         rate = Decimal(str(raw_rate))
         if rate <= 0:

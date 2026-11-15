@@ -9,8 +9,9 @@ from django.db import transaction
 from django.db.models import Sum
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import prefix_of
 from apps.accounts.models import Role, User
-from apps.accounts.permissions import own_warehouse_id
+from apps.accounts.permissions import own_warehouse_id, require_action
 from apps.audit.services import record_audit
 from apps.catalog.models import Item
 from apps.common.exceptions import ApiException, ErrorCode
@@ -110,7 +111,7 @@ def create_stocktake(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         status=StocktakeStatus.OPEN,
         created_by=actor,
     )
-    st.number = f"STK-{st.id:04d}"
+    st.number = f"{prefix_of('stocktake')}-{st.id:04d}"
     st.save(update_fields=["number"])
 
     for it in items_qs:
@@ -174,6 +175,7 @@ def update_stocktake(*, actor: User, stocktake_id: int, data: dict[str, Any]) ->
 
 @transaction.atomic
 def close_stocktake(*, actor: User, stocktake_id: int) -> dict[str, Any]:
+    require_action(actor, "close_stocktake")
     st = (
         Stocktake.objects.select_for_update()
         .select_related("warehouse")

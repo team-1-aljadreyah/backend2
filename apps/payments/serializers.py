@@ -37,6 +37,7 @@ class PaymentSerializer(serializers.Serializer):
     received_by = PersonRoleSerializer()
     allocations = AllocationSerializer(many=True)
     reversed = serializers.BooleanField()
+    reversed_amount = serializers.IntegerField(required=False)
     reversal_of = serializers.IntegerField(required=False, allow_null=True)
     reversed_by_id = serializers.IntegerField(required=False, allow_null=True)
     note = serializers.CharField(required=False, allow_blank=True)
@@ -54,6 +55,7 @@ class PaymentInputSerializer(serializers.Serializer):
 
 class PaymentReverseInputSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, default="")
+    amount = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
 
 class RefundSerializer(serializers.Serializer):

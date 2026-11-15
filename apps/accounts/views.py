@@ -14,7 +14,7 @@ from apps.accounts.authentication import issue_tokens_for_user, revoke_access_jt
 from apps.accounts.health import build_health_report
 from apps.accounts.models import Role, UserSession
 from apps.accounts.otp import send_otp_challenge, verify_otp_challenge
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.accounts.profiles import get_site_payload, save_custom_values, save_site_config
 from apps.accounts.rules_engine import list_recent_rule_runs
 from apps.accounts.serializers import (
@@ -240,7 +240,7 @@ class LookupsView(APIView):
 
 
 class UsersListCreateView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("manage_users")]
 
     @extend_schema(
         summary="List all company users",
@@ -259,7 +259,7 @@ class UsersListCreateView(APIView):
 
 
 class UserDetailView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("manage_users")]
 
     @extend_schema(
         summary="Update company user attributes",
@@ -281,7 +281,7 @@ class UserDetailView(APIView):
 
 
 class UserProfileView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("manage_users")]
 
     @extend_schema(
         summary="Assign permission profile to user",

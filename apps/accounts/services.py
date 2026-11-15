@@ -14,8 +14,8 @@ from rest_framework import status as http_status
 from apps.accounts.authentication import issue_tokens_for_user
 from apps.accounts.business_rules import (
     DEFAULT_RULES,
-    check_rules,
     changed_rules,
+    check_rules,
     diff_settings_changes,
     rules_of,
 )
@@ -357,6 +357,12 @@ def create_user_by_manager(*, actor: User, data: dict[str, Any], request: Any = 
         raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"phone": msg})
 
     role = str(data.get("role") or "")
+    if role == Role.MANAGER and actor.role != Role.MANAGER:
+        raise ApiException(
+            code=ErrorCode.FORBIDDEN,
+            message=("حسابات المدير يغيّرها المدير فقط", "Only a manager can manage manager accounts"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     active = bool(data.get("active", True))
     sales_target = None
     if role == Role.REP and data.get("sales_target") not in (None, ""):
@@ -413,6 +419,13 @@ def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any], r
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
 
     before = serialize_user(target)
+    new_role = str(data.get("role", target.role))
+    if (target.role == Role.MANAGER or new_role == Role.MANAGER) and actor.role != Role.MANAGER:
+        raise ApiException(
+            code=ErrorCode.FORBIDDEN,
+            message=("حسابات المدير يغيّرها المدير فقط", "Only a manager can manage manager accounts"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     if "name" in data:
         target.name = _validate_nonempty_str(data, "name", "الاسم", "Name")
     if "phone" in data:
@@ -422,7 +435,6 @@ def update_user_by_manager(*, actor: User, user_id: int, data: dict[str, Any], r
             raise ApiException(code=ErrorCode.VALIDATION, message=msg, errors={"phone": msg})
         target.phone = new_phone
 
-    new_role = str(data.get("role", target.role))
     new_active = bool(data.get("active", target.active))
     if target.id == actor.id and not new_active:
         raise ApiException(
@@ -781,6 +793,12 @@ def set_user_profile(*, actor: User, user_id: int, profile_id: str | None, reque
     target = User.objects.select_for_update().filter(id=user_id, deleted=False).first()
     if not target:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
+    if target.role == Role.MANAGER and actor.role != Role.MANAGER:
+        raise ApiException(
+            code=ErrorCode.FORBIDDEN,
+            message=("حسابات المدير يغيّرها المدير فقط", "Only a manager can manage manager accounts"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     if target.role == Role.MANAGER and profile_id:
         raise ApiException(
             code=ErrorCode.BAD_STATE,
@@ -846,6 +864,12 @@ def delete_user_by_manager(*, actor: User, user_id: int) -> None:
     target = User.objects.select_for_update().filter(id=user_id, deleted=False).first()
     if not target:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
+    if target.role == Role.MANAGER and actor.role != Role.MANAGER:
+        raise ApiException(
+            code=ErrorCode.FORBIDDEN,
+            message=("حسابات المدير يغيّرها المدير فقط", "Only a manager can manage manager accounts"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     if target.id == actor.id:
         raise ApiException(
             code=ErrorCode.BAD_STATE,

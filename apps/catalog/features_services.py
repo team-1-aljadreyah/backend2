@@ -11,7 +11,7 @@ from rest_framework import status as http_status
 
 from apps.accounts.business_rules import round_amount_by_rule, rules_of
 from apps.accounts.models import PriceTier, Role, User
-from apps.accounts.permissions import get_active_customer_id
+from apps.accounts.permissions import get_active_customer_id, require_action
 from apps.audit.services import record_audit
 from apps.catalog.models import Clearance, Item, ItemPrice, PriceChange, ScheduledPrice, StockAlert
 from apps.common.exceptions import ApiException, ErrorCode
@@ -226,8 +226,7 @@ def list_clearances_for_actor(*, actor: User) -> list[dict[str, Any]]:
 
 @transaction.atomic
 def start_clearance(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
-    if actor.role != Role.MANAGER:
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "start_clearance")
     if not rules_of()["features"]["clearance"]:
         raise ApiException(
             code=ErrorCode.FEATURE_OFF,
@@ -293,8 +292,7 @@ def start_clearance(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
 
 @transaction.atomic
 def cancel_clearance(*, actor: User, clearance_id: int) -> dict[str, Any]:
-    if actor.role != Role.MANAGER:
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "start_clearance")
     c = Clearance.objects.select_for_update().select_related("item", "batch", "created_by").filter(id=clearance_id).first()
     if not c:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)

@@ -6,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import action_permission
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import ok_response
 from apps.payments.serializers import (
@@ -38,7 +39,10 @@ from apps.payments.services import (
 
 
 class PaymentListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [action_permission("record_payment")()]
+        return [IsAuthenticated()]
 
     @extend_schema(
         summary="List customer payments",
@@ -72,7 +76,7 @@ class PaymentDetailView(APIView):
 
 
 class PaymentReverseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [action_permission("reverse_payment")]
 
     @extend_schema(
         summary="Reverse a payment entry",
@@ -85,6 +89,7 @@ class PaymentReverseView(APIView):
                 actor=request.user,
                 payment_id=payment_id,
                 reason=str(request.data.get("reason") or ""),
+                amount=request.data.get("amount"),
             )
         )
 
@@ -140,7 +145,10 @@ class CustomerCreditNoteListView(APIView):
 
 
 class CustomerRefundListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [action_permission("refund")()]
+        return [IsAuthenticated()]
 
     @extend_schema(
         summary="List customer refunds",

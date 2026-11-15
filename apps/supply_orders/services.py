@@ -9,6 +9,7 @@ from uuid import uuid4
 from django.db import transaction
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import prefix_of
 from apps.accounts.models import Role, User
 from apps.accounts.permissions import own_warehouse_id
 from apps.audit.services import record_audit
@@ -193,7 +194,7 @@ def create_supply_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         note=str(data.get("note") or "").strip(),
         created_by=actor,
     )
-    order.number = f"SUP-{order.id:04d}"
+    order.number = f"{prefix_of('supply')}-{order.id:04d}"
     order.save(update_fields=["number"])
 
     SupplyOrderLine.objects.bulk_create(

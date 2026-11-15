@@ -10,8 +10,10 @@ from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import expense_limit_of, prefix_from_rules, rules_of
 from apps.accounts.health import DEFAULT_EXPENSE_APPROVAL_ABOVE
 from apps.accounts.models import Role, SystemSetting, User
+from apps.accounts.permissions import require_action
 from apps.accounts.rules_engine import run_automation_rules
 from apps.audit.services import record_audit
 from apps.common.exceptions import ApiException, ErrorCode
@@ -175,11 +177,13 @@ def create_expense(*, actor: User, data: dict[str, Any], request: Any = None) ->
 
     assert exp_date is not None
     setting = SystemSetting.get_solo()
-    limit = (
+    exp_rules = rules_of(setting)
+    base_limit = (
         setting.expense_approval_above
         if setting.expense_approval_above is not None
         else DEFAULT_EXPENSE_APPROVAL_ABOVE
     )
+    limit = expense_limit_of(exp_rules, actor, base_limit)
     waits_limit = actor.role != Role.MANAGER and amount > limit
 
     exp = Expense.objects.create(
@@ -195,7 +199,7 @@ def create_expense(*, actor: User, data: dict[str, Any], request: Any = None) ->
         status=ExpenseStatus.PENDING if waits_limit else ExpenseStatus.APPROVED,
         created_by=actor,
     )
-    exp.number = f"EXP-{exp.id:04d}"
+    exp.number = f"{prefix_from_rules(exp_rules, 'expense')}-{exp.id:04d}"
     update_fields = ["number"]
 
     if photo_bytes is not None:
@@ -244,6 +248,7 @@ def create_expense(*, actor: User, data: dict[str, Any], request: Any = None) ->
 def decide_expense(
     *, actor: User, expense_id: int, ok: bool, reason: str = "", request: Any = None
 ) -> dict[str, Any]:
+    require_action(actor, "approve_expense")
     exp = Expense.objects.select_for_update().select_related("created_by").filter(id=expense_id).first()
     if not exp:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)

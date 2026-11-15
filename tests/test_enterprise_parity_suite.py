@@ -482,6 +482,7 @@ def test_vehicles_shipment_splitting_loading_and_parent_sync(erp_seed):
         },
         format="json",
     ).json()["data"]
+    assert mgr_cli.post(f"/api/v1/orders/{ord_data['id']}/accept").status_code == 200
     prep = k1_cli.post(f"/api/v1/orders/{ord_data['id']}/prepare", {"warehouses": {}}, format="json").json()["data"]
     assert prep["delivery"]["vehicle"]["id"] == v1["id"]
 

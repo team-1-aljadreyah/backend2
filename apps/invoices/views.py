@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import ok_response
 from apps.invoices.serializers import (
@@ -50,7 +50,7 @@ class InvoiceDetailView(APIView):
 
 
 class InvoiceCreditNoteView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [action_permission("credit_note")]
 
     @extend_schema(
         summary="Issue credit note on paid invoice",

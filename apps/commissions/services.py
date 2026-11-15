@@ -9,6 +9,7 @@ from django.db import transaction
 from rest_framework import status as http_status
 
 from apps.accounts.models import Role, SystemSetting, User
+from apps.accounts.permissions import require_action
 from apps.audit.services import record_audit
 from apps.commissions.models import ClosedCommissionMonth
 from apps.common.exceptions import ApiException, ErrorCode
@@ -64,6 +65,13 @@ def _compute_live_month(month: str) -> tuple[list[dict[str, Any]], list[dict[str
     }
     lines: list[dict[str, Any]] = []
 
+    rev_by_pair: dict[tuple[int, int], int] = {}
+    for ra in PaymentAllocation.objects.select_related("payment").filter(
+        payment__reversal_of_id__isnull=False, amount__lt=0
+    ):
+        key = (int(ra.payment.reversal_of_id), int(ra.invoice_id))
+        rev_by_pair[key] = rev_by_pair.get(key, 0) + (-int(ra.amount))
+
     allocs = (
         PaymentAllocation.objects.select_related(
             "payment",
@@ -80,6 +88,9 @@ def _compute_live_month(month: str) -> tuple[list[dict[str, Any]], list[dict[str
         day = baghdad_day_of(alloc.payment.created_at)
         if not day.startswith(month):
             continue
+        net_alloc = max(0, int(alloc.amount) - rev_by_pair.get((alloc.payment_id, alloc.invoice_id), 0))
+        if net_alloc <= 0:
+            continue
         inv = alloc.invoice
         rep = inv.rep or inv.customer.rep
         if not rep:
@@ -95,8 +106,8 @@ def _compute_live_month(month: str) -> tuple[list[dict[str, Any]], list[dict[str
                 "returns_dec": Decimal("0"),
             },
         )
-        bucket["paid_sales"] += alloc.amount
-        bucket["commission_dec"] += Decimal(alloc.amount) * rate
+        bucket["paid_sales"] += net_alloc
+        bucket["commission_dec"] += Decimal(net_alloc) * rate
         lines.append({
             "payment_id": alloc.payment_id,
             "payment_number": alloc.payment.number,
@@ -105,9 +116,9 @@ def _compute_live_month(month: str) -> tuple[list[dict[str, Any]], list[dict[str
             "customer": inv.customer.name,
             "invoice_id": inv.id,
             "invoice_number": inv.number,
-            "amount": alloc.amount,
+            "amount": net_alloc,
             "rate": _fmt_rate_pct(rate),
-            "commission": _round_iqd(Decimal(alloc.amount) * rate),
+            "commission": _round_iqd(Decimal(net_alloc) * rate),
             "rep_id": rep.id,
         })
 
@@ -193,8 +204,7 @@ def list_closed_months(*, actor: User) -> list[str]:
 
 @transaction.atomic
 def close_commission_month(*, actor: User, month_raw: str | None) -> list[dict[str, Any]]:
-    if actor.role != Role.MANAGER:
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "close_month")
 
     month = _normalize_month(month_raw)
     if ClosedCommissionMonth.objects.filter(month=month).exists():

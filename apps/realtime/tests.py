@@ -317,6 +317,7 @@ async def test_ws_topic_acls_http_on_commit_broadcasts_and_gps_fanout():
         )
         assert ord_res.status_code == 201
         oid = ord_res.json()["data"]["id"]
+        mgr_cli.post(f"/api/v1/orders/{oid}/accept", {}, format="json")
         k1_cli.post(f"/api/v1/orders/{oid}/prepare", {"warehouses": {}}, format="json")
         dlv = Delivery.objects.get(order_id=oid)
         rep_cli.post("/api/v1/deliveries/dispatch", {"code": f"NAHRAIN:DLV:{dlv.code}"}, format="json")

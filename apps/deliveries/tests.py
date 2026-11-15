@@ -91,6 +91,7 @@ def test_delivery_qr_dispatch_5try_pin_lock_photo_security_and_partial_split(pha
         format="json",
     ).json()["data"]
     line_id = order["lines"][0]["id"]
+    assert mgr.post(f"/api/v1/orders/{order['id']}/accept").status_code == 200
 
     # Keeper prepares -> creates Delivery ready with code & secret PIN
     prepped = keeper.post(
@@ -193,6 +194,7 @@ def test_delivery_problem_report_and_return_to_warehouse_re_dispatch(phase7_setu
         format="json",
     ).json()["data"]
     line_id = order["lines"][0]["id"]
+    assert mgr.post(f"/api/v1/orders/{order['id']}/accept").status_code == 200
     prepped = keeper.post(f"/api/v1/orders/{order['id']}/prepare", {"warehouses": {str(line_id): wh.id}}, format="json").json()["data"]
     code = prepped["delivery"]["code"]
 

@@ -6,15 +6,14 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from rest_framework.test import APIClient
 
-from apps.accounts.models import LoginAttempt, OtpChallenge, PriceTier, Role, SettingsChange, SystemSetting, User
-from apps.catalog.models import Item, ItemPrice, PriceChange
+from apps.accounts.models import OtpChallenge, PriceTier, Role, SettingsChange, SystemSetting, User
+from apps.catalog.models import Item, ItemPrice
 from apps.common.utils import baghdad_now, baghdad_today
 from apps.customers.models import Customer, CustomerStatus, ShopMembership
 from apps.deliveries.models import Delivery, DeliveryStatus
 from apps.inventory.models import Batch
-from apps.invoices.models import Invoice
 from apps.notifications.models import Notification
-from apps.orders.models import Order, OrderLine, OrderStatus
+from apps.orders.models import Order, OrderStatus
 from apps.payments.models import Payment
 from apps.warehouses.models import Warehouse
 
@@ -514,3 +513,406 @@ def test_delivery_door_payment_custody_cap_reversals_visits_features_and_notify_
     assert v_res.status_code == 200
     assert v_res.json()["data"]["far"] is True
     assert Notification.objects.filter(target_role=Role.MANAGER, kind="needs_approval", ref_type="customer", ref_id=str(cust.id)).exists()
+
+
+def test_rules_v2_validation_422(rules_setup):
+    mgr = _login("07709000001")
+    acct = rules_setup["acct"]
+
+    # Duplicate document prefixes -> 422
+    bad_pfx = mgr.patch(
+        "/api/v1/settings",
+        {"advanced": {"names": {"prefixes": {"order": "ORD", "invoice": "ORD"}}}},
+        format="json",
+    )
+    assert bad_pfx.status_code == 422
+    assert "names.prefixes" in bad_pfx.json()["errors"]
+
+    # Invalid work hours (from >= to) -> 422
+    bad_work = mgr.patch(
+        "/api/v1/settings",
+        {"advanced": {"work": {"on": True, "from": "17:00", "to": "08:00"}}},
+        format="json",
+    )
+    assert bad_work.status_code == 422
+    assert "work.hours" in bad_work.json()["errors"]
+
+    # discount_by_role above global discount_max -> 422
+    bad_dbr = mgr.patch(
+        "/api/v1/settings",
+        {"advanced": {"discount_max": 20, "discount_by_role": {"accountant": 25}}},
+        format="json",
+    )
+    assert bad_dbr.status_code == 422
+    assert "discount_by_role.accountant" in bad_dbr.json()["errors"]
+
+    # people[uid].discount_max above global discount_max -> 422
+    bad_ppl = mgr.patch(
+        "/api/v1/settings",
+        {"advanced": {"discount_max": 20, "people": {str(acct.id): {"discount_max": 25}}}},
+        format="json",
+    )
+    assert bad_ppl.status_code == 422
+    assert f"people.{acct.id}.discount_max" in bad_ppl.json()["errors"]
+
+
+def test_rules_v2_permissions_people_redaction_and_manager_guard(rules_setup):
+    mgr = _login("07709000001")
+    acct = _login("07709000002")
+    keeper = _login("07709000003")
+    staff = _login("07709000008")
+    rep = _login("07709000004")
+
+    acct_u = rules_setup["acct"]
+    keeper_u = rules_setup["keeper"]
+    staff_u = rules_setup["staff"]
+    mgr_u = rules_setup["mgr"]
+    wh = rules_setup["wh"]
+    cust = rules_setup["cust"]
+    item = rules_setup["item"]
+
+    # Default permissions: staff cannot edit items (403 "ليس من صلاحياتك"), acct cannot edit_items either
+    item_payload = {
+        "name": "شاي",
+        "name_en": "Tea",
+        "category": "مواد غذائية",
+        "pieces_per_carton": 12,
+        "prices": [{"tier_id": rules_setup["t1"].id, "carton_price": 12000, "piece_price": 1000}],
+    }
+    no_item = staff.post("/api/v1/items", item_payload, format="json")
+    assert no_item.status_code == 403
+    assert "ليس من صلاحياتك" in no_item.json()["message"]
+
+    # Manager grants edit_items to role staff + approve_expense to acct, and tests deny/allow override on acct_u
+    r_upd = mgr.patch(
+        "/api/v1/settings",
+        {
+            "advanced": {
+                "permissions": {
+                    "edit_items": ["manager", "staff"],
+                    "edit_customers": ["manager", "staff"],
+                    "approve_shop": ["manager"],
+                    "approve_expense": ["manager", "accountant"],
+                    "manage_users": ["manager", "accountant"],
+                    "see_costs": ["manager", "accountant"],
+                    "see_debts": ["manager", "accountant"],
+                },
+                "people": {
+                    str(staff_u.id): {"deny": ["edit_customers"], "allow": ["approve_shop"]},
+                    str(acct_u.id): {"deny": ["see_costs", "see_debts"]},
+                },
+            }
+        },
+        format="json",
+    )
+    assert r_upd.status_code == 200
+
+    # Staff can now create an item via role permission
+    yes_item = staff.post("/api/v1/items", item_payload, format="json")
+    assert yes_item.status_code == 201, yes_item.json()
+
+    # Deny beats role for staff on edit_customers
+    no_cust = staff.post(
+        "/api/v1/customers",
+        {"name": "محل جديد", "owner_name": "علي", "phone": "07709111222", "tier_id": rules_setup["t1"].id},
+        format="json",
+    )
+    assert no_cust.status_code == 403
+
+    # Allow beats role for staff on approve_shop
+    pend_cust = Customer.objects.create(
+        name="محل معلق",
+        owner_name="كريم",
+        phone="07709111223",
+        tier=rules_setup["t1"],
+        status=CustomerStatus.PENDING,
+        active=False,
+    )
+    yes_app = staff.post(f"/api/v1/customers/{pend_cust.id}/reject", {"reason": "اختبار"}, format="json")
+    assert yes_app.status_code == 200
+
+    # Manager always allowed even if permissions stripped (keep people override so redaction check below holds)
+    r_strip = mgr.patch(
+        "/api/v1/settings",
+        {
+            "advanced": {
+                "permissions": {
+                    "edit_items": [],
+                    "approve_expense": ["manager", "accountant"],
+                    "manage_users": ["manager", "accountant"],
+                    "see_costs": ["manager", "accountant"],
+                    "see_debts": ["manager", "accountant"],
+                },
+                "people": {
+                    str(acct_u.id): {"deny": ["see_costs", "see_debts"]},
+                },
+            }
+        },
+        format="json",
+    )
+    assert r_strip.status_code == 200
+    mgr_item = mgr.post(
+        "/api/v1/items",
+        {
+            "name": "سكر",
+            "name_en": "Sugar",
+            "category": "مواد غذائية",
+            "pieces_per_carton": 10,
+            "prices": [{"tier_id": rules_setup["t1"].id, "carton_price": 10000, "piece_price": 1000}],
+        },
+        format="json",
+    )
+    assert mgr_item.status_code == 201, mgr_item.json()
+
+    # Personal deny on see_costs / see_debts hides cost fields from accountant on /items & /reports/debts & /dashboard
+    items_res = acct.get("/api/v1/items")
+    assert items_res.status_code == 200
+    first_item = next(x for x in items_res.json()["data"] if x["id"] == item.id)
+    assert "avg_cost" not in first_item
+    dash_res = acct.get("/api/v1/dashboard")
+    assert dash_res.status_code == 200
+    assert dash_res.json()["data"]["total_debt"] == 0
+    assert dash_res.json()["data"]["today_collected"] == 0
+    assert "month_profit" not in dash_res.json()["data"]
+    assert acct.get("/api/v1/reports/debts").status_code == 403
+    cust_res = acct.get(f"/api/v1/customers/{cust.id}")
+    assert cust_res.status_code == 200
+    assert "balance" not in cust_res.json()["data"]
+
+    # Accountant has manage_users, so can create/edit staff, but CANNOT create/edit/delete manager (403)
+    ok_create = acct.post(
+        "/api/v1/users",
+        {"name": "Staff Two", "phone": "07709333444", "password": "Password123", "role": "staff", "warehouse_id": wh.id},
+        format="json",
+    )
+    assert ok_create.status_code == 201
+    new_uid = ok_create.json()["data"]["id"]
+    assert acct.patch(f"/api/v1/users/{new_uid}", {"name": "Staff Two Edited"}, format="json").status_code == 200
+    no_promote = acct.patch(f"/api/v1/users/{new_uid}", {"role": "manager"}, format="json")
+    assert no_promote.status_code == 403
+    no_mgr_create = acct.post(
+        "/api/v1/users",
+        {"name": "Fake Mgr", "phone": "07709333445", "password": "Password123", "role": "manager"},
+        format="json",
+    )
+    assert no_mgr_create.status_code == 403
+    assert acct.patch(f"/api/v1/users/{mgr_u.id}", {"name": "Hacked"}, format="json").status_code == 403
+    assert acct.delete(f"/api/v1/users/{mgr_u.id}").status_code == 403
+
+    # Warehouse guard still holds even if receive_goods granted
+    wh2 = Warehouse.objects.create(name="مخزن ٢", name_en="WH2", code="W2")
+    bad_wh_rec = keeper.post(
+        "/api/v1/receipts",
+        {
+            "warehouse_id": wh2.id,
+            "supplier_name": "مورد",
+            "lines": [{"item_id": item.id, "qty": 10, "unit_cost": 800, "expiry_date": str(baghdad_today() + timedelta(days=90))}],
+        },
+        format="json",
+    )
+    assert bad_wh_rec.status_code == 403
+    assert keeper_u.warehouse_id == wh.id
+
+    # cancel_order: creator can cancel own open order without explicit permission; non-writer without permission cannot
+    o_res = rep.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 6}]},
+        format="json",
+    )
+    assert o_res.status_code == 201, o_res.json()
+    assert o_res.json()["data"]["status"] == OrderStatus.NEEDS_APPROVAL
+    oid = o_res.json()["data"]["id"]
+    assert rep.post(f"/api/v1/orders/{oid}/cancel", {"reason": "خطأ"}, format="json").status_code == 200
+
+    # Non-writer (accountant lacks cancel_order by default in Round 2? No, acct has cancel_order in def, so check staff!)
+    o2_res = rep.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 1}]},
+        format="json",
+    )
+    assert o2_res.status_code == 201, o2_res.json()
+    oid2 = o2_res.json()["data"]["id"]
+    # Strip cancel_order from all non-managers and confirm acct (non-writer) gets 403 while rep (writer while open) still gets 200
+    mgr.patch("/api/v1/settings", {"advanced": {"permissions": {"cancel_order": ["manager"]}}}, format="json")
+    assert acct.post(f"/api/v1/orders/{oid2}/cancel", {"reason": "بدون صلاحية"}, format="json").status_code == 403
+    assert rep.post(f"/api/v1/orders/{oid2}/cancel", {"reason": "الكاتب يلغي"}, format="json").status_code == 200
+
+
+def test_rules_v2_limits_work_delivery_warehouses_and_names(rules_setup, monkeypatch):
+    mgr = _login("07709000001")
+    acct = _login("07709000002")
+    rep = _login("07709000004")
+
+    acct_u = rules_setup["acct"]
+    rep_u = rules_setup["rep"]
+    wh = rules_setup["wh"]
+    cust = rules_setup["cust"]
+    item = rules_setup["item"]
+
+    # Seed old order first to confirm prefixes only apply to new records
+    old_o = rep.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 1}]},
+        format="json",
+    )
+    assert old_o.status_code == 201, old_o.json()
+    old_num = old_o.json()["data"]["number"]
+    assert old_num.startswith("ORD-")
+
+    # 1. Configure limits (discount_by_role, expense_by_role, custody_cap, people), work, delivery_plan, warehouses, names
+    current_dt = datetime(2026, 11, 15, 19, 30, tzinfo=baghdad_now().tzinfo)  # 19:30 Baghdad (after work hours)
+
+    class _FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return current_dt.astimezone(tz) if tz is not None else current_dt.replace(tzinfo=None)
+
+    monkeypatch.setattr("apps.accounts.business_rules.baghdad_now", lambda: current_dt)
+    monkeypatch.setattr("apps.orders.services.datetime", _FakeDateTime)
+
+    upd = mgr.patch(
+        "/api/v1/settings",
+        {
+            "advanced": {
+                "discount_max": 30,
+                "discount_alone_max": 3,
+                "discount_by_role": {"staff": 6},
+                "custody_cap": 1_000_000,
+                "expense_by_role": {"accountant": 25_000},
+                "people": {
+                    str(rep_u.id): {"discount_max": 5, "custody_cap": 200_000, "allow": ["give_discount"]},
+                    str(acct_u.id): {"discount_max": 12, "expense_limit": 10_000},
+                },
+                "work": {
+                    "on": True,
+                    "days": [0, 1, 2, 3, 4],  # Sun-Thu
+                    "from": "08:00",
+                    "to": "17:00",
+                    "holidays": [{"date": "2026-11-16", "name": "عطلة رسمية"}],  # Monday is a holiday!
+                },
+                "delivery_plan": {
+                    "on": True,
+                    "cutoff": "14:00",
+                    "days_by_area": {"حي الحسين": [2, 4]},  # Tue & Thu (2026-11-17 Tue)
+                },
+                "warehouses": {
+                    str(wh.id): {"reservation_hours": 10, "shop_orders": True, "counter_sale": False},
+                },
+                "permissions": {"manage_users": ["manager", "accountant"]},
+                "names": {
+                    "prefixes": {"order": "NORD", "invoice": "NINV", "payment": "NPAY", "expense": "NEXP"},
+                    "currency_ar": "د.ع",
+                    "currency_en": "IQD",
+                    "invoice_footer": "شكراً لتعاملكم مع النهرين",
+                },
+            }
+        },
+        format="json",
+    )
+    assert upd.status_code == 200
+
+    # 2. GET /site includes public live.names & live.users_page
+    site_res = APIClient().get("/api/v1/site")
+    assert site_res.status_code == 200
+    live = site_res.json()["data"]["live"]
+    assert live["names"]["currency_ar"] == "د.ع"
+    assert live["names"]["invoice_footer"] == "شكراً لتعاملكم مع النهرين"
+    assert live["users_page"] == {"roles": ["manager", "accountant"], "allow": [], "deny": []}
+
+    # 3. After-hours reservation + delivery_plan expected_on + new prefix NORD- (old order unchanged!)
+    new_o = rep.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 6}]},
+        format="json",
+    )
+    assert new_o.status_code == 201, new_o.json()
+    ndata = new_o.json()["data"]
+    assert ndata["number"].startswith("NORD-")
+    assert Order.objects.get(id=old_o.json()["data"]["id"]).number == old_num
+    assert ndata.get("after_hours") is not None
+    # 2026-11-15 Sun 19:30 -> Mon 2026-11-16 is holiday -> next work start is Tue 2026-11-17 08:00 Baghdad + 10h WH reservation = 18:00 Baghdad
+    after_local = datetime.fromisoformat(ndata["after_hours"].replace("Z", "+00:00")).astimezone(baghdad_now().tzinfo)
+    assert after_local.date().isoformat() == "2026-11-17"
+    assert after_local.hour == 8
+    reserved_local = datetime.fromisoformat(ndata["reserved_until"].replace("Z", "+00:00")).astimezone(baghdad_now().tzinfo)
+    assert reserved_local.date().isoformat() == "2026-11-17"
+    assert reserved_local.hour == 18
+    assert ndata.get("expected_on") == "2026-11-17"
+
+    # 4. Personal discount_max: rep person limit is 5% (6% needs_approval, 5% stays approved)
+    Customer.objects.filter(id=cust.id).update(debt_limit=500_000)
+    disc_o = rep.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 1}]},
+        format="json",
+    )
+    assert disc_o.status_code == 201
+    assert disc_o.json()["data"]["status"] == OrderStatus.APPROVED
+    did = disc_o.json()["data"]["id"]
+    d5 = rep.post(f"/api/v1/orders/{did}/discount", {"percent": 5}, format="json")
+    assert d5.status_code == 200
+    assert d5.json()["data"]["status"] == OrderStatus.APPROVED
+    d6 = rep.post(f"/api/v1/orders/{did}/discount", {"percent": 6}, format="json")
+    assert d6.status_code == 200
+    assert d6.json()["data"]["status"] == OrderStatus.NEEDS_APPROVAL
+    assert "discount" in d6.json()["data"]["approval_for"]
+
+    # 5. Personal expense_limit for acct = 10_000 (< 25_000 role limit -> exceeding triggers pending & prefix NEXP-)
+    exp_ok = acct.post(
+        "/api/v1/expenses",
+        {
+            "category": "وقود",
+            "amount": 15_000,
+            "date": "2026-11-15",
+            "method": "cash",
+            "paid_to": "محطة وقود",
+            "note": "توصيل",
+        },
+        format="json",
+    )
+    assert exp_ok.status_code == 201, exp_ok.json()
+    assert exp_ok.json()["data"]["number"].startswith("NEXP-")
+    assert exp_ok.json()["data"]["status"] == "pending"
+
+    # 6. Counter sale disabled for wh -> 403 FEATURE_OFF
+    keeper = _login("07709000003")
+    cs_res = keeper.post(
+        "/api/v1/counter-sales",
+        {
+            "client_ref": "cs-off-1",
+            "warehouse_id": wh.id,
+            "tier_id": rules_setup["t1"].id,
+            "method": "cash",
+            "lines": [{"item_id": item.id, "unit": "carton", "qty": 1}],
+        },
+        format="json",
+    )
+    assert cs_res.status_code == 403, cs_res.json()
+    assert cs_res.json()["code"] == "FEATURE_OFF"
+
+    # 7. Closed day (Monday holiday 2026-11-16) blocks delivery dispatch -> 409 CLOSED_DAY
+    mgr.post(f"/api/v1/orders/{ndata['id']}/approve", {}, format="json")
+    mgr.post(f"/api/v1/orders/{ndata['id']}/accept", {}, format="json")
+    Order.objects.filter(id=ndata["id"]).update(status=OrderStatus.APPROVED, warehouse=wh)
+    Delivery.objects.create(order_id=ndata["id"], rep=rep_u, code="CLOSED01", status=DeliveryStatus.READY)
+    current_dt = datetime(2026, 11, 16, 10, 0, tzinfo=baghdad_now().tzinfo)
+    monkeypatch.setattr("apps.deliveries.services.datetime", _FakeDateTime)
+    disp_res = rep.post("/api/v1/deliveries/dispatch", {"code": "NAHRAIN:DLV:CLOSED01"}, format="json")
+    assert disp_res.status_code == 409
+    assert disp_res.json()["code"] == "CLOSED_DAY"
+
+    # 8. Shop orders disabled on warehouse -> shop order blocked (409 BAD_STATE)
+    mgr.patch(
+        "/api/v1/settings",
+        {"advanced": {"warehouses": {str(wh.id): {"reservation_hours": 10, "shop_orders": False, "counter_sale": True}}}},
+        format="json",
+    )
+    shop = _login("07709000005")
+    so_res = shop.post(
+        "/api/v1/orders",
+        {"customer_id": cust.id, "warehouse_id": wh.id, "lines": [{"item_id": item.id, "unit": "carton", "qty": 1}]},
+        format="json",
+    )
+    assert so_res.status_code == 409
+    assert so_res.json()["code"] == "BAD_STATE"
+

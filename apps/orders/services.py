@@ -14,13 +14,23 @@ from django.db.models import Min, Q
 from django.utils import timezone
 from rest_framework import status as http_status
 
-from apps.accounts.business_rules import round_amount_by_rule, rules_of
-from apps.accounts.models import Role, SystemSetting, User
+from apps.accounts.business_rules import (
+    discount_alone,
+    expected_delivery,
+    hold_from,
+    prefix_from_rules,
+    round_amount_by_rule,
+    rules_of,
+    warehouse_rule,
+)
+from apps.accounts.models import Role, User
 from apps.accounts.permissions import (
     covering_warehouse_ids,
     get_active_customer_id,
     own_warehouse_id,
     rep_may_sell,
+    require_action,
+    user_may,
     works_in_warehouse,
 )
 from apps.accounts.profiles import (
@@ -214,6 +224,8 @@ def serialize_order(order: Order, *, actor: User, custom_values: dict[str, Any] 
         "rounding": order.rounding,
         "total": order.total,
         "reserved_until": order.reserved_until.isoformat() if order.reserved_until else None,
+        **({"after_hours": order.after_hours.isoformat()} if order.after_hours else {}),
+        **({"expected_on": order.expected_on.isoformat()} if order.expected_on else {}),
         "offline": bool(order.offline),
         "recorded_at": order.recorded_at.isoformat() if order.recorded_at else None,
         "parent_id": order.parent_id,
@@ -374,17 +386,23 @@ def _compute_totals(lines_specs: list[dict[str, Any]], discount_pct: Decimal) ->
     return subtotal, disc_amt, rounding, total
 
 
-def _parse_discount_percent(raw: Any, actor_role: str, rules: dict[str, Any] | None = None) -> Decimal:
-    if actor_role in (Role.SHOP, Role.WAREHOUSE, Role.STAFF):
+def _parse_discount_percent(raw: Any, actor: User, rules: dict[str, Any] | None = None) -> Decimal:
+    if actor.role == Role.SHOP:
         return Decimal("0")
     if raw in (None, ""):
         return Decimal("0")
-    max_pct = int((rules or rules_of()).get("discount_max", int(DISCOUNT_MAX)))
+    r = rules or rules_of()
+    max_pct = int(r.get("discount_max", int(DISCOUNT_MAX)))
     try:
         d = Decimal(str(raw))
+        if d == 0:
+            return Decimal("0")
+        require_action(actor, "give_discount", rules=r)
         if d < 0 or d > Decimal(max_pct):
             raise ValueError
         return d
+    except ApiException:
+        raise
     except (InvalidOperation, ValueError) as exc:
         raise ApiException(
             code=ErrorCode.VALIDATION,
@@ -445,6 +463,12 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     wh = Warehouse.objects.filter(id=wh_id, active=True).first() if wh_id else Warehouse.objects.filter(active=True).order_by("id").first()
     if not wh:
         raise ApiException(code=ErrorCode.VALIDATION, message=("المخزن غير موجود", "Warehouse not found"))
+    if actor.role == Role.SHOP and warehouse_rule(rules, wh.id).get("shop_orders") is False:
+        raise ApiException(
+            code=ErrorCode.BAD_STATE,
+            message=(f"{wh.name} ما يستقبل طلبات المحلات حالياً", f"{wh.name_en} is not accepting shop orders right now"),
+            status_code=http_status.HTTP_409_CONFLICT,
+        )
 
     raw_lines = data.get("lines")
     if not isinstance(raw_lines, list) or not raw_lines:
@@ -564,10 +588,12 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             up_w = _resolve_unit_price(it, customer, u_w, price_at)
             waiting_specs.append({"item": it, "unit": u_w, "qty": q_w, "pieces": short, "unit_price": up_w, "total": q_w * up_w})
 
-    discount_pct = _parse_discount_percent(data.get("discount_percent"), actor.role, rules)
+    discount_pct = _parse_discount_percent(data.get("discount_percent"), actor, rules)
     if discount_pct > 0:
         may_profile_action(actor, "discount")
-    settings_obj = SystemSetting.get_solo()
+    hold_res_until, after_hours_dt = hold_from(wh.id, now=now)
+    exp_on = expected_delivery(rules, customer.area, now)
+    order_prefix = prefix_from_rules(rules, "order")
     source = OrderSource.SHOP if actor.role == Role.SHOP else (OrderSource.REP if actor.role == Role.REP else OrderSource.OFFICE)
     rep_user_id = actor.id if actor.role == Role.REP else customer.rep_id
     notes = str(data.get("note") if "note" in data else data.get("notes") or "").strip()
@@ -584,7 +610,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         eff_disc = discount_pct if not waiting_flag else Decimal("0")
         sub, disc_amt, rnd, tot = _compute_totals(specs, eff_disc)
         res_until = (
-            now + timedelta(hours=settings_obj.reservation_hours)
+            hold_res_until
             if status_val in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL)
             else None
         )
@@ -614,12 +640,14 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             rounding=rnd,
             total=tot,
             reserved_until=res_until,
+            after_hours=after_hours_dt,
+            expected_on=exp_on,
             client_ref=cref,
             offline=is_offline,
             recorded_at=recorded_at,
             parent=parent_order,
         )
-        o.number = f"ORD-{o.id:04d}"
+        o.number = f"{order_prefix}-{o.id:04d}"
         o.save(update_fields=["number"])
         for sp in specs:
             OrderLine.objects.create(
@@ -685,18 +713,20 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             status_code=http_status.HTTP_409_CONFLICT,
         )
 
-    staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
+    disc_alone = discount_alone(rules, actor)
     approval_for: list[str] = []
     if actor.role != Role.MANAGER:
         if over_limit and over_limit_mode == "approval":
             approval_for.append("debt")
-        if discount_pct > staff_disc_max:
+        if discount_pct > disc_alone:
             approval_for.append("discount")
 
     if approval_for:
         initial_status = OrderStatus.NEEDS_APPROVAL
-    else:
+    elif actor.role == Role.REP and bool(rules.get("auto_confirm_rep_orders", False)):
         initial_status = OrderStatus.APPROVED
+    else:
+        initial_status = OrderStatus.PENDING
 
     primary_order = _persist_order(
         specs=active_specs,
@@ -728,7 +758,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         primary_order.rule_note = " · ".join(rule_approvals)
         primary_order.status = OrderStatus.NEEDS_APPROVAL
         if primary_order.reserved_until is None:
-            primary_order.reserved_until = now + timedelta(hours=settings_obj.reservation_hours)
+            primary_order.reserved_until = hold_res_until
         primary_order.accepted_by = None
         primary_order.accepted_at = None
         primary_order.save(
@@ -825,6 +855,7 @@ def create_order(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
 
 @transaction.atomic
 def accept_order(*, actor: User, order_id: int) -> dict[str, Any]:
+    require_action(actor, "approve_order")
     order = Order.objects.select_for_update().prefetch_related("lines__item").filter(id=order_id).first()
     if not order:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -873,19 +904,12 @@ def accept_order(*, actor: User, order_id: int) -> dict[str, Any]:
 
 @transaction.atomic
 def approve_order(*, actor: User, order_id: int) -> dict[str, Any]:
+    require_action(actor, "approve_over_limit")
     order = Order.objects.select_for_update().prefetch_related("lines").filter(id=order_id).first()
     if not order:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
     if order.status != OrderStatus.NEEDS_APPROVAL:
         raise ApiException(code=ErrorCode.BAD_STATE, message=("الطلب لا يحتاج موافقة", "Order does not require approval"))
-
-    reasons = list(order.approval_for or [])
-    if ("discount" in reasons or "rule" in reasons) and actor.role != Role.MANAGER:
-        raise ApiException(
-            code=ErrorCode.FORBIDDEN,
-            message=("الموافقة على الخصم العالي تتطلب صلاحية المدير", "Only manager can approve high-discount orders"),
-            status_code=http_status.HTTP_403_FORBIDDEN,
-        )
 
     line_item_ids = sorted({ln.item_id for ln in order.lines.all()})
     if line_item_ids:
@@ -1192,14 +1216,19 @@ def prepare_order(
                 ref_id=order.id,
             )
         else:
-            notify_role(
-                role=Role.REP,
-                kind="delivery_ready",
-                title_ar=f"طلب جاهز للتوصيل {order.number}",
-                title_en=f"Order ready for delivery {order.number}",
-                ref_type="order",
-                ref_id=order.id,
-            )
+            from apps.accounts.models import User
+
+            for rep_u in User.objects.filter(role=Role.REP, active=True, deleted=False).order_by("id"):
+                if not rep_u.has_rep_kind("delivery"):
+                    continue
+                notify_user(
+                    user_id=rep_u.id,
+                    kind="delivery_ready",
+                    title_ar=f"طلب جاهز للتوصيل {order.number}",
+                    title_en=f"Order ready for delivery {order.number}",
+                    ref_type="order",
+                    ref_id=order.id,
+                )
 
     record_audit(
         actor=actor,
@@ -1371,7 +1400,10 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
     else:
         specs = [{"total": ln.total} for ln in order.lines.all()]
 
-    disc = _parse_discount_percent(data.get("discount_percent", order.discount_percent), actor.role, rules)
+    if "discount_percent" in data:
+        disc = _parse_discount_percent(data.get("discount_percent"), actor, rules)
+    else:
+        disc = order.discount_percent
     sub, disc_amt, rnd, tot = _compute_totals(specs, disc)
     order.discount_percent = disc
     order.subtotal = sub
@@ -1395,14 +1427,14 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
         reasons = [r for r in (order.approval_for or []) if r != "debt"]
         if over_limit and over_limit_mode == "approval":
             reasons.append("debt")
-        staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
-        if disc > staff_disc_max and "discount" not in reasons:
+        disc_alone = discount_alone(rules, actor)
+        if disc > disc_alone and "discount" not in reasons:
             reasons.append("discount")
         order.approval_for = reasons
         if reasons:
             order.status = OrderStatus.NEEDS_APPROVAL
             if order.reserved_until is None:
-                order.reserved_until = datetime.now(tz=UTC) + timedelta(hours=SystemSetting.get_solo().reservation_hours)
+                order.reserved_until = hold_from(order.warehouse_id, now=datetime.now(tz=UTC))[0]
             order.accepted_by = None
             order.accepted_at = None
         elif order.status == OrderStatus.NEEDS_APPROVAL:
@@ -1420,6 +1452,8 @@ def update_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[st
 
 @transaction.atomic
 def apply_order_discount(*, actor: User, order_id: int, percent: Any) -> dict[str, Any]:
+    rules = rules_of()
+    require_action(actor, "give_discount", rules=rules)
     may_profile_action(actor, "discount")
     order = Order.objects.select_for_update().prefetch_related("lines").filter(id=order_id).first()
     if not order:
@@ -1429,8 +1463,7 @@ def apply_order_discount(*, actor: User, order_id: int, percent: Any) -> dict[st
     if order.status not in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL, OrderStatus.APPROVED) or hasattr(order, "delivery"):
         raise ApiException(code=ErrorCode.BAD_STATE, message=("لا يمكن تعديل الخصم في هذه المرحلة", "Cannot apply discount at this stage"))
 
-    rules = rules_of()
-    disc = _parse_discount_percent(percent, actor.role, rules)
+    disc = _parse_discount_percent(percent, actor, rules)
     specs = [{"total": ln.total} for ln in order.lines.all()]
     sub, disc_amt, rnd, tot = _compute_totals(specs, disc)
     now = datetime.now(tz=UTC)
@@ -1442,14 +1475,14 @@ def apply_order_discount(*, actor: User, order_id: int, percent: Any) -> dict[st
     order.rounding = rnd
     order.total = tot
 
-    staff_disc_max = Decimal(str(int(rules.get("staff_discount_max", int(STAFF_DISCOUNT_MAX)))))
-    if disc > staff_disc_max and actor.role != Role.MANAGER:
+    disc_alone = discount_alone(rules, actor)
+    if disc > disc_alone and actor.role != Role.MANAGER:
         reasons = list(order.approval_for or [])
         if "discount" not in reasons:
             reasons.append("discount")
         order.approval_for = reasons
         order.status = OrderStatus.NEEDS_APPROVAL
-        order.reserved_until = now + timedelta(hours=SystemSetting.get_solo().reservation_hours)
+        order.reserved_until = hold_from(order.warehouse_id, now=now)[0]
 
     order.save()
     record_audit(actor=actor, action="order.discount", entity_type="order", entity_id=order.id, after={"discount_percent": float(disc)})
@@ -1465,6 +1498,18 @@ def cancel_order(*, actor: User, order_id: int, reason: str) -> dict[str, Any]:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
     if not can_see_order(actor, order):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    is_writer = order.created_by_id == actor.id
+    is_open = (
+        order.status in (OrderStatus.PENDING, OrderStatus.NEEDS_APPROVAL, OrderStatus.APPROVED)
+        and not (hasattr(order, "delivery") and order.delivery.status != DeliveryStatus.READY)
+    )
+    can_cancel = user_may(actor, "cancel_order") or (is_writer and is_open)
+    if not can_cancel:
+        raise ApiException(
+            code=ErrorCode.FORBIDDEN,
+            message=("ليس من صلاحياتك: إلغاء طلب", "Not allowed: Cancel an order"),
+            status_code=http_status.HTTP_403_FORBIDDEN,
+        )
     if order.status in (OrderStatus.CONFIRMED, OrderStatus.CANCELLED):
         raise ApiException(code=ErrorCode.BAD_STATE, message=("الطلب مكتمل أو ملغي مسبقاً", "Order is already delivered or cancelled"))
     if hasattr(order, "delivery") and order.delivery.status != DeliveryStatus.READY and actor.role != Role.MANAGER:

@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.responses import created_response, ok_response
 from apps.stocktakes.services import (
     close_stocktake,
@@ -42,7 +42,7 @@ class StocktakeDetailUpdateView(APIView):
 
 
 class StocktakeCloseView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.WAREHOUSE)]
+    permission_classes = [action_permission("close_stocktake")]
 
     def post(self, request, stocktake_id: int):
         return ok_response(close_stocktake(actor=request.user, stocktake_id=stocktake_id))

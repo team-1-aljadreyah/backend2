@@ -11,7 +11,7 @@ from rest_framework import status as http_status
 
 from apps.accounts.business_rules import rules_of
 from apps.accounts.models import PriceTier, Role, User, UserSession
-from apps.accounts.permissions import get_active_customer_id, sees_debt
+from apps.accounts.permissions import get_active_customer_id, require_action, sees_debt
 from apps.accounts.profiles import (
     batch_custom_values,
     custom_values_for_object,
@@ -325,6 +325,7 @@ def _validate_address_and_core(data: dict[str, Any], *, partial: bool = False) -
 
 @transaction.atomic
 def create_customer(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
+    require_action(actor, "edit_customers")
     cleaned = _validate_address_and_core(data, partial=False)
     phone = cleaned["phone"]
     if Customer.objects.filter(phone=phone).exists():
@@ -389,6 +390,12 @@ def update_customer(*, actor: User, customer_id: int, data: dict[str, Any]) -> d
 
     before = {"status": cust.status, "active": cust.active, "tier_id": cust.tier_id, "debt_limit": cust.debt_limit, "rep_id": cust.rep_id}
     was_pending = cust.status == CustomerStatus.PENDING
+    will_approve = bool(was_pending and ((("pending" in data) and data["pending"] is False) or bool(data.get("active"))))
+    if will_approve:
+        require_action(actor, "approve_shop")
+    edit_keys = set(data.keys()) - {"active", "pending"}
+    if not will_approve or edit_keys:
+        require_action(actor, "edit_customers")
     cleaned = _validate_address_and_core(data, partial=True)
 
     if "phone" in cleaned and cleaned["phone"] != cust.phone:
@@ -465,6 +472,7 @@ def update_customer(*, actor: User, customer_id: int, data: dict[str, Any]) -> d
 
 @transaction.atomic
 def reject_customer(*, actor: User, customer_id: int, reason: str) -> dict[str, Any]:
+    require_action(actor, "approve_shop")
     cust = Customer.objects.select_for_update().filter(id=customer_id).first()
     if not cust:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -521,6 +529,7 @@ def list_special_prices(*, actor: User, customer_id: int) -> list[dict[str, Any]
 
 @transaction.atomic
 def set_special_price(*, actor: User, customer_id: int, data: dict[str, Any]) -> list[dict[str, Any]]:
+    require_action(actor, "edit_customers")
     cust = Customer.objects.filter(id=customer_id).first()
     if not cust:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)

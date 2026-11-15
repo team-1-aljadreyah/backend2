@@ -128,12 +128,13 @@ def get_dashboard(*, actor: User, warehouse_id: int | None = None) -> dict[str, 
             pay_qs = pay_qs.filter(Q(customer__rep_id=actor.id) | Q(received_by=actor))
             cust_qs = cust_qs.filter(rep_id=actor.id)
 
-        for p in pay_qs.only("amount", "created_at"):
+        for p in pay_qs.only("amount", "reversed_amount", "created_at"):
+            net_amt = max(0, int(p.amount) - int(getattr(p, "reversed_amount", 0) or 0))
             d = baghdad_day_of(p.created_at)
             if d == today_str:
-                today_collected += p.amount
+                today_collected += net_amt
             if d in collected_by_day:
-                collected_by_day[d] += p.amount
+                collected_by_day[d] += net_amt
 
         cust_ids = list(cust_qs.values_list("id", flat=True))
         bmap = customer_balance_map(cust_ids)
@@ -330,7 +331,11 @@ def get_daily_sales(*, actor: User, date_str: str | None = None, warehouse_id: i
         if actor.role == Role.REP:
             pay_qs = pay_qs.filter(Q(customer__rep_id=actor.id) | Q(received_by=actor))
         collected = sum(
-            (p.amount for p in pay_qs.only("amount", "created_at") if baghdad_day_of(p.created_at) == target_date),
+            (
+                max(0, int(p.amount) - int(getattr(p, "reversed_amount", 0) or 0))
+                for p in pay_qs.only("amount", "reversed_amount", "created_at")
+                if baghdad_day_of(p.created_at) == target_date
+            ),
             0,
         )
 
@@ -441,7 +446,7 @@ def get_near_expiry_report(*, actor: User, days: int | None = None, warehouse_id
 
 
 def get_debts_report(*, actor: User) -> list[dict[str, Any]]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT, Role.REP):
+    if actor.role == Role.SHOP or not sees_debt(actor):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
 
     cust_qs = Customer.objects.select_related("rep", "tier").filter(active=True, status=CustomerStatus.ACTIVE)

@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import ok_response
 from apps.orders.serializers import (
@@ -83,7 +83,7 @@ class OrderDetailUpdateView(APIView):
 
 
 class OrderAcceptView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.ACCOUNTANT)]
+    permission_classes = [action_permission("approve_order")]
 
     @extend_schema(
         summary="Accept order and advance to preparing",
@@ -94,7 +94,7 @@ class OrderAcceptView(APIView):
 
 
 class OrderApproveView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.ACCOUNTANT)]
+    permission_classes = [action_permission("approve_over_limit")]
 
     @extend_schema(
         summary="Approve order debt or discount override",
@@ -152,7 +152,7 @@ class OrderDeliveryCarrierView(APIView):
 
 
 class OrderDiscountView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.REP)]
+    permission_classes = [action_permission("give_discount")]
 
     @extend_schema(
         summary="Apply line discount percent",
@@ -165,7 +165,7 @@ class OrderDiscountView(APIView):
 
 
 class OrderCancelView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.REP, Role.SHOP)]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Cancel an unfulfilled order",

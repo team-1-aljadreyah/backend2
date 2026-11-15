@@ -205,8 +205,10 @@ def test_order_rbac_discount_approval_and_multi_warehouse_prepare_pin_privacy(ph
         format="json",
     )
     assert mixed.status_code == 201
+    assert mixed.json()["data"]["status"] == "pending"
     assert "prep_parts" not in mixed.json()["data"]
     mid = mixed.json()["data"]["id"]
+    assert mgr.post(f"/api/v1/orders/{mid}/accept").status_code == 200
     plan = k1.get(f"/api/v1/orders/{mid}/prep-plan").json()["data"]
     l1_id = plan[0]["line_id"]
     l2_id = plan[1]["line_id"]
@@ -277,7 +279,7 @@ def test_offline_order_3day_price_history_partial_split_and_idempotency(phase5_s
 
 
 @pytest.mark.django_db
-def test_active_customer_orders_auto_approve_and_only_over_debt_requires_approval(phase5_setup):
+def test_active_customer_orders_start_pending_and_respect_auto_confirm_rep(phase5_setup):
     mgr = _c("07704000001")
     acct = _c("07704000002")
     k1 = _c("07704000003")
@@ -293,37 +295,51 @@ def test_active_customer_orders_auto_approve_and_only_over_debt_requires_approva
     ).json()["data"]["id"]
     k1.post("/api/v1/receipts", {"warehouse_id": wh1.id, "lines": [{"item_id": it_oil, "unit": "carton", "qty": 20, "expiry_date": exp, "purchase_price": 3000}]}, format="json")
 
-    # 1. Shop places 150,000 order (<= 200,000 debt_limit) -> approved immediately & keeper can prepare directly!
+    # 1. Shop places 150,000 order (<= 200,000 debt_limit) -> starts pending until accountant/manager accepts!
     s_ok = shop.post("/api/v1/orders", {"warehouse_id": wh1.id, "lines": [{"item_id": it_oil, "unit": "carton", "qty": 3}]}, format="json")
     assert s_ok.status_code == 201, s_ok.json()
     s_data = s_ok.json()["data"]
-    assert s_data["status"] == "approved"
+    assert s_data["status"] == "pending"
+    assert s_data["accepted_by"] is None
     assert s_data["approval_for"] == []
+    assert k1.post(f"/api/v1/orders/{s_data['id']}/prepare", {"warehouses": {str(it_oil): wh1.id}}, format="json").status_code == 409
+    assert acct.post(f"/api/v1/orders/{s_data['id']}/accept").status_code == 200
     assert k1.post(f"/api/v1/orders/{s_data['id']}/prepare", {"warehouses": {str(it_oil): wh1.id}}, format="json").status_code == 200
 
-    # 2. Rep places 50,000 order (150k committed + 50k = 200,000 <= 200,000) -> approved immediately!
+    # 2. Rep places 50,000 order (150k committed + 50k = 200,000 <= 200,000) -> pending by default, approved only when auto_confirm_rep_orders=True
     r_ok = rep.post("/api/v1/orders", {"customer_id": cust.id, "warehouse_id": wh1.id, "lines": [{"item_id": it_oil, "unit": "carton", "qty": 1}]}, format="json")
     assert r_ok.status_code == 201
-    assert r_ok.json()["data"]["status"] == "approved"
+    assert r_ok.json()["data"]["status"] == "pending"
+    assert r_ok.json()["data"]["accepted_by"] is None
+    assert mgr.post(f"/api/v1/orders/{r_ok.json()['data']['id']}/cancel", {"reason": "test"}, format="json").status_code == 200
 
-    # 3. Shop places another 50,000 order (200k committed + 50k = 250,000 > 200,000) -> needs_approval ("debt")!
+    assert mgr.patch("/api/v1/settings", {"auto_confirm_rep_orders": True}, format="json").status_code == 200
+    r_auto = rep.post("/api/v1/orders", {"customer_id": cust.id, "warehouse_id": wh1.id, "lines": [{"item_id": it_oil, "unit": "carton", "qty": 1}]}, format="json")
+    assert r_auto.status_code == 201
+    assert r_auto.json()["data"]["status"] == "approved"
+    assert r_auto.json()["data"]["accepted_by"]["id"] == 0
+    assert Order.objects.get(id=r_auto.json()["data"]["id"]).accepted_by_id is None
+    assert mgr.patch("/api/v1/settings", {"auto_confirm_rep_orders": False}, format="json").status_code == 200
+
+    # 3. Shop places another 50,000 order (> 200,000) -> needs_approval ("debt")!
     s_over = shop.post("/api/v1/orders", {"warehouse_id": wh1.id, "lines": [{"item_id": it_oil, "unit": "carton", "qty": 1}]}, format="json")
     assert s_over.status_code == 201
     over_id = s_over.json()["data"]["id"]
     assert s_over.json()["data"]["status"] == "needs_approval"
     assert s_over.json()["data"]["approval_for"] == ["debt"]
-    # Warehouse keeper cannot prepare an unapproved over-debt order
-    assert k1.post(f"/api/v1/orders/{over_id}/prepare", {"warehouses": {str(it_oil): wh1.id}}, format="json").status_code == 400
-    # Accountant can approve debt-only order, then keeper prepares!
-    assert acct.post(f"/api/v1/orders/{over_id}/approve", {}, format="json").status_code == 200
+    # Warehouse keeper cannot prepare an unapproved over-debt order (409 BAD_STATE)
+    assert k1.post(f"/api/v1/orders/{over_id}/prepare", {"warehouses": {str(it_oil): wh1.id}}, format="json").status_code == 409
+    # Accountant cannot approve over-limit by default under Round 2 `approve_over_limit`; manager approves, then keeper prepares!
+    assert acct.post(f"/api/v1/orders/{over_id}/approve", {}, format="json").status_code == 403
+    assert mgr.post(f"/api/v1/orders/{over_id}/approve", {}, format="json").status_code == 200
     assert k1.post(f"/api/v1/orders/{over_id}/prepare", {"warehouses": {str(it_oil): wh1.id}}, format="json").status_code == 200
 
 
 @pytest.mark.django_db
 def test_keeper_carrier_pick_delivery_carrier_and_shipments_driver_id(phase5_setup):
+    from apps.accounts.models import RepKind
     from apps.deliveries.models import Vehicle
     from apps.notifications.models import Notification
-    from apps.accounts.models import RepKind
 
     mgr = _c("07704000001")
     k1 = _c("07704000003")
@@ -375,6 +391,7 @@ def test_keeper_carrier_pick_delivery_carrier_and_shipments_driver_id(phase5_set
         {"customer_id": cust.id, "warehouse_id": wh1.id, "lines": [{"item_id": it_a, "unit": "carton", "qty": 2}]},
         format="json",
     ).json()["data"]
+    assert mgr.post(f"/api/v1/orders/{o1['id']}/accept").status_code == 200
     bad_rep = k1.post(
         f"/api/v1/orders/{o1['id']}/prepare",
         {"warehouses": {str(it_a): wh1.id}, "rep_id": sales_only.id},
@@ -395,6 +412,7 @@ def test_keeper_carrier_pick_delivery_carrier_and_shipments_driver_id(phase5_set
         },
         format="json",
     ).json()["data"]
+    assert mgr.post(f"/api/v1/orders/{o_split['id']}/accept").status_code == 200
     p1 = k1.post(
         f"/api/v1/orders/{o_split['id']}/prepare",
         {"warehouses": {str(it_a): wh1.id, str(it_b): wh2.id}, "rep_id": drv1.id, "vehicle_id": veh2.id},
@@ -443,7 +461,12 @@ def test_keeper_carrier_pick_delivery_carrier_and_shipments_driver_id(phase5_set
         {"customer_id": cust.id, "warehouse_id": wh1.id, "lines": [{"item_id": it_a, "unit": "carton", "qty": 4}]},
         format="json",
     ).json()["data"]
+    assert mgr.post(f"/api/v1/orders/{o_multi['id']}/accept").status_code == 200
     assert k1.post(f"/api/v1/orders/{o_multi['id']}/prepare", {"warehouses": {str(it_a): wh1.id}}, format="json").status_code == 200
+    # Preparing without carrier notifies ONLY delivery reps (drv1/drv2), NEVER sales_only!
+    assert Notification.objects.filter(user=drv1, kind="delivery_ready", ref_id=str(o_multi["id"])).exists()
+    assert Notification.objects.filter(user=drv2, kind="delivery_ready", ref_id=str(o_multi["id"])).exists()
+    assert not Notification.objects.filter(user=sales_only, kind="delivery_ready", ref_id=str(o_multi["id"])).exists()
     split_res = k1.post(
         f"/api/v1/orders/{o_multi['id']}/shipments",
         {
@@ -481,6 +504,7 @@ def test_keeper_carrier_pick_delivery_carrier_and_shipments_driver_id(phase5_set
         format="json",
     ).json()["data"]
     assert o_shop["rep_id"] == 0
+    assert mgr.post(f"/api/v1/orders/{o_shop['id']}/accept").status_code == 200
     prep_no_rep = k1.post(
         f"/api/v1/orders/{o_shop['id']}/prepare",
         {"warehouses": {str(it_a): wh1.id}, "rep_id": drv1.id},

@@ -91,7 +91,10 @@ def test_error_codes_match_frontend_errors_ts():
         for attr in dir(ErrorCode)
         if attr.isupper() and isinstance(getattr(ErrorCode, attr), str)
     }
-    assert ts_codes == py_codes
+    # Round 2 added `CLOSED_DAY` (409 on closed/holiday dispatch) to backend docs before local frontend sync
+    assert "CLOSED_DAY" in py_codes
+    assert ts_codes <= py_codes
+    assert (py_codes - ts_codes) <= {"CLOSED_DAY"}
 
 
 def test_every_frontend_http_operation_resolves_to_matching_django_cbv_method():

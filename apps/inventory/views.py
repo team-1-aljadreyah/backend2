@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.responses import ok_response
 from apps.inventory.services import (
     build_shelf_rows,
@@ -43,7 +43,7 @@ class ShelfStockView(APIView):
 
 
 class BatchHoldView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.WAREHOUSE)]
+    permission_classes = [action_permission("hold_batch")]
 
     def post(self, request, batch_id: int):
         reason = request.data.get("reason", "") if isinstance(request.data, dict) else ""
@@ -51,7 +51,7 @@ class BatchHoldView(APIView):
 
 
 class BatchReleaseView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("hold_batch")]
 
     def post(self, request, batch_id: int):
         return ok_response(release_batch(actor=request.user, batch_id=batch_id))

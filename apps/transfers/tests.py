@@ -146,7 +146,7 @@ def test_stocktake_locking_staff_restriction_and_close_adjustment(phase4_setup):
         {"from_warehouse_id": wh1.id, "to_warehouse_id": wh2.id, "lines": [{"item_id": i_oil, "pieces": 5}]},
         format="json",
     )
-    assert blocked_trf.status_code == 400
+    assert blocked_trf.status_code == 409
     assert blocked_trf.json()["code"] == "BAD_STATE"
 
     # Staff cannot edit stocktake lines; keeper records counted shortage of 3 without reason -> close fails
@@ -161,15 +161,16 @@ def test_stocktake_locking_staff_restriction_and_close_adjustment(phase4_setup):
         format="json",
     )
     assert staff1.post(f"/api/v1/stocktakes/{st_id}/close", format="json").status_code == 403
-    assert k1.post(f"/api/v1/stocktakes/{st_id}/close", format="json").status_code == 400
+    assert k1.post(f"/api/v1/stocktakes/{st_id}/close", format="json").status_code == 403
+    assert mgr.post(f"/api/v1/stocktakes/{st_id}/close", format="json").status_code == 400
 
-    # Add reason and close by keeper
+    # Add reason and close by manager (`close_stocktake` defaults to manager under Round 2)
     k1.patch(
         f"/api/v1/stocktakes/{st_id}",
         {"lines": [{"item_id": i_oil, "counted_qty": 22, "damaged_qty": 3, "reason": "3 broken bottles"}]},
         format="json",
     )
-    close_res = k1.post(f"/api/v1/stocktakes/{st_id}/close", format="json")
+    close_res = mgr.post(f"/api/v1/stocktakes/{st_id}/close", format="json")
     assert close_res.status_code == 200
     assert close_res.json()["data"]["status"] == "closed"
     assert is_count_locked(wh1.id, "زيوت") is False

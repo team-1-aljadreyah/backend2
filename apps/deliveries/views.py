@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.responses import ok_response
 from apps.deliveries.serializers import (
     DeliverInputSerializer,
@@ -56,7 +56,7 @@ class OrderDeliverView(APIView):
 
 
 class DeliveryUnlockView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [action_permission("unlock_delivery")]
 
     @extend_schema(
         summary="Manager unlock 5-attempt locked delivery PIN",
@@ -79,7 +79,7 @@ class DeliveryProblemView(APIView):
 
 
 class DeliveryReturnToWarehouseView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [action_permission("take_back_shipment")]
 
     @extend_schema(
         summary="Return undelivered shipment to warehouse stock",

@@ -9,8 +9,9 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
+from apps.accounts.business_rules import prefix_of
 from apps.accounts.models import Role, User
-from apps.accounts.permissions import own_warehouse_id
+from apps.accounts.permissions import own_warehouse_id, require_action
 from apps.audit.services import record_audit
 from apps.catalog.models import Item
 from apps.common.exceptions import ApiException, ErrorCode
@@ -126,7 +127,7 @@ def create_transfer(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         client_ref=client_ref,
         created_by=actor,
     )
-    transfer.number = f"TRF-{transfer.id:04d}"
+    transfer.number = f"{prefix_of('transfer')}-{transfer.id:04d}"
     transfer.save(update_fields=["number"])
 
     for iid in sorted(aggregated.keys()):
@@ -299,6 +300,7 @@ def receive_transfer(*, actor: User, transfer_id: int, data: dict[str, Any]) -> 
 
 @transaction.atomic
 def review_transfer(*, actor: User, transfer_id: int) -> dict[str, Any]:
+    require_action(actor, "review_transfer")
     transfer = Transfer.objects.select_for_update().filter(id=transfer_id).first()
     if not transfer:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)

@@ -15,12 +15,21 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
-from apps.accounts.business_rules import DOOR_METHODS_ALL, round_amount_by_rule, rules_of
-from apps.accounts.models import Role, SystemSetting, User
+from apps.accounts.business_rules import (
+    DOOR_METHODS_ALL,
+    expected_delivery,
+    hold_from,
+    is_work_day,
+    prefix_from_rules,
+    round_amount_by_rule,
+    rules_of,
+)
+from apps.accounts.models import Role, User
 from apps.accounts.permissions import (
     get_active_customer_id,
     own_warehouse_id,
     rep_may_deliver,
+    require_action,
     works_in_warehouse,
 )
 from apps.accounts.serializers import serialize_vehicle
@@ -85,6 +94,12 @@ def dispatch_delivery(*, actor: User, code: str) -> dict[str, Any]:
         return get_order_for_actor(actor=actor, order_id=dlv.order_id)
 
     now = datetime.now(tz=UTC)
+    if not is_work_day(rules_of(), now):
+        raise ApiException(
+            code=ErrorCode.CLOSED_DAY,
+            message=("اليوم عطلة في الشركة: لا تخرج شحنات", "Today is a day off: no shipments go out"),
+            status_code=http_status.HTTP_409_CONFLICT,
+        )
     dlv.rep = actor if actor.role == Role.REP else dlv.rep
     dlv.dispatched_by = actor
     dlv.out_by = actor
@@ -360,10 +375,12 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
                 after = max(0, sub - disc_amt)
                 tot = round_amount_by_rule(after)
                 rnd = tot - after
-                res_hours = SystemSetting.get_solo().reservation_hours
+                rules_cur = rules_of()
+                rest_until, rest_ah = hold_from(order.warehouse_id, now=now)
+                rest_exp = expected_delivery(rules_cur, order.customer.area, now)
 
                 rest_order = Order.objects.create(
-                    number=f"ORD-RST-{order.id}",
+                    number=f"TMP-RST-{order.id}",
                     customer_id=order.customer_id,
                     warehouse_id=order.warehouse_id,
                     rep_id=order.rep_id,
@@ -376,10 +393,12 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
                     discount_amount=disc_amt,
                     rounding=rnd,
                     total=tot,
-                    reserved_until=now + timedelta(hours=res_hours),
+                    reserved_until=rest_until,
+                    after_hours=rest_ah,
+                    expected_on=rest_exp,
                     parent=order,
                 )
-                rest_order.number = f"ORD-{rest_order.id:05d}"
+                rest_order.number = f"{prefix_from_rules(rules_cur, 'order')}-{rest_order.id:05d}"
                 rest_order.save(update_fields=["number"])
                 for sp in remaining_specs:
                     OrderLine.objects.create(
@@ -507,8 +526,7 @@ def deliver_order(*, actor: User, order_id: int, data: dict[str, Any]) -> dict[s
 
 @transaction.atomic
 def unlock_delivery(*, actor: User, order_id: int) -> dict[str, Any]:
-    if actor.role != Role.MANAGER:
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "unlock_delivery")
     dlv = Delivery.objects.select_for_update().filter(order_id=order_id).first()
     if not dlv:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
@@ -579,8 +597,7 @@ def report_delivery_problem(*, actor: User, data: dict[str, Any]) -> list[dict[s
 
 @transaction.atomic
 def return_delivery_to_warehouse(*, actor: User, order_id: int) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.WAREHOUSE):
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "take_back_shipment")
 
     dlv = Delivery.objects.select_for_update().select_related("order").filter(order_id=order_id).first()
     if not dlv:

@@ -40,8 +40,9 @@ class Payment(models.Model):
     reason = models.TextField(blank=True, default="")
 
     reversed = models.BooleanField(default=False, db_index=True)
-    reversal_of = models.OneToOneField(
-        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="reversed_by_entry"
+    reversed_amount = models.BigIntegerField(default=0)
+    reversal_of = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="reversals"
     )
     reversed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

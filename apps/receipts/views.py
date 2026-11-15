@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import ok_response
 from apps.receipts.services import create_receipt, get_receipt_for_actor, list_receipts_for_actor
@@ -13,7 +13,7 @@ from apps.receipts.services import create_receipt, get_receipt_for_actor, list_r
 class ReceiptListCreateView(APIView):
     def get_permissions(self):
         if self.request.method == "POST":
-            return [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.WAREHOUSE)()]
+            return [action_permission("receive_goods")()]
         return [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.WAREHOUSE, Role.STAFF)()]
 
     def get(self, request):

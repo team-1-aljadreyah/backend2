@@ -10,11 +10,18 @@ from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
-from apps.accounts.business_rules import round_amount_by_rule
+from apps.accounts.business_rules import (
+    prefix_from_rules,
+    prefix_of,
+    round_amount_by_rule,
+    rules_of,
+    warehouse_rule,
+)
 from apps.accounts.models import Role, SystemSetting, User
 from apps.accounts.permissions import (
     get_active_customer_id,
     own_warehouse_id,
+    require_action,
     sees_cost,
     sees_debt,
     sees_profit,
@@ -253,7 +260,7 @@ def create_invoice_for_order(
         created_by=delivery_rep or order.created_by,
         delivered_at=dlv_time,
     )
-    inv.number = f"INV-{inv.id:05d}"
+    inv.number = f"{prefix_of('invoice')}-{inv.id:05d}"
 
     total_cost = 0
     for spec in delivered_line_specs:
@@ -298,18 +305,12 @@ def create_invoice_for_order(
 
     inv.cost = total_cost
     inv.save(update_fields=["number", "cost"])
-
-    from apps.payments.services import apply_available_credit_to_open_invoices
-
-    apply_available_credit_to_open_invoices(customer_id=order.customer_id)
-    inv.refresh_from_db(fields=["paid"])
     return inv
 
 
 @transaction.atomic
 def create_credit_note(*, actor: User, invoice_id: int, data: dict[str, Any]) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT):
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "credit_note")
 
     inv = Invoice.objects.select_for_update().filter(id=invoice_id).first()
     if not inv:
@@ -343,7 +344,7 @@ def create_credit_note(*, actor: User, invoice_id: int, data: dict[str, Any]) ->
         reason=reason,
         created_by=actor,
     )
-    cn.number = f"CN-{cn.id:05d}"
+    cn.number = f"{prefix_of('credit_note')}-{cn.id:05d}"
     cn.save(update_fields=["number"])
 
     inv.credited += amount
@@ -490,7 +491,7 @@ def create_return(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         client_ref=client_ref,
         created_by=actor,
     )
-    ret_doc.number = f"RET-{ret_doc.id:05d}"
+    ret_doc.number = f"{prefix_of('return')}-{ret_doc.id:05d}"
 
     prev_returned = inv.returned
     total_ret_amount = 0
@@ -691,6 +692,13 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
             status_code=http_status.HTTP_403_FORBIDDEN,
             message=("تبيع من مخزنك فقط", "You sell only from your warehouse"),
         )
+    cs_rules = rules_of()
+    if warehouse_rule(cs_rules, wh.id).get("counter_sale") is False:
+        raise ApiException(
+            code=ErrorCode.FEATURE_OFF,
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            message=("البيع المباشر موقّف في هذا المخزن", "Counter sale is turned off for this warehouse"),
+        )
 
     from apps.accounts.models import PriceTier
 
@@ -868,7 +876,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         fefo_deductions.append((pl, allocs, line_cost))
 
     order_id = (Order.objects.aggregate(m=Max("id"))["m"] or 0) + 1
-    order_num = f"ORD-{order_id:06d}"
+    order_num = f"{prefix_from_rules(cs_rules, 'order')}-{order_id:06d}"
 
     order = Order.objects.create(
         id=order_id,
@@ -907,7 +915,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
         )
 
     inv_id = (Invoice.objects.aggregate(m=Max("id"))["m"] or 0) + 1
-    inv_num = f"INV-{inv_id:06d}"
+    inv_num = f"{prefix_from_rules(cs_rules, 'invoice')}-{inv_id:06d}"
 
     usd_rate_val = Decimal("1500.00")
     if apps.is_installed("apps.exchange_rates"):
@@ -967,7 +975,7 @@ def record_counter_sale(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
     from apps.payments.models import Payment, PaymentAllocation, PaymentMethod
 
     pay_id = (Payment.objects.aggregate(m=Max("id"))["m"] or 0) + 1
-    pay_num = f"PAY-{pay_id:06d}"
+    pay_num = f"{prefix_from_rules(cs_rules, 'payment')}-{pay_id:06d}"
     pay_method = PaymentMethod.CASH if method == "cash" else PaymentMethod.TRANSFER
 
     payment = Payment.objects.create(

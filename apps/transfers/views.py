@@ -4,7 +4,7 @@ from __future__ import annotations
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.idempotency import run_idempotent
 from apps.common.responses import ok_response
 from apps.transfers.services import (
@@ -40,7 +40,7 @@ class TransferReceiveView(APIView):
 
 
 class TransferReviewView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("review_transfer")]
 
     def post(self, request, transfer_id: int):
         return ok_response(review_transfer(actor=request.user, transfer_id=transfer_id))

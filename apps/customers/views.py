@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, role_permission
 from apps.common.responses import created_response, ok_response
 from apps.customers.serializers import (
     CustomerInputSerializer,
@@ -36,7 +36,7 @@ from apps.customers.services import (
 class CustomerListCreateView(APIView):
     def get_permissions(self):
         if self.request.method == "POST":
-            return [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.REP)()]
+            return [action_permission("edit_customers")()]
         return [IsAuthenticated()]
 
     @extend_schema(
@@ -57,8 +57,6 @@ class CustomerListCreateView(APIView):
 
 class CustomerDetailUpdateView(APIView):
     def get_permissions(self):
-        if self.request.method == "PATCH":
-            return [role_permission(Role.MANAGER, Role.ACCOUNTANT)()]
         return [IsAuthenticated()]
 
     @extend_schema(
@@ -78,7 +76,7 @@ class CustomerDetailUpdateView(APIView):
 
 
 class CustomerRejectView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.ACCOUNTANT)]
+    permission_classes = [action_permission("approve_shop")]
 
     @extend_schema(
         summary="Reject pending customer application",
@@ -91,7 +89,7 @@ class CustomerRejectView(APIView):
 class CustomerSpecialPricesView(APIView):
     def get_permissions(self):
         if self.request.method == "POST":
-            return [role_permission(Role.MANAGER)()]
+            return [action_permission("edit_customers")()]
         return [role_permission(Role.MANAGER, Role.ACCOUNTANT, Role.REP, Role.SHOP)()]
 
     @extend_schema(

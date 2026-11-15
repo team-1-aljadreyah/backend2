@@ -199,7 +199,7 @@ def test_supply_order_partial_and_full_receipt_reconciliation(supply_setup):
     assert after_partial["lines"][1]["received_qty"] == 0
 
     # Partially received supply order cannot be cancelled
-    assert mgr.post(f"/api/v1/supply-orders/{so_id}/cancel", {"reason": "Late"}, format="json").status_code == 400
+    assert mgr.post(f"/api/v1/supply-orders/{so_id}/cancel", {"reason": "Late"}, format="json").status_code == 409
 
     # Complete remaining items (4 cartons it1 + 5 cartons it2) -> status becomes "received"
     r2 = k1.post(

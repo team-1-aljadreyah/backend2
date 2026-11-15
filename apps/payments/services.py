@@ -14,9 +14,9 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from rest_framework import status as http_status
 
-from apps.accounts.business_rules import rules_of
+from apps.accounts.business_rules import prefix_of, rules_of
 from apps.accounts.models import Role, User
-from apps.accounts.permissions import get_active_customer_id
+from apps.accounts.permissions import get_active_customer_id, require_action, sees_debt, user_may
 from apps.accounts.profiles import may_profile_action
 from apps.accounts.rules_engine import run_automation_rules
 from apps.audit.services import record_audit
@@ -48,11 +48,12 @@ def _can_see_customer_finance(actor: User, customer: Customer) -> bool:
         return Invoice.objects.filter(customer=customer, delivery_rep=actor).exists()
     if actor.role == Role.SHOP:
         return get_active_customer_id(actor) == customer.id
-    return False
+    return sees_debt(actor) or user_may(actor, "record_payment")
 
 
 def serialize_payment(p: Payment) -> dict[str, Any]:
-    rev_entry = getattr(p, "reversed_by_entry", None)
+    revs = sorted(p.reversals.all(), key=lambda r: r.id)
+    latest_rev = revs[-1] if revs else None
     return {
         "id": p.id,
         "number": p.number,
@@ -65,8 +66,9 @@ def serialize_payment(p: Payment) -> dict[str, Any]:
         "note": p.note,
         "reason": p.reason,
         "reversed": bool(p.reversed),
+        "reversed_amount": int(p.reversed_amount or 0),
         "reversal_of": p.reversal_of_id,
-        "reversed_by_id": rev_entry.id if rev_entry else None,
+        "reversed_by_id": latest_rev.id if latest_rev else None,
         "received_by": {
             "id": p.received_by_id or 0,
             "name": p.received_by.name if p.received_by else (p.received_by_name or "Qi Card"),
@@ -130,11 +132,11 @@ def serialize_online_payment(op: OnlinePayment) -> dict[str, Any]:
 
 
 def list_payments_for_actor(*, actor: User) -> list[dict[str, Any]]:
-    if actor.role in (Role.WAREHOUSE, Role.STAFF):
+    if actor.role in (Role.WAREHOUSE, Role.STAFF) and not (sees_debt(actor) or user_may(actor, "record_payment")):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
     qs = (
-        Payment.objects.select_related("received_by", "reversed_by_entry")
-        .prefetch_related("allocations__invoice")
+        Payment.objects.select_related("received_by")
+        .prefetch_related("reversals", "allocations__invoice")
         .order_by("-id")
     )
     if actor.role == Role.REP:
@@ -151,11 +153,11 @@ def list_payments_for_actor(*, actor: User) -> list[dict[str, Any]]:
 
 
 def get_payment_for_actor(*, actor: User, payment_id: int) -> dict[str, Any]:
-    if actor.role in (Role.WAREHOUSE, Role.STAFF):
+    if actor.role in (Role.WAREHOUSE, Role.STAFF) and not (sees_debt(actor) or user_may(actor, "record_payment")):
         raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
     p = (
-        Payment.objects.select_related("customer", "received_by", "reversed_by_entry")
-        .prefetch_related("allocations__invoice")
+        Payment.objects.select_related("customer", "received_by")
+        .prefetch_related("reversals", "allocations__invoice")
         .filter(id=payment_id)
         .first()
     )
@@ -215,7 +217,7 @@ def _allocate_payment_fifo(
         client_ref=client_ref,
         gateway=gateway,
     )
-    pay.number = f"PAY-{pay.id:05d}"
+    pay.number = f"{prefix_of('payment')}-{pay.id:05d}"
 
     left = amount
     for inv in Invoice.objects.select_for_update().filter(customer=customer).order_by("delivered_at", "id"):
@@ -253,8 +255,8 @@ def _allocate_payment_fifo(
         after={"customer_id": customer.id, "amount": amount, "method": method, "unallocated": left},
     )
     return (
-        Payment.objects.select_related("received_by", "reversed_by_entry")
-        .prefetch_related("allocations__invoice")
+        Payment.objects.select_related("received_by")
+        .prefetch_related("reversals", "allocations__invoice")
         .get(id=pay.id)
     )
 
@@ -322,15 +324,14 @@ def apply_available_credit_to_open_invoices(*, customer_id: int) -> None:
 
 @transaction.atomic
 def create_payment(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT, Role.REP):
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "record_payment")
     may_profile_action(actor, "payments")
 
     client_ref = (str(data.get("client_ref") or "")).strip() or None
     if client_ref:
         existing = (
-            Payment.objects.select_related("received_by", "reversed_by_entry")
-            .prefetch_related("allocations__invoice")
+            Payment.objects.select_related("received_by")
+            .prefetch_related("reversals", "allocations__invoice")
             .filter(client_ref=client_ref)
             .first()
         )
@@ -388,11 +389,15 @@ def create_payment(*, actor: User, data: dict[str, Any]) -> dict[str, Any]:
 
 
 @transaction.atomic
-def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, Any]:
+def reverse_payment(
+    *,
+    actor: User,
+    payment_id: int,
+    reason: str,
+    amount: Any = None,
+) -> dict[str, Any]:
     rules = rules_of()
-    allowed_roles = rules.get("reverse_roles") or [Role.MANAGER, Role.ACCOUNTANT]
-    if actor.role not in allowed_roles:
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "reverse_payment", rules=rules)
 
     clean_reason = (reason or "").strip()
     if not clean_reason:
@@ -407,11 +412,41 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
     )
     if not orig:
         raise ApiException(code=ErrorCode.NOT_FOUND, status_code=http_status.HTTP_404_NOT_FOUND)
-    if orig.reversed or orig.reversal_of_id is not None:
+    if orig.reversal_of_id is not None or orig.amount <= 0:
+        raise ApiException(
+            code=ErrorCode.BAD_STATE,
+            message=("هذه عملية عكسية أصلاً", "This is already a reversal entry"),
+        )
+    left = int(orig.amount) - int(orig.reversed_amount or 0)
+    if orig.reversed or left <= 0:
         raise ApiException(
             code=ErrorCode.ALREADY_REVERSED,
             message=("هذا التسديد معكوس مسبقاً", "This payment is already reversed"),
         )
+
+    if amount is None:
+        rev_amt = left
+    else:
+        if isinstance(amount, bool):
+            amt_err = ("المبلغ غير صحيح", "Amount is not valid")
+            raise ApiException(code=ErrorCode.VALIDATION, message=amt_err, errors={"amount": amt_err})
+        try:
+            rev_amt = int(amount)
+            if isinstance(amount, float) or (isinstance(amount, str) and str(rev_amt) != amount.strip()):
+                raise ValueError("not whole int")
+        except (TypeError, ValueError) as exc:
+            amt_err = ("اكتب مبلغاً صحيحاً بالدينار", "Enter a whole amount in dinars")
+            raise ApiException(code=ErrorCode.VALIDATION, message=amt_err, errors={"amount": amt_err}) from exc
+        if rev_amt <= 0:
+            amt_err = ("المبلغ غير صحيح", "Amount is not valid")
+            raise ApiException(code=ErrorCode.VALIDATION, message=amt_err, errors={"amount": amt_err})
+        if rev_amt > left:
+            amt_err = (f"أقصى ما يُعكس {left:,} د.ع", f"{left:,} IQD at most")
+            raise ApiException(
+                code=ErrorCode.VALIDATION,
+                message=("المبلغ أكبر مما بقي من التسديد", "More than what is left of the payment"),
+                errors={"amount": amt_err},
+            )
 
     max_days = int(rules.get("reverse_days") or 0)
     if max_days > 0 and actor.role != Role.MANAGER:
@@ -437,6 +472,10 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
                 status_code=http_status.HTTP_409_CONFLICT,
             )
 
+    unalloc_avail = max(0, int(orig.unallocated_amount or 0))
+    unalloc_take = min(rev_amt, unalloc_avail)
+    rest = rev_amt - unalloc_take
+
     now = datetime.now(tz=UTC)
     rev_entry = Payment.objects.create(
         number="REV-TMP",
@@ -445,8 +484,8 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
         received_by_name=actor.name,
         received_by_role=actor.role,
         method=orig.method,
-        amount=-orig.amount,
-        unallocated_amount=-orig.unallocated_amount,
+        amount=-rev_amt,
+        unallocated_amount=-unalloc_take,
         note=orig.note,
         reason=clean_reason,
         reversal_of=orig,
@@ -454,19 +493,43 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
     rev_entry.number = f"REV-{rev_entry.id:05d}"
     rev_entry.save(update_fields=["number"])
 
-    for alloc in orig.allocations.order_by("invoice_id", "id"):
-        inv = Invoice.objects.select_for_update().get(id=alloc.invoice_id)
-        inv.paid = max(0, inv.paid - alloc.amount)
-        inv.save(update_fields=["paid"])
-        PaymentAllocation.objects.create(payment=rev_entry, invoice=inv, amount=-alloc.amount)
+    prev_rev_by_inv: dict[int, int] = {}
+    for prev_alloc in PaymentAllocation.objects.filter(
+        payment__reversal_of_id=orig.id, amount__lt=0
+    ).only("invoice_id", "amount"):
+        prev_rev_by_inv[prev_alloc.invoice_id] = prev_rev_by_inv.get(prev_alloc.invoice_id, 0) + (-prev_alloc.amount)
 
-    orig.reversed = True
+    for alloc in orig.allocations.order_by("-id"):
+        if rest <= 0:
+            break
+        already_taken = prev_rev_by_inv.get(alloc.invoice_id, 0)
+        avail_alloc = max(0, alloc.amount - already_taken)
+        take = min(rest, avail_alloc)
+        if take <= 0:
+            continue
+        inv = Invoice.objects.select_for_update().get(id=alloc.invoice_id)
+        inv.paid = max(0, inv.paid - take)
+        inv.save(update_fields=["paid"])
+        PaymentAllocation.objects.create(payment=rev_entry, invoice=inv, amount=-take)
+        prev_rev_by_inv[alloc.invoice_id] = already_taken + take
+        rest -= take
+
+    orig.reversed_amount = int(orig.reversed_amount or 0) + rev_amt
+    orig.reversed = orig.reversed_amount >= orig.amount
+    orig.unallocated_amount = max(0, unalloc_avail - unalloc_take)
     orig.reversed_by = actor
     orig.reversed_at = now
     orig.reason = clean_reason
-    orig.save(update_fields=["reversed", "reversed_by", "reversed_at", "reason"])
-
-    apply_available_credit_to_open_invoices(customer_id=orig.customer_id)
+    orig.save(
+        update_fields=[
+            "reversed",
+            "reversed_amount",
+            "unallocated_amount",
+            "reversed_by",
+            "reversed_at",
+            "reason",
+        ]
+    )
 
     notify_role(
         role=Role.MANAGER,
@@ -478,19 +541,21 @@ def reverse_payment(*, actor: User, payment_id: int, reason: str) -> dict[str, A
         ref_type="payment",
         ref_id=orig.id,
     )
+    part_en = f" ({rev_amt:,} of {orig.amount:,} IQD)" if rev_amt < orig.amount else f" ({orig.amount:,} IQD)"
+    part_ar = f" ({rev_amt:,} من {orig.amount:,} د.ع)" if rev_amt < orig.amount else f" بمبلغ {orig.amount:,} د.ع"
     record_audit(
         actor=actor,
         action="reverse",
         entity_type="payment",
         entity_id=orig.id,
-        summary=f"Reversed payment {orig.number} ({orig.amount:,} IQD): {clean_reason}",
-        summary_ar=f"عكس التسديد {orig.number} بمبلغ {orig.amount:,} د.ع: {clean_reason}",
-        after={"reversal_id": rev_entry.id, "reason": clean_reason},
+        summary=f"Reversed payment {orig.number}{part_en}: {clean_reason}",
+        summary_ar=f"عكس التسديد {orig.number}{part_ar}: {clean_reason}",
+        after={"reversal_id": rev_entry.id, "reversed_amount": orig.reversed_amount, "reason": clean_reason},
     )
 
     refreshed = (
-        Payment.objects.select_related("received_by", "reversed_by_entry")
-        .prefetch_related("allocations__invoice")
+        Payment.objects.select_related("received_by")
+        .prefetch_related("reversals", "allocations__invoice")
         .get(id=orig.id)
     )
     return serialize_payment(refreshed)
@@ -521,8 +586,7 @@ def list_refunds_for_customer(*, actor: User, customer_id: int) -> list[dict[str
 
 @transaction.atomic
 def create_refund(*, actor: User, customer_id: int, data: dict[str, Any]) -> dict[str, Any]:
-    if actor.role not in (Role.MANAGER, Role.ACCOUNTANT):
-        raise ApiException(code=ErrorCode.FORBIDDEN, status_code=http_status.HTTP_403_FORBIDDEN)
+    require_action(actor, "refund")
 
     customer = Customer.objects.select_for_update().filter(id=customer_id).first()
     if not customer:
@@ -569,7 +633,7 @@ def create_refund(*, actor: User, customer_id: int, data: dict[str, Any]) -> dic
         reason=reason,
         created_by=actor,
     )
-    ref.number = f"REF-{ref.id:05d}"
+    ref.number = f"{prefix_of('refund')}-{ref.id:05d}"
     ref.save(update_fields=["number"])
 
     notify_customer(

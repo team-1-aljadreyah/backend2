@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.accounts.models import Role
-from apps.accounts.permissions import role_permission
+from apps.accounts.permissions import action_permission, require_action, role_permission, user_may
 from apps.catalog.serializers import (
     CatalogItemSerializer,
     CategoryRenameInputSerializer,
@@ -51,7 +51,7 @@ class CatalogListView(APIView):
 class ItemListCreateView(APIView):
     def get_permissions(self):
         if self.request.method == "POST":
-            return [role_permission(Role.MANAGER)()]
+            return [action_permission("edit_items")()]
         return [IsAuthenticated()]
 
     @extend_schema(
@@ -73,7 +73,7 @@ class ItemListCreateView(APIView):
 class ItemDetailView(APIView):
     def get_permissions(self):
         if self.request.method in ("PATCH", "DELETE"):
-            return [role_permission(Role.MANAGER)()]
+            return [action_permission("edit_items")()]
         return [IsAuthenticated()]
 
     @extend_schema(
@@ -100,7 +100,7 @@ class ItemDetailView(APIView):
 
 
 class ItemVideoView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.WAREHOUSE)]
+    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     @extend_schema(
@@ -109,6 +109,8 @@ class ItemVideoView(APIView):
         responses={200: ItemSerializer},
     )
     def post(self, request, item_id: int):
+        if not user_may(request.user, "edit_items") and getattr(request.user, "role", None) != Role.WAREHOUSE:
+            require_action(request.user, "edit_items")
         uploaded_file = request.FILES.get("file") or request.FILES.get("video")
         video_val = None
         if isinstance(request.data, dict) and "video" in request.data and not uploaded_file:
@@ -125,13 +127,15 @@ class ItemVideoView(APIView):
 
 
 class ItemImageUploadView(APIView):
-    permission_classes = [role_permission(Role.MANAGER, Role.WAREHOUSE)]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Upload item image (Base64 data URL)",
         responses={200: ItemSerializer},
     )
     def post(self, request, item_id: int):
+        if not user_may(request.user, "edit_items") and getattr(request.user, "role", None) != Role.WAREHOUSE:
+            require_action(request.user, "edit_items")
         image = request.data.get("image") if isinstance(request.data, dict) else None
         return ok_response(update_item_image(actor=request.user, item_id=item_id, image_data_url=image, request=request))
 
@@ -155,7 +159,7 @@ class ItemBatchesView(APIView):
 
 
 class ItemQuickUpdateView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("edit_items")]
 
     @extend_schema(
         summary="Quick edit item attributes or tier prices",
@@ -167,7 +171,7 @@ class ItemQuickUpdateView(APIView):
 
 
 class CategoryRenameView(APIView):
-    permission_classes = [role_permission(Role.MANAGER)]
+    permission_classes = [action_permission("edit_items")]
 
     @extend_schema(
         summary="Rename category across items, reps, and site settings",
